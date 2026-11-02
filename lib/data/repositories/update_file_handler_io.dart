@@ -11,7 +11,7 @@ UpdateFileHandler createUpdateFileHandler() => const IoUpdateFileHandler();
 class IoUpdateFileHandler implements UpdateFileHandler {
   const IoUpdateFileHandler();
 
-  static const _channel = MethodChannel('com.faddgraphics.faddompet/update');
+  static const _channel = MethodChannel('com.sheva.dompetku/update');
 
   @override
   Future<SavedUpdateFile> saveApk({

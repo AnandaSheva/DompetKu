@@ -156,7 +156,7 @@ class SettingsPage extends ConsumerWidget {
           //   subtitle: 'Lihat kode sumber dan perkembangan proyek.',
           //   onTap: () => _confirmExternalLink(
           //     context,
-          //     url: 'https://github.com/fadd3079-prog/faddompet',
+          //     url: 'https://github.com/fadd3079-prog/DompetKu',
           //     actionLabel: 'Buka GitHub',
           //   ),
           ),

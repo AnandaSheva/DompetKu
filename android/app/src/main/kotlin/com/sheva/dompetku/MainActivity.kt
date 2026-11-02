@@ -1,4 +1,4 @@
-package com.faddgraphics.faddompet
+package com.sheva.dompetku
 
 import android.content.Intent
 import androidx.core.content.FileProvider
@@ -10,7 +10,7 @@ import java.io.File
 class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.faddgraphics.faddompet/update")
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.sheva.dompetku/update")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "openApk" -> {
@@ -84,3 +84,4 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 }
+

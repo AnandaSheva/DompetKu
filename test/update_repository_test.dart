@@ -27,7 +27,7 @@ void main() {
     );
   });
 
-  for (final brand in ['DompetSheva', 'FadDompet']) {
+  for (final brand in ['DompetSheva', 'DompetKu']) {
     test('picks arm64 APK from $brand release assets', () {
       final asset = UpdateRepository.pickArm64ApkAsset([
         {

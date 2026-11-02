@@ -27,7 +27,7 @@ val hasCompleteReleaseSigning =
         releaseKeystoreProperty("keyAlias") != null
 
 android {
-    namespace = "com.faddgraphics.faddompet"
+    namespace = "com.sheva.dompetku"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -38,7 +38,7 @@ android {
 
     defaultConfig {
         // Keep the installed app identity so signed updates retain local data.
-        applicationId = "com.faddgraphics.faddompet"
+        applicationId = "com.sheva.dompetku"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

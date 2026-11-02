@@ -428,7 +428,7 @@ class AppDatabase extends _$AppDatabase {
     : super(
         driftDatabase(
           // Keep the existing database name so rebranding retains local data.
-          name: 'faddompet',
+          name: 'dompetku',
           web: kIsWeb
               ? DriftWebOptions(
                   sqlite3Wasm: Uri.parse('sqlite3.wasm'),

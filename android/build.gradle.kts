@@ -33,6 +33,19 @@ subprojects {
 subprojects {
     project.evaluationDependsOn(":app")
 }
+subprojects {
+    tasks.configureEach {
+        if (name.contains("strip") && name.contains("DebugSymbols")) {
+            doFirst {
+                outputs.files.files.forEach { dir ->
+                    listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64").forEach { abi ->
+                        java.io.File(dir, "lib/$abi").mkdirs()
+                    }
+                }
+            }
+        }
+    }
+}
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
