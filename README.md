@@ -155,7 +155,7 @@ See [SECURITY.md](SECURITY.md).
 
 If Dompet Sheva helps you, you can support its ongoing development here:
 
-https://tako.id/fadhol_pemula
+https://tako.id/shevaanandaa
 
 ## License
 
