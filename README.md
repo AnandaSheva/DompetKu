@@ -1,15 +1,15 @@
 <p align="center">
-  <img src="assets/icons/app_icon.png" width="96" alt="FadDompet logo">
+  <img src="assets/icons/app_icon.png" width="96" alt="Dompet Sheva logo">
 </p>
 
-<h1 align="center">FadDompet</h1>
+<h1 align="center">Dompet Sheva</h1>
 
 <p align="center">
   Offline-first personal finance tracker for Android.
 </p>
 
 <p align="center">
-  FadDompet helps users track income, expenses, wallets, budgets, backups, and app updates locally on their device.
+  Dompet Sheva helps users track income, expenses, wallets, budgets, backups, and app updates locally on their device.
 </p>
 
 <p align="center">
@@ -18,23 +18,15 @@
   <img alt="Android" src="https://img.shields.io/badge/Android-primary-3DDC84?style=flat-square&logo=android&logoColor=white">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-blue?style=flat-square"></a>
   <a href="https://github.com/fadd3079-prog/faddompet/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/fadd3079-prog/faddompet?style=flat-square"></a>
-  <img alt="Offline first" src="https://img.shields.io/badge/Offline-first-0F766E?style=flat-square">
+  <img alt="Offline first" src="https://img.shields.io/badge/Offline-first-2563EB?style=flat-square">
 </p>
 
-## Screenshots
+## Branding and Compatibility
 
-<p align="center">
-  <img width="180" alt="FadDompet dashboard" src="docs/screenshots/dashboard.webp" />
-  <img width="180" alt="FadDompet app lock" src="docs/screenshots/app-lock.webp" />
-  <img width="180" alt="FadDompet add transaction" src="docs/screenshots/add-transaction.webp" />
-  <img width="180" alt="FadDompet wallets" src="docs/screenshots/wallets.webp" />
-</p>
+The app is now named **Dompet Sheva**, with Dart package `dompet_sheva`.
+The Android application ID, native update channel, database name, and backup format remain compatible with existing installations. Updating an existing installation requires the same signing key.
 
-<p align="center">
-  <img width="180" alt="FadDompet transactions" src="docs/screenshots/transactions.webp" />
-  <img width="180" alt="FadDompet settings" src="docs/screenshots/settings.webp" />
-  <img width="180" alt="FadDompet analytics" src="docs/screenshots/analytics.webp" />
-</p>
+The GitHub repository and update endpoint still use the existing repository URL. Historical release notes, published APK filenames, and screenshots in `docs/` describe earlier releases; they have not been rewritten as new releases. The wallet icon uses the blue brand palette. Run `scripts/render-brand-icons.ps1` on Windows to render the SVG sources, then `dart run flutter_launcher_icons` to regenerate Android launchers.
 
 ## Features
 
@@ -58,7 +50,7 @@
 - Data stays on the device
 - Backup files contain financial data and should be stored safely
 
-FadDompet uses the internet only for user-triggered actions such as checking app updates, downloading an APK update, opening external links, or sharing exported files through Android.
+Dompet Sheva uses the internet only for user-triggered actions such as checking app updates, downloading an APK update, opening external links, or sharing exported files through Android.
 
 ## Download
 
@@ -68,10 +60,10 @@ https://github.com/fadd3079-prog/faddompet/releases/latest
 
 For most modern Android phones, use the `arm64` APK.
 
-Current release APK name:
+APK naming for future Dompet Sheva releases (replace `{VERSION}` with the release version):
 
 ```txt
-FadDompet-v1.3.0-arm64.apk
+DompetSheva-v{VERSION}-arm64.apk
 ```
 
 APK files installed from GitHub are sideloaded. Android or Play Protect may show a warning because the app is not installed from the Play Store.
@@ -83,7 +75,7 @@ If a release provides a SHA256 checksum, verify the downloaded APK before instal
 PowerShell:
 
 ```powershell
-Get-FileHash .\FadDompet-v1.3.0-arm64.apk -Algorithm SHA256
+Get-FileHash '.\DompetSheva-v{VERSION}-arm64.apk' -Algorithm SHA256
 ```
 
 SHA256 tersedia di halaman GitHub Release.
@@ -146,7 +138,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## AI-Assisted Development
 
-FadDompet includes repository-level instructions for AI-assisted development. AI-generated changes must follow the same standards as human contributions: small scope, no secrets, no unnecessary permissions, and passing checks.
+Dompet Sheva includes repository-level instructions for AI-assisted development. AI-generated changes must follow the same standards as human contributions: small scope, no secrets, no unnecessary permissions, and passing checks.
 
 - [AGENTS.md](AGENTS.md)
 - [AI-assisted development guide](docs/ai-assisted-development.md)
@@ -161,12 +153,12 @@ See [SECURITY.md](SECURITY.md).
 
 ## Support Development
 
-If FadDompet helps you, you can support its ongoing development here:
+If Dompet Sheva helps you, you can support its ongoing development here:
 
 https://tako.id/fadhol_pemula
 
 ## License
 
-FadDompet is released under the [MIT License](LICENSE).
+Dompet Sheva is released under the [MIT License](LICENSE).
 
 Copyright (c) 2026 Mufaddhol.

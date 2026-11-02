@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/constants/app_constants.dart';
 import '../features/onboarding/onboarding_page.dart';
 import '../features/security/app_lock_gate.dart';
 import '../shared/layouts/main_shell.dart';
@@ -9,8 +10,8 @@ import '../shared/widgets/loading_state.dart';
 import 'providers/app_providers.dart';
 import 'theme/app_theme.dart';
 
-class FadDompetApp extends ConsumerWidget {
-  const FadDompetApp({super.key});
+class DompetShevaApp extends ConsumerWidget {
+  const DompetShevaApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,7 +20,7 @@ class FadDompetApp extends ConsumerWidget {
         .maybeWhen(data: (value) => value, orElse: () => null);
 
     return MaterialApp(
-      title: 'FadDompet',
+      title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
@@ -79,7 +80,8 @@ class _AppGate extends ConsumerWidget {
           error: (_, _) => const OnboardingPage(),
         );
       },
-      loading: () => const LoadingState(message: 'Menyiapkan FadDompet'),
+      loading: () =>
+          const LoadingState(message: 'Menyiapkan ${AppConstants.appName}'),
       error: (_, _) => const LoadingState(message: 'Data belum bisa dimuat'),
     );
   }

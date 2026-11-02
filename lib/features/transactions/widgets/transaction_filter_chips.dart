@@ -36,7 +36,10 @@ class TransactionFilterChips extends StatelessWidget {
                     _FilterChipButton(
                       label: labels[index],
                       selected: selectedIndex == index,
-                      accentColor: _accentForLabel(labels[index]),
+                      accentColor: AppColors.readableAccent(
+                        _accentForLabel(labels[index]),
+                        Theme.of(context).brightness,
+                      ),
                       onTap: () => onChanged(index),
                     ),
                     if (index != labels.length - 1)
@@ -116,9 +119,9 @@ class _FilterChipButton extends StatelessWidget {
 Color _accentForLabel(String label) {
   switch (label) {
     case 'Pemasukan':
-      return AppColors.incomeGreen;
+      return AppColors.incomeBlue;
     case 'Pengeluaran':
-      return AppColors.expenseRed;
+      return AppColors.expenseBlue;
     case 'Transfer':
       return AppColors.infoBlue;
     default:

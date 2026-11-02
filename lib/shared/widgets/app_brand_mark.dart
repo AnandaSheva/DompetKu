@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme/app_radius.dart';
+import '../../core/constants/app_constants.dart';
 
 class AppBrandMark extends StatelessWidget {
   const AppBrandMark({super.key, this.size = 72, this.radius = AppRadius.xl});
@@ -12,7 +13,7 @@ class AppBrandMark extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       image: true,
-      label: 'FadDompet',
+      label: AppConstants.appName,
       child: Container(
         width: size,
         height: size,

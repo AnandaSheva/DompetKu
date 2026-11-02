@@ -34,6 +34,10 @@ class DateFormatter {
     return _month.format(date);
   }
 
+  static String shortDateLabel(DateTime date) {
+    return _shortDate.format(date);
+  }
+
   static String monthKey(DateTime date) {
     return _monthKey.format(date);
   }

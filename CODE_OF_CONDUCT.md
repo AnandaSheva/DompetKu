@@ -1,6 +1,6 @@
 # Code of Conduct
 
-FadDompet follows a simple expectation: be respectful, constructive, and focused on improving the project.
+Dompet Sheva follows a simple expectation: be respectful, constructive, and focused on improving the project.
 
 ## Expected Behavior
 

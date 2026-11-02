@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../core/constants/app_constants.dart';
 import 'update_file_handler.dart';
 
 enum AppUpdateStatus { upToDate, updateAvailable, unavailable, error }
@@ -118,6 +119,7 @@ class UpdateRepository {
   }) : _client = client ?? http.Client(),
        _fileHandler = fileHandler ?? createUpdateFileHandler();
 
+  // Keep the existing release source until the repository is migrated.
   static final Uri latestReleaseUri = Uri.parse(
     'https://api.github.com/repos/fadd3079-prog/faddompet/releases/latest',
   );
@@ -136,7 +138,7 @@ class UpdateRepository {
             latestReleaseUri,
             headers: const {
               'Accept': 'application/vnd.github+json',
-              'User-Agent': 'FadDompet',
+              'User-Agent': AppConstants.appToken,
             },
           )
           .timeout(_timeout);
@@ -180,7 +182,7 @@ class UpdateRepository {
 
     try {
       final request = http.Request('GET', Uri.parse(asset.downloadUrl))
-        ..headers['User-Agent'] = 'FadDompet';
+        ..headers['User-Agent'] = AppConstants.appToken;
       final response = await _client.send(request).timeout(_timeout);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw const AppUpdateException(
@@ -188,7 +190,7 @@ class UpdateRepository {
         );
       }
 
-      final fileName = 'FadDompet-v$latestVersion-arm64.apk';
+      final fileName = '${AppConstants.appToken}-v$latestVersion-arm64.apk';
       final savedFile = await _fileHandler.saveApk(
         fileName: fileName,
         stream: response.stream,

@@ -51,7 +51,7 @@ class _TopToastContent extends StatelessWidget {
     final theme = Theme.of(context);
     final brightness = theme.colorScheme.brightness;
     final isDark = brightness == Brightness.dark;
-    final color = _color(type);
+    final color = AppColors.readableAccent(_color(type), brightness);
 
     return Positioned(
       top: MediaQuery.paddingOf(context).top + AppSpacing.md,
@@ -127,9 +127,9 @@ class _TopToastContent extends StatelessWidget {
   Color _color(TopToastType type) {
     switch (type) {
       case TopToastType.success:
-        return AppColors.incomeGreen;
+        return AppColors.incomeBlue;
       case TopToastType.error:
-        return AppColors.expenseRed;
+        return AppColors.dangerRed;
       case TopToastType.warning:
         return AppColors.warningOrange;
       case TopToastType.info:

@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import '../../core/constants/category_palette.dart';
 import '../../core/enums/analytics_period.dart';
 import '../../core/enums/transaction_type.dart';
 import '../../core/formatters/date_formatter.dart';
+import '../../core/helpers/monthly_period.dart';
 import '../local/database/app_database.dart';
 import 'app_models.dart';
 
@@ -15,12 +17,20 @@ class AnalyticsRepository {
     final controller = StreamController<AnalyticsSummary>();
     List<TransactionEntry>? transactions;
     List<CategoryEntry>? categories;
+    var resetDay = 1;
+    var settingsLoaded = false;
 
     void emit() {
       final currentTransactions = transactions;
       final currentCategories = categories;
-      if (currentTransactions == null || currentCategories == null) return;
-      controller.add(_summary(currentTransactions, currentCategories, period));
+      if (currentTransactions == null ||
+          currentCategories == null ||
+          !settingsLoaded) {
+        return;
+      }
+      controller.add(
+        _summary(currentTransactions, currentCategories, period, resetDay),
+      );
     }
 
     final transactionSub = _database.transactionsDao.watchAll().listen((value) {
@@ -31,10 +41,18 @@ class AnalyticsRepository {
       categories = value;
       emit();
     });
+    final settingsSub = _database.appSettingsDao.watchSettings().listen((
+      value,
+    ) {
+      resetDay = value?.monthlyResetDay ?? 1;
+      settingsLoaded = true;
+      emit();
+    });
 
     controller.onCancel = () async {
       await transactionSub.cancel();
       await categorySub.cancel();
+      await settingsSub.cancel();
     };
 
     return controller.stream;
@@ -44,14 +62,22 @@ class AnalyticsRepository {
     List<TransactionEntry> transactions,
     List<CategoryEntry> categories,
     AnalyticsPeriod period,
+    int resetDay,
   ) {
     final now = DateTime.now();
-    final start = period.startDate(now);
+    final start = period.startDate(now, resetDay);
+    final end = period == AnalyticsPeriod.currentMonth
+        ? MonthlyPeriod.containing(now, resetDay).end
+        : null;
     final categoriesById = {
       for (final category in categories) category.id: category,
     };
     final filtered = transactions
-        .where((item) => start == null || !item.date.isBefore(start))
+        .where(
+          (item) =>
+              (start == null || !item.date.isBefore(start)) &&
+              (end == null || item.date.isBefore(end)),
+        )
         .toList();
 
     return AnalyticsSummary(
@@ -65,8 +91,8 @@ class AnalyticsRepository {
         categoriesById,
         TransactionType.income,
       ),
-      dailyCashflow: _cashflowSeries(filtered, period, now),
-      weeklyExpense: _expenseBuckets(filtered, period, now),
+      dailyCashflow: _cashflowSeries(filtered, period, now, resetDay),
+      weeklyExpense: _expenseBuckets(filtered, period, now, resetDay),
       topExpenses: _categoryAmounts(
         filtered,
         categoriesById,
@@ -106,10 +132,11 @@ class AnalyticsRepository {
     List<TransactionEntry> transactions,
     AnalyticsPeriod period,
     DateTime now,
+    int resetDay,
   ) {
     switch (period) {
       case AnalyticsPeriod.currentMonth:
-        final start = DateFormatter.startOfMonth(now);
+        final start = MonthlyPeriod.containing(now, resetDay).start;
         final today = DateFormatter.startOfDay(now);
         final days = today.difference(start).inDays + 1;
         return [
@@ -123,17 +150,29 @@ class AnalyticsRepository {
       case AnalyticsPeriod.last3Months:
         return _monthlyCashflow(
           transactions,
-          DateTime(now.year, now.month - 2),
+          MonthlyPeriod.shiftStart(
+            MonthlyPeriod.containing(now, resetDay).start,
+            -2,
+            resetDay,
+          ),
           now,
+          resetDay,
+          customCycles: true,
         );
       case AnalyticsPeriod.yearToDate:
-        return _monthlyCashflow(transactions, DateTime(now.year), now);
+        return _monthlyCashflow(
+          transactions,
+          DateTime(now.year),
+          now,
+          resetDay,
+        );
       case AnalyticsPeriod.allTime:
         if (transactions.isEmpty) return const [];
         return _monthlyCashflow(
           transactions,
           _allTimeChartStart(transactions, now),
           now,
+          resetDay,
         );
     }
   }
@@ -142,10 +181,23 @@ class AnalyticsRepository {
     List<TransactionEntry> transactions,
     DateTime start,
     DateTime now,
-  ) {
+    int resetDay, {
+    bool customCycles = false,
+  }) {
     return [
-      for (final monthStart in _monthStarts(start, now))
-        _cashflowForRange(monthStart, _nextMonth(monthStart), transactions),
+      for (final monthStart in _monthStarts(
+        start,
+        now,
+        resetDay,
+        customCycles: customCycles,
+      ))
+        _cashflowForRange(
+          monthStart,
+          customCycles
+              ? MonthlyPeriod.shiftStart(monthStart, 1, resetDay)
+              : _nextMonth(monthStart),
+          transactions,
+        ),
     ];
   }
 
@@ -177,24 +229,32 @@ class AnalyticsRepository {
     List<TransactionEntry> transactions,
     AnalyticsPeriod period,
     DateTime now,
+    int resetDay,
   ) {
     switch (period) {
       case AnalyticsPeriod.currentMonth:
-        return _weeklyExpense(transactions, now);
+        return _weeklyExpense(transactions, now, resetDay);
       case AnalyticsPeriod.last3Months:
         return _monthlyExpense(
           transactions,
-          DateTime(now.year, now.month - 2),
+          MonthlyPeriod.shiftStart(
+            MonthlyPeriod.containing(now, resetDay).start,
+            -2,
+            resetDay,
+          ),
           now,
+          resetDay,
+          customCycles: true,
         );
       case AnalyticsPeriod.yearToDate:
-        return _monthlyExpense(transactions, DateTime(now.year), now);
+        return _monthlyExpense(transactions, DateTime(now.year), now, resetDay);
       case AnalyticsPeriod.allTime:
         if (transactions.isEmpty) return const [];
         return _monthlyExpense(
           transactions,
           _allTimeChartStart(transactions, now),
           now,
+          resetDay,
         );
     }
   }
@@ -202,8 +262,9 @@ class AnalyticsRepository {
   List<CategoryAmount> _weeklyExpense(
     List<TransactionEntry> transactions,
     DateTime now,
+    int resetDay,
   ) {
-    final start = DateFormatter.startOfMonth(now);
+    final start = MonthlyPeriod.containing(now, resetDay).start;
     final buckets = <CategoryAmount>[];
     var bucketStart = start;
     var index = 1;
@@ -224,12 +285,21 @@ class AnalyticsRepository {
     List<TransactionEntry> transactions,
     DateTime start,
     DateTime now,
-  ) {
+    int resetDay, {
+    bool customCycles = false,
+  }) {
     return [
-      for (final monthStart in _monthStarts(start, now))
+      for (final monthStart in _monthStarts(
+        start,
+        now,
+        resetDay,
+        customCycles: customCycles,
+      ))
         _expenseForRange(
           monthStart,
-          _nextMonth(monthStart),
+          customCycles
+              ? MonthlyPeriod.shiftStart(monthStart, 1, resetDay)
+              : _nextMonth(monthStart),
           transactions,
           _shortMonthLabel(monthStart),
         ),
@@ -252,17 +322,32 @@ class AnalyticsRepository {
         )
         .fold<int>(0, (total, transaction) => total + transaction.amount);
 
-    return CategoryAmount(label: label, amount: amount, colorValue: 0xFFDC2626);
+    return CategoryAmount(
+      label: label,
+      amount: amount,
+      colorValue: CategoryPalette.values[0],
+    );
   }
 
-  List<DateTime> _monthStarts(DateTime start, DateTime now) {
-    final end = DateFormatter.startOfMonth(now);
+  List<DateTime> _monthStarts(
+    DateTime start,
+    DateTime now,
+    int resetDay, {
+    bool customCycles = false,
+  }) {
+    final end = customCycles
+        ? MonthlyPeriod.containing(now, resetDay).start
+        : DateFormatter.startOfMonth(now);
     final starts = <DateTime>[];
-    var cursor = DateFormatter.startOfMonth(start);
+    var cursor = customCycles
+        ? MonthlyPeriod.shiftStart(start, 0, resetDay)
+        : DateFormatter.startOfMonth(start);
 
     while (!cursor.isAfter(end)) {
       starts.add(cursor);
-      cursor = _nextMonth(cursor);
+      cursor = customCycles
+          ? MonthlyPeriod.shiftStart(cursor, 1, resetDay)
+          : _nextMonth(cursor);
     }
 
     return starts;

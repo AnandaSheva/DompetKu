@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../../core/constants/category_palette.dart';
 import '../database/app_database.dart';
 
 class DefaultSeedData {
@@ -16,7 +17,7 @@ class DefaultSeedData {
 
   static List<CategoryEntriesCompanion> categories(DateTime now) {
     final expense = <({String group, String name, int color})>[
-      ..._group('Kebutuhan Harian', 0xFFDC2626, [
+      ..._group('Kebutuhan Harian', CategoryPalette.values[0], [
         'Makanan',
         'Minuman',
         'Belanja Harian',
@@ -27,7 +28,7 @@ class DefaultSeedData {
         'Laundry',
         'Kebutuhan Rumah',
       ]),
-      ..._group('Tagihan & Langganan', 0xFFF97316, [
+      ..._group('Tagihan & Langganan', CategoryPalette.values[1], [
         'Listrik',
         'Air',
         'WiFi',
@@ -42,7 +43,7 @@ class DefaultSeedData {
         'Design Tools',
         'Domain & Hosting',
       ]),
-      ..._group('Kesehatan', 0xFF0F766E, [
+      ..._group('Kesehatan', CategoryPalette.values[2], [
         'Obat',
         'Dokter',
         'Rumah Sakit',
@@ -50,7 +51,7 @@ class DefaultSeedData {
         'Perawatan Diri',
         'Olahraga',
       ]),
-      ..._group('Pendidikan & Produktivitas', 0xFF2563EB, [
+      ..._group('Pendidikan & Produktivitas', CategoryPalette.values[3], [
         'Buku',
         'Kursus',
         'Sertifikasi',
@@ -59,7 +60,7 @@ class DefaultSeedData {
         'Peralatan Kerja',
         'Aplikasi Produktivitas',
       ]),
-      ..._group('Hiburan & Gaya Hidup', 0xFFF97316, [
+      ..._group('Hiburan & Gaya Hidup', CategoryPalette.values[1], [
         'Hiburan',
         'Nongkrong',
         'Bioskop',
@@ -69,7 +70,7 @@ class DefaultSeedData {
         'Fashion',
         'Hadiah',
       ]),
-      ..._group('Keuangan', 0xFF2563EB, [
+      ..._group('Keuangan', CategoryPalette.values[3], [
         'Tabungan',
         'Investasi',
         'Dana Darurat',
@@ -78,11 +79,11 @@ class DefaultSeedData {
         'Donasi',
         'Hutang Dibayar',
       ]),
-      ..._group('Lainnya', 0xFF6B7280, ['Lainnya']),
+      ..._group('Lainnya', CategoryPalette.values[5], ['Lainnya']),
     ];
 
     final income = <({String group, String name, int color})>[
-      ..._group('Penghasilan', 0xFF16A34A, [
+      ..._group('Penghasilan', CategoryPalette.values[4], [
         'Gaji',
         'Upah',
         'Bonus',
@@ -90,7 +91,7 @@ class DefaultSeedData {
         'Tunjangan',
         'Lembur',
       ]),
-      ..._group('Usaha & Jasa', 0xFF0F766E, [
+      ..._group('Usaha & Jasa', CategoryPalette.values[2], [
         'Penjualan',
         'Jasa',
         'Project',
@@ -99,7 +100,7 @@ class DefaultSeedData {
         'Royalti',
         'Affiliate',
       ]),
-      ..._group('Keuangan', 0xFF2563EB, [
+      ..._group('Keuangan', CategoryPalette.values[3], [
         'Cashback',
         'Refund',
         'Bunga',
@@ -107,7 +108,7 @@ class DefaultSeedData {
         'Investasi Cair',
         'Tabungan Dicairkan',
       ]),
-      ..._group('Dukungan & Lainnya', 0xFF16A34A, [
+      ..._group('Dukungan & Lainnya', CategoryPalette.values[4], [
         'Uang Saku',
         'Hadiah',
         'Bantuan',
@@ -128,6 +129,7 @@ class DefaultSeedData {
       themeMode: const Value('system'),
       hideBalance: const Value(false),
       onboardingCompleted: const Value(false),
+      monthlyResetDay: const Value(1),
       createdAt: now,
       updatedAt: now,
     );

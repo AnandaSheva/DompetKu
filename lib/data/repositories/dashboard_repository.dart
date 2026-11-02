@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import '../../core/enums/transaction_type.dart';
-import '../../core/formatters/date_formatter.dart';
 import '../../core/helpers/calculation_helper.dart';
+import '../../core/helpers/monthly_period.dart';
 import '../local/database/app_database.dart';
 import 'app_models.dart';
 
@@ -17,6 +17,8 @@ class DashboardRepository {
     List<CategoryEntry>? categories;
     List<WalletEntry>? wallets;
     List<BudgetEntry>? budgets;
+    var resetDay = 1;
+    var settingsLoaded = false;
 
     void emit() {
       final currentTransactions = transactions;
@@ -26,7 +28,8 @@ class DashboardRepository {
       if (currentTransactions == null ||
           currentCategories == null ||
           currentWallets == null ||
-          currentBudgets == null) {
+          currentBudgets == null ||
+          !settingsLoaded) {
         return;
       }
 
@@ -36,6 +39,7 @@ class DashboardRepository {
           categories: currentCategories,
           wallets: currentWallets,
           budgets: currentBudgets,
+          resetDay: resetDay,
         ),
       );
     }
@@ -56,12 +60,20 @@ class DashboardRepository {
       budgets = value;
       emit();
     });
+    final settingsSub = _database.appSettingsDao.watchSettings().listen((
+      value,
+    ) {
+      resetDay = value?.monthlyResetDay ?? 1;
+      settingsLoaded = true;
+      emit();
+    });
 
     controller.onCancel = () async {
       await transactionSub.cancel();
       await categorySub.cancel();
       await walletSub.cancel();
       await budgetSub.cancel();
+      await settingsSub.cancel();
     };
 
     return controller.stream;
@@ -72,11 +84,15 @@ class DashboardRepository {
     required List<CategoryEntry> categories,
     required List<WalletEntry> wallets,
     required List<BudgetEntry> budgets,
+    required int resetDay,
   }) {
     final now = DateTime.now();
-    final start = DateFormatter.startOfMonth(now);
-    final monthKey = DateFormatter.monthKey(now);
-    final monthly = transactions.where((item) => !item.date.isBefore(start));
+    final period = MonthlyPeriod.containing(now, resetDay);
+    final monthly = transactions.where(
+      (item) =>
+          !item.date.isBefore(period.start) && item.date.isBefore(period.end),
+    );
+    final monthKey = period.key;
     final categoriesById = {
       for (final category in categories) category.id: category,
     };
@@ -153,6 +169,7 @@ class DashboardRepository {
       budgetCount: currentBudgets.length,
       hasMonthlyBudget: monthlyBudgetLimit > 0,
       categoryBudgetLimitTotal: categoryBudgetLimitTotal,
+      monthlyPeriodLabel: MonthlyPeriod.label(period),
       topExpenseCategory: categoriesById[topCategoryId]?.name,
       recentTransactions: [
         for (final transaction in transactions.take(5))

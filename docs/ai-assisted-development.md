@@ -1,6 +1,6 @@
 # AI-Assisted Development
 
-FadDompet may use AI-assisted tooling for development, review, documentation, and maintenance. AI assistance is treated as a workflow aid, not as a replacement for human review.
+Dompet Sheva may use AI-assisted tooling for development, review, documentation, and maintenance. AI assistance is treated as a workflow aid, not as a replacement for human review.
 
 ## Review Standard
 
@@ -45,7 +45,7 @@ The following changes need careful human review:
 
 AI must not fabricate features in documentation. Documentation should describe behavior that exists in the app or is clearly marked as planned.
 
-AI must not claim that FadDompet is more secure than it is. App lock is local protection, not full database encryption. Backup files contain financial data and should be stored safely.
+AI must not claim that Dompet Sheva is more secure than it is. App lock is local protection, not full database encryption. Backup files contain financial data and should be stored safely.
 
 ## Repository Instructions
 

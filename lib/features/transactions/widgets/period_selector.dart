@@ -95,7 +95,7 @@ class _PeriodButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.colorScheme.brightness == Brightness.dark;
-    final activeColor = isDark ? AppColors.softMint : AppColors.primary;
+    final activeColor = isDark ? AppColors.softBlue : AppColors.primary;
 
     return Semantics(
       button: true,

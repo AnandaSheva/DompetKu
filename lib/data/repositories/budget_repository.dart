@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:drift/drift.dart';
 
 import '../../core/enums/transaction_type.dart';
-import '../../core/formatters/date_formatter.dart';
 import '../../core/helpers/calculation_helper.dart';
+import '../../core/helpers/monthly_period.dart';
 import '../local/database/app_database.dart';
 import 'app_models.dart';
 
@@ -18,6 +18,8 @@ class BudgetRepository {
     List<BudgetEntry>? budgets;
     List<TransactionEntry>? transactions;
     List<CategoryEntry>? categories;
+    var resetDay = 1;
+    var settingsLoaded = false;
 
     void emit() {
       final currentBudgets = budgets;
@@ -25,11 +27,17 @@ class BudgetRepository {
       final currentCategories = categories;
       if (currentBudgets == null ||
           currentTransactions == null ||
-          currentCategories == null) {
+          currentCategories == null ||
+          !settingsLoaded) {
         return;
       }
       controller.add(
-        _progress(currentBudgets, currentTransactions, currentCategories),
+        _progress(
+          currentBudgets,
+          currentTransactions,
+          currentCategories,
+          resetDay,
+        ),
       );
     }
 
@@ -45,11 +53,19 @@ class BudgetRepository {
       categories = value;
       emit();
     });
+    final settingsSub = _database.appSettingsDao.watchSettings().listen((
+      value,
+    ) {
+      resetDay = value?.monthlyResetDay ?? 1;
+      settingsLoaded = true;
+      emit();
+    });
 
     controller.onCancel = () async {
       await budgetSub.cancel();
       await transactionSub.cancel();
       await categorySub.cancel();
+      await settingsSub.cancel();
     };
 
     return controller.stream;
@@ -60,6 +76,7 @@ class BudgetRepository {
       await _database.budgetsDao.getAll(),
       await _database.transactionsDao.getAll(),
       await _database.categoriesDao.getAll(),
+      (await _database.appSettingsDao.getSettings())?.monthlyResetDay ?? 1,
     );
   }
 
@@ -110,6 +127,7 @@ class BudgetRepository {
     List<BudgetEntry> budgets,
     List<TransactionEntry> transactions,
     List<CategoryEntry> categories,
+    int resetDay,
   ) {
     final categoriesById = {
       for (final category in categories) category.id: category,
@@ -122,19 +140,26 @@ class BudgetRepository {
           label: budget.categoryId == null
               ? 'Budget bulanan'
               : categoriesById[budget.categoryId]?.name ?? 'Kategori',
-          spent: _spentForBudget(budget, transactions),
+          spent: _spentForBudget(budget, transactions, resetDay),
           status: CalculationHelper.budgetStatus(
-            _spentForBudget(budget, transactions),
+            _spentForBudget(budget, transactions, resetDay),
             budget.limitAmount,
           ),
         ),
     ];
   }
 
-  int _spentForBudget(BudgetEntry budget, List<TransactionEntry> transactions) {
+  int _spentForBudget(
+    BudgetEntry budget,
+    List<TransactionEntry> transactions,
+    int resetDay,
+  ) {
     return transactions
         .where((transaction) {
-          final month = DateFormatter.monthKey(transaction.date);
+          final month = MonthlyPeriod.containing(
+            transaction.date,
+            resetDay,
+          ).key;
           final type = TransactionType.fromValue(transaction.type);
           final categoryMatches =
               budget.categoryId == null ||

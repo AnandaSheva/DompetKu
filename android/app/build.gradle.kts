@@ -37,6 +37,7 @@ android {
     }
 
     defaultConfig {
+        // Keep the installed app identity so signed updates retain local data.
         applicationId = "com.faddgraphics.faddompet"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion

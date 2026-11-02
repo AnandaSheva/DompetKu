@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:faddompet/core/enums/transaction_type.dart';
-import 'package:faddompet/core/helpers/calculation_helper.dart';
+import 'package:dompet_sheva/core/enums/transaction_type.dart';
+import 'package:dompet_sheva/core/helpers/calculation_helper.dart';
 
 void main() {
   test('transfer moves money between wallets without becoming expense', () {

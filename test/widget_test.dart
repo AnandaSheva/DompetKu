@@ -3,27 +3,31 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-import 'package:faddompet/app/app.dart';
-import 'package:faddompet/app/providers/app_providers.dart';
-import 'package:faddompet/app/theme/app_theme.dart';
-import 'package:faddompet/data/local/database/app_database.dart';
-import 'package:faddompet/data/repositories/app_models.dart';
-import 'package:faddompet/data/repositories/security_repository.dart';
-import 'package:faddompet/features/dashboard/dashboard_page.dart';
-import 'package:faddompet/shared/widgets/premium_bottom_nav.dart';
+import 'package:dompet_sheva/app/app.dart';
+import 'package:dompet_sheva/app/providers/app_providers.dart';
+import 'package:dompet_sheva/app/theme/app_theme.dart';
+import 'package:dompet_sheva/data/local/database/app_database.dart';
+import 'package:dompet_sheva/data/repositories/app_models.dart';
+import 'package:dompet_sheva/data/repositories/security_repository.dart';
+import 'package:dompet_sheva/features/dashboard/dashboard_page.dart';
+import 'package:dompet_sheva/shared/widgets/premium_bottom_nav.dart';
 
 void main() {
   setUpAll(() async {
     await initializeDateFormatting('id_ID');
   });
 
-  testWidgets('FadDompet app shell renders', (WidgetTester tester) async {
-    await tester.pumpWidget(_withOverrides(const FadDompetApp()));
+  testWidgets('Dompet Sheva app shell renders', (WidgetTester tester) async {
+    await tester.pumpWidget(_withOverrides(const DompetShevaApp()));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(PremiumBottomNav), findsOneWidget);
     expect(find.text('Beranda'), findsOneWidget);
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).title,
+      'Dompet Sheva',
+    );
   });
 
   testWidgets('Dashboard hierarchy renders', (WidgetTester tester) async {
@@ -36,7 +40,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Total Saldo'), findsOneWidget);
-    expect(find.text('Ringkasan bulan ini'), findsOneWidget);
+    expect(find.text('Dompet Sheva'), findsOneWidget);
+    expect(find.text('Ringkasan periode'), findsOneWidget);
     expect(find.text('Riwayat terbaru'), findsOneWidget);
   });
 }
@@ -50,6 +55,7 @@ Widget _withOverrides(Widget child) {
     themeMode: 'system',
     hideBalance: false,
     onboardingCompleted: true,
+    monthlyResetDay: 1,
     createdAt: now,
     updatedAt: now,
   );

@@ -1,8 +1,8 @@
-# FadDompet Design System
+# Dompet Sheva Design System
 
 ## 1. Design Direction
 
-FadDompet menggunakan pendekatan visual **iOS-inspired premium mobile interface** yang diadaptasi untuk Android.
+Dompet Sheva menggunakan pendekatan visual **iOS-inspired premium mobile interface** yang diadaptasi untuk Android.
 
 Arah desain ini mengambil inspirasi dari kualitas visual iOS modern seperti:
 
@@ -16,7 +16,7 @@ Arah desain ini mengambil inspirasi dari kualitas visual iOS modern seperti:
 - interaksi yang terasa natural
 - fokus pada konten utama
 
-Namun FadDompet **bukan clone iOS**, bukan Apple Wallet clone, dan bukan aplikasi yang memaksakan pola iPhone mentah ke Android.
+Namun Dompet Sheva **bukan clone iOS**, bukan Apple Wallet clone, dan bukan aplikasi yang memaksakan pola iPhone mentah ke Android.
 
 Targetnya adalah:
 
@@ -26,7 +26,7 @@ Targetnya adalah:
 
 ## 2. Design Personality
 
-FadDompet harus terasa:
+Dompet Sheva harus terasa:
 
 - calm
 - premium
@@ -39,7 +39,7 @@ FadDompet harus terasa:
 - lightweight
 - personal
 
-FadDompet tidak boleh terasa:
+Dompet Sheva tidak boleh terasa:
 
 - generic AI dashboard
 - template SaaS analytics
@@ -57,7 +57,7 @@ FadDompet tidak boleh terasa:
 
 ## 3. Product Feel
 
-Ketika pengguna membuka FadDompet, kesan yang harus muncul:
+Ketika pengguna membuka Dompet Sheva, kesan yang harus muncul:
 
 1. Uang saya mudah dipahami.
 2. Aplikasi ini ringan dan cepat.
@@ -205,115 +205,78 @@ Hindari:
 
 ## 6.1 Brand Palette
 
-Primary brand FadDompet:
+Palet Dompet Sheva menggunakan royal blue, sky blue, dan navy. Token warna berada di `lib/app/theme/app_colors.dart`.
 
 ```txt
-Primary Teal       #0F766E
-Primary Dark       #134E4A
-Deep Navy          #0C2949
-Soft Mint          #DDF7F2
+Primary Blue       #2563EB
+Primary Dark       #1E40AF
+Deep Navy          #102A56
+Bright Blue        #38BDF8
+Soft Blue          #BFDBFE
+Surface Blue       #E8F1FF
+Income Blue        #0369A1
+Expense Blue       #1D4ED8
+Warning Orange     #C2410C
+Danger Red         #DC2626
 ```
-
-Financial colors:
-
-```txt
-Income Green       #16A34A
-Expense Red        #DC2626
-Info Blue          #2563EB
-Warning Orange     #F97316
-Neutral Gray       #6B7280
-```
-
----
 
 ## 6.2 Light Mode
 
 ```txt
-Background         #F7F7F8
-Background Soft    #F3F4F6
+Background         #F5F8FF
+Background Soft    #EDF3FF
 Surface            #FFFFFF
 Surface Elevated   #FFFFFF
-Surface Soft       #F1F3F5
-
-Text Primary       #111827
-Text Secondary     #6B7280
-Text Tertiary      #9CA3AF
-
-Border Subtle      rgba(17, 24, 39, 0.06)
-Shadow Soft        rgba(15, 23, 42, 0.08)
+Surface Soft       #EFF4FC
+Text Primary       #10213D
+Text Secondary     #50617C
+Text Tertiary      #64748B
+Border Subtle      #DCE6F5
+Frame Border       #CDDCF2
 ```
 
-Light mode harus terasa bersih, soft, dan premium. Jangan terlalu putih polos seperti halaman kosong.
-
----
+Latar biru sangat muda, permukaan putih, dan teks navy menjaga tampilan bersih dan mudah dibaca. Tombol utama menggunakan biru dengan teks putih.
 
 ## 6.3 Dark Mode
 
 ```txt
-Background         #080A0D
-Background Soft    #0B1016
-Surface            #111827
-Surface Elevated   #17202B
-Surface Soft       #1F2937
-
-Text Primary       #F9FAFB
-Text Secondary     #9CA3AF
-Text Tertiary      #6B7280
-
-Border Subtle      rgba(255, 255, 255, 0.06)
-Shadow Soft        rgba(0, 0, 0, 0.30)
+Background         #081222
+Background Soft    #0C182B
+Surface            #101E34
+Surface Elevated   #162842
+Surface Soft       #1C3250
+Text Primary       #F3F7FF
+Text Secondary     #C3D3EB
+Text Tertiary      #9EB5D4
+Border Subtle      #2B4263
+Frame Border       #284061
 ```
 
-Dark mode harus terasa deep, calm, dan tidak menyilaukan.
-
----
+Tombol utama memakai biru cerah dengan teks navy. Aksen kategori dan keuangan dibuat lebih terang pada tema gelap agar terbaca.
 
 ## 6.4 Color Usage Rules
 
-Gunakan warna berdasarkan makna:
-
-* Hijau untuk pemasukan dan kondisi positif.
-* Merah untuk pengeluaran dan kondisi negatif.
-* Orange untuk budget warning.
-* Biru untuk informasi netral.
-* Teal untuk brand action utama.
-* Navy untuk depth dan hero section.
-
-Jangan gunakan warna random untuk sekadar mempercantik UI.
-
----
+* Biru utama untuk tombol, navigasi aktif, fokus form, dan informasi.
+* Biru muda untuk highlight, chip, dan empty state.
+* Sky blue dan royal blue untuk membedakan pemasukan, pengeluaran, dan transfer; tetap gunakan label, ikon, serta tanda plus/minus.
+* Navy untuk teks dan depth pada hero section.
+* Oranye untuk peringatan budget dan keamanan.
+* Merah untuk error, budget terlampaui, dan tindakan berbahaya.
+* Kategori dan grafik memakai variasi biru dari `CategoryPalette`. Warna lama/import ditampilkan melalui resolver tanpa migrasi atau penulisan ulang data tersimpan.
 
 ## 6.5 Gradient Rules
 
-Gradient boleh digunakan, tetapi terbatas.
-
-Boleh digunakan untuk:
-
-* balance hero card
-* selected premium surface
-* onboarding hero visual
-* empty state background halus
-
-Hindari:
-
-* semua card memakai gradient
-* gradient terlalu neon
-* gradient terlalu ramai
-* gradient tanpa fungsi hierarchy
-
-Gradient utama:
+Gradient dibatasi pada balance hero card dan highlight yang membutuhkan hierarchy.
 
 ```txt
 Balance Gradient:
-#0F766E -> #134E4A -> #0C2949
+#2563EB -> #1E40AF -> #102A56
+
+Soft Blue Gradient:
+#E8F1FF -> #F5F8FF
 ```
 
-Alternative soft gradient:
-
-```txt
-Soft Mint Gradient:
-#EFFFFB -> #F7F7F8
-```
+Hindari gradient pada semua card, warna neon, dan efek yang mengganggu keterbacaan.
 
 ---
 
@@ -409,7 +372,7 @@ Button vertical padding         14-18
 Bottom sheet padding            20-28
 ```
 
-UI FadDompet harus terasa lega. Jangan padat seperti aplikasi admin dashboard.
+UI Dompet Sheva harus terasa lega. Jangan padat seperti aplikasi admin dashboard.
 
 ---
 
@@ -485,16 +448,16 @@ Do not:
 
 ## 11. Component System
 
-FadDompet harus memakai custom reusable components. Jangan terlalu bergantung pada widget default tanpa styling.
+Dompet Sheva harus memakai custom reusable components. Jangan terlalu bergantung pada widget default tanpa styling.
 
 ## 11.1 Required Components
 
 Komponen inti:
 
 ```txt
-FadDompetApp
+DompetShevaApp
 MainShell
-FadDompetScaffold
+DompetShevaScaffold
 PremiumBottomNav
 BalanceHeroCard
 MoneyMetricCard
@@ -812,7 +775,7 @@ Group settings:
 * Tampilan
 * Data & Backup
 * Keamanan
-* Tentang FadDompet
+* Tentang Dompet Sheva
 
 List tile harus:
 
@@ -839,7 +802,7 @@ Contoh tone:
 
 ```txt
 Belum ada transaksi
-Tambahkan transaksi pertama agar FadDompet bisa mulai membaca pola keuanganmu.
+Tambahkan transaksi pertama agar Dompet Sheva bisa mulai membaca pola keuanganmu.
 ```
 
 Empty state tidak boleh terasa seperti halaman rusak atau kosong.
@@ -927,7 +890,7 @@ Microcopy harus membantu.
 Contoh baik:
 
 ```txt
-Tambahkan transaksi pertama agar FadDompet bisa membaca pola keuanganmu.
+Tambahkan transaksi pertama agar Dompet Sheva bisa membaca pola keuanganmu.
 Budget makan sudah terpakai 80%.
 Pengeluaran bulan ini lebih rendah dari bulan lalu.
 ```
@@ -1107,7 +1070,7 @@ Jangan:
 
 ## 28. Accessibility Rules
 
-FadDompet harus memperhatikan:
+Dompet Sheva harus memperhatikan:
 
 * kontras teks
 * touch target
@@ -1117,7 +1080,7 @@ FadDompet harus memperhatikan:
 * nominal mudah dibaca
 * dark mode aman di mata
 
-Jika menggunakan warna hijau/merah, tetap gunakan tanda plus/minus atau label pemasukan/pengeluaran.
+Selain warna biru, tetap gunakan tanda plus/minus, ikon, dan label pemasukan/pengeluaran untuk membedakan transaksi.
 
 ---
 
@@ -1223,6 +1186,6 @@ Setiap screen harus memenuhi standar:
 
 ## 32. Final Design Statement
 
-FadDompet should feel like a calm, premium, iOS-inspired personal finance app adapted for Android. It must prioritize fast input, readable financial information, soft visual hierarchy, elegant surfaces, smooth motion, and offline-first practicality.
+Dompet Sheva should feel like a calm, premium, iOS-inspired personal finance app adapted for Android. It must prioritize fast input, readable financial information, soft visual hierarchy, elegant surfaces, smooth motion, and offline-first practicality.
 
 The design must never look like a generic AI-generated dashboard or default Flutter Material app.

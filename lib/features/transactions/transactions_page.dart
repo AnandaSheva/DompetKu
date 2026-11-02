@@ -251,7 +251,10 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                     hidden: hideBalance,
                   ),
                   style: theme.textTheme.displayMedium?.copyWith(
-                    color: _amountColor(detail.type),
+                    color: AppColors.readableAccent(
+                      _amountColor(detail.type),
+                      Theme.of(context).brightness,
+                    ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xxl),
@@ -352,9 +355,9 @@ class _DetailRow extends StatelessWidget {
 Color _amountColor(TransactionType type) {
   switch (type) {
     case TransactionType.income:
-      return AppColors.incomeGreen;
+      return AppColors.incomeBlue;
     case TransactionType.expense:
-      return AppColors.expenseRed;
+      return AppColors.expenseBlue;
     case TransactionType.transfer:
       return AppColors.infoBlue;
   }

@@ -277,7 +277,10 @@ class _WalletCard extends StatelessWidget {
     final brightness = theme.colorScheme.brightness;
     final isDark = brightness == Brightness.dark;
     final type = WalletType.fromValue(wallet.wallet.type);
-    final accentColor = _accent(type);
+    final accentColor = AppColors.readableAccent(
+      _accent(type),
+      theme.brightness,
+    );
 
     return PressableSurface(
       onTap: onTap,
@@ -485,13 +488,13 @@ class _WalletFormResult {
 Color _accent(WalletType type) {
   switch (type) {
     case WalletType.cash:
-      return AppColors.incomeGreen;
+      return AppColors.incomeBlue;
     case WalletType.ewallet:
       return AppColors.infoBlue;
     case WalletType.bank:
       return AppColors.primary;
     case WalletType.savings:
-      return AppColors.warningOrange;
+      return AppColors.categoryPalette[4];
   }
 }
 

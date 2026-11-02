@@ -6,6 +6,7 @@ import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_radius.dart';
 import '../../app/theme/app_shadows.dart';
 import '../../app/theme/app_spacing.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/enums/transaction_type.dart';
 import '../../core/formatters/currency_formatter.dart';
 import '../../core/formatters/date_formatter.dart';
@@ -63,9 +64,9 @@ class DashboardPage extends ConsumerWidget {
                       },
                     ),
                     const SizedBox(height: AppSpacing.xxl),
-                    const SectionHeader(
-                      title: 'Ringkasan bulan ini',
-                      subtitle: 'Bulan berjalan',
+                    SectionHeader(
+                      title: 'Ringkasan periode',
+                      subtitle: data.monthlyPeriodLabel,
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     _MonthlySnapshotCard(
@@ -156,14 +157,14 @@ class _DashboardHeader extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? AppColors.softMint.withValues(alpha: 0.12)
-                      : AppColors.surfaceMint,
+                      ? AppColors.softBlue.withValues(alpha: 0.12)
+                      : AppColors.surfaceBlue,
                   borderRadius: BorderRadius.circular(AppRadius.full),
                 ),
                 child: Text(
-                  'FadDompet',
+                  AppConstants.appName,
                   style: theme.textTheme.labelMedium?.copyWith(
-                    color: isDark ? AppColors.softMint : AppColors.primary,
+                    color: isDark ? AppColors.softBlue : AppColors.primary,
                   ),
                 ),
               ),
@@ -195,7 +196,7 @@ class _DashboardHeader extends StatelessWidget {
             child: Text(
               'IDR',
               style: theme.textTheme.labelLarge?.copyWith(
-                color: isDark ? AppColors.softMint : AppColors.primary,
+                color: isDark ? AppColors.softBlue : AppColors.primary,
               ),
             ),
           ),
@@ -244,8 +245,11 @@ class _MonthlySnapshotCard extends StatelessWidget {
                   ),
                   caption: summary.monthlyIncome == 0
                       ? 'Belum ada pemasukan'
-                      : DateFormatter.monthLabel(DateTime.now()),
-                  accentColor: AppColors.incomeGreen,
+                      : summary.monthlyPeriodLabel,
+                  accentColor: AppColors.readableAccent(
+                    AppColors.incomeBlue,
+                    theme.brightness,
+                  ),
                 ),
               ),
               Container(
@@ -268,8 +272,11 @@ class _MonthlySnapshotCard extends StatelessWidget {
                   ),
                   caption: summary.monthlyExpense == 0
                       ? 'Belum ada pengeluaran'
-                      : DateFormatter.monthLabel(DateTime.now()),
-                  accentColor: AppColors.expenseRed,
+                      : summary.monthlyPeriodLabel,
+                  accentColor: AppColors.readableAccent(
+                    AppColors.expenseBlue,
+                    theme.brightness,
+                  ),
                 ),
               ),
             ],
@@ -292,7 +299,10 @@ class _MonthlySnapshotCard extends StatelessWidget {
                     hidden: hideBalance,
                   ),
                   helper: 'Pemasukan dikurangi pengeluaran',
-                  accentColor: AppColors.infoBlue,
+                  accentColor: AppColors.readableAccent(
+                    AppColors.infoBlue,
+                    theme.brightness,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 _MiniStatusRow(
@@ -301,7 +311,10 @@ class _MonthlySnapshotCard extends StatelessWidget {
                       ? 'Belum ada'
                       : '${(summary.budgetRatio * 100).round()}%',
                   helper: _budgetHelper(summary, hideBalance),
-                  accentColor: AppColors.warningOrange,
+                  accentColor: AppColors.readableAccent(
+                    AppColors.categoryPalette[4],
+                    theme.brightness,
+                  ),
                 ),
               ],
             ),

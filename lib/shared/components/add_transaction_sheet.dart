@@ -53,12 +53,15 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
 
   int get _amount => int.tryParse(_amountDigits) ?? 0;
 
-  Color get _accentColor {
+  Color get _accentColor =>
+      AppColors.readableAccent(_baseAccentColor, Theme.of(context).brightness);
+
+  Color get _baseAccentColor {
     switch (_type) {
       case TransactionType.expense:
-        return AppColors.expenseRed;
+        return AppColors.expenseBlue;
       case TransactionType.income:
-        return AppColors.incomeGreen;
+        return AppColors.incomeBlue;
       case TransactionType.transfer:
         return AppColors.infoBlue;
     }
@@ -647,7 +650,10 @@ class _CategoryPicker extends StatelessWidget {
                   label: item.name,
                   icon: categoryIconForEntry(item),
                   selected: selectedCategoryId == item.id,
-                  accentColor: Color(item.colorValue),
+                  accentColor: AppColors.categoryColor(
+                    item.colorValue,
+                    Theme.of(context).brightness,
+                  ),
                   onSelected: () => onSelected(item),
                 ),
             ],
@@ -922,11 +928,11 @@ class _SheetFooter extends StatelessWidget {
               ),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: isDark ? AppColors.softMint : AppColors.primary,
+                color: isDark ? AppColors.softBlue : AppColors.primary,
                 borderRadius: BorderRadius.circular(AppRadius.lg),
                 boxShadow: [
                   BoxShadow(
-                    color: (isDark ? AppColors.softMint : AppColors.primary)
+                    color: (isDark ? AppColors.softBlue : AppColors.primary)
                         .withValues(alpha: isDark ? 0.18 : 0.14),
                     blurRadius: AppSpacing.xxl,
                     offset: const Offset(0, AppSpacing.md),

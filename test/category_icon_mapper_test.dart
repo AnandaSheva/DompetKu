@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:faddompet/shared/helpers/category_icon_mapper.dart';
+import 'package:dompet_sheva/shared/helpers/category_icon_mapper.dart';
 
 void main() {
   test('food category does not use generic fallback icon', () {

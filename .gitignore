@@ -1,4 +1,4 @@
-﻿# Dart / Flutter
+# Dart / Flutter
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
@@ -65,3 +65,5 @@ backups/
 # Temporary files
 tmp/
 temp/
+# Widget Preview related
+.widget_preview/

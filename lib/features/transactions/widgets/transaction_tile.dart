@@ -33,7 +33,10 @@ class TransactionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.colorScheme.brightness == Brightness.dark;
-    final accentColor = _accentColor(type);
+    final accentColor = AppColors.readableAccent(
+      _accentColor(type),
+      theme.brightness,
+    );
 
     return PressableSurface(
       onTap: onTap,
@@ -123,9 +126,9 @@ class TransactionTile extends StatelessWidget {
 Color _accentColor(TransactionPreviewType type) {
   switch (type) {
     case TransactionPreviewType.income:
-      return AppColors.incomeGreen;
+      return AppColors.incomeBlue;
     case TransactionPreviewType.expense:
-      return AppColors.expenseRed;
+      return AppColors.expenseBlue;
     case TransactionPreviewType.transfer:
       return AppColors.infoBlue;
   }

@@ -1,4 +1,4 @@
-import '../formatters/date_formatter.dart';
+import '../helpers/monthly_period.dart';
 
 enum AnalyticsPeriod { currentMonth, last3Months, yearToDate, allTime }
 
@@ -29,12 +29,16 @@ extension AnalyticsPeriodX on AnalyticsPeriod {
     }
   }
 
-  DateTime? startDate(DateTime now) {
+  DateTime? startDate(DateTime now, [int resetDay = 1]) {
     switch (this) {
       case AnalyticsPeriod.currentMonth:
-        return DateFormatter.startOfMonth(now);
+        return MonthlyPeriod.containing(now, resetDay).start;
       case AnalyticsPeriod.last3Months:
-        return DateTime(now.year, now.month - 2);
+        return MonthlyPeriod.shiftStart(
+          MonthlyPeriod.containing(now, resetDay).start,
+          -2,
+          resetDay,
+        );
       case AnalyticsPeriod.yearToDate:
         return DateTime(now.year);
       case AnalyticsPeriod.allTime:

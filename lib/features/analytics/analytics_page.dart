@@ -10,8 +10,8 @@ import '../../app/theme/app_spacing.dart';
 import '../../core/enums/analytics_period.dart';
 import '../../core/enums/budget_status.dart';
 import '../../core/formatters/currency_formatter.dart';
-import '../../core/formatters/date_formatter.dart';
 import '../../core/formatters/rupiah_input_formatter.dart';
+import '../../core/helpers/monthly_period.dart';
 import '../../data/local/database/app_database.dart';
 import '../../data/repositories/app_models.dart';
 import '../../shared/widgets/app_confirm_dialog.dart';
@@ -28,6 +28,10 @@ class AnalyticsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final analytics = ref.watch(analyticsSummaryProvider);
     final selectedPeriod = ref.watch(analyticsPeriodProvider);
+    final settings = ref
+        .watch(appSettingsProvider)
+        .maybeWhen(data: (value) => value, orElse: () => null);
+    final resetDay = settings?.monthlyResetDay ?? 1;
     final budgets = ref.watch(budgetProgressProvider);
     final categories = ref
         .watch(categoriesProvider)
@@ -58,7 +62,8 @@ class AnalyticsPage extends ConsumerWidget {
                 AppIconActionButton(
                   icon: Icons.add_rounded,
                   label: 'Tambah budget',
-                  onPressed: () => _showBudgetDialog(context, ref, categories),
+                  onPressed: () =>
+                      _showBudgetDialog(context, ref, categories, resetDay),
                 ),
               ],
             ),
@@ -122,9 +127,9 @@ class AnalyticsPage extends ConsumerWidget {
               data: (items) => _BudgetSection(
                 items: items,
                 onEdit: (item) =>
-                    _showBudgetDialog(context, ref, categories, item),
+                    _showBudgetDialog(context, ref, categories, resetDay, item),
                 onDelete: (item) => _confirmDeleteBudget(context, ref, item),
-                onReset: () => _confirmResetBudget(context, ref),
+                onReset: () => _confirmResetBudget(context, ref, resetDay),
               ),
               loading: () => const SizedBox.shrink(),
               error: (_, _) => const SizedBox.shrink(),
@@ -142,6 +147,7 @@ class AnalyticsPage extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     List<CategoryEntry> categories, [
+    int resetDay = 1,
     BudgetProgress? existing,
   ]) async {
     final result = await showModalBottomSheet<_BudgetFormResult>(
@@ -159,7 +165,7 @@ class AnalyticsPage extends ConsumerWidget {
           .save(
             id: existing?.budget.id,
             categoryId: result.categoryId,
-            month: DateFormatter.monthKey(DateTime.now()),
+            month: MonthlyPeriod.containing(DateTime.now(), resetDay).key,
             limitAmount: result.limitAmount,
           );
       if (!context.mounted) return;
@@ -202,7 +208,11 @@ class AnalyticsPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirmResetBudget(BuildContext context, WidgetRef ref) async {
+  Future<void> _confirmResetBudget(
+    BuildContext context,
+    WidgetRef ref,
+    int resetDay,
+  ) async {
     final confirmed = await showAppConfirmDialog(
       context: context,
       title: 'Reset budget bulan ini?',
@@ -214,7 +224,7 @@ class AnalyticsPage extends ConsumerWidget {
     if (!confirmed) return;
     await ref
         .read(budgetRepositoryProvider)
-        .resetMonth(DateFormatter.monthKey(DateTime.now()));
+        .resetMonth(MonthlyPeriod.containing(DateTime.now(), resetDay).key);
     if (!context.mounted) return;
     TopToast.show(
       context,
@@ -281,7 +291,7 @@ class _PeriodChip extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: selected
-              ? (isDark ? AppColors.softMint : AppColors.primary)
+              ? (isDark ? AppColors.softBlue : AppColors.primary)
               : (isDark ? AppColors.darkSurfaceElevated : AppColors.surface),
           borderRadius: BorderRadius.circular(AppRadius.full),
           border: Border.all(
@@ -358,7 +368,7 @@ class _DonutChart extends StatelessWidget {
     }
 
     final total = items.fold<int>(0, (value, item) => value + item.amount);
-    final slices = _donutSlices(items);
+    final slices = _donutSlices(items, Theme.of(context).brightness);
 
     return Row(
       children: [
@@ -446,7 +456,10 @@ class _DonutLegendItem extends StatelessWidget {
   }
 }
 
-List<_DonutSlice> _donutSlices(List<CategoryAmount> items) {
+List<_DonutSlice> _donutSlices(
+  List<CategoryAmount> items,
+  Brightness brightness,
+) {
   final top = items.take(4).toList();
   final rest = items.skip(4).fold<int>(0, (value, item) => value + item.amount);
 
@@ -455,7 +468,7 @@ List<_DonutSlice> _donutSlices(List<CategoryAmount> items) {
       _DonutSlice(
         label: top[index].label,
         amount: top[index].amount,
-        color: _chartColor(top[index].colorValue, index),
+        color: _chartColor(top[index].colorValue, index, brightness),
       ),
     if (rest > 0)
       _DonutSlice(
@@ -466,18 +479,12 @@ List<_DonutSlice> _donutSlices(List<CategoryAmount> items) {
   ];
 }
 
-Color _chartColor(int colorValue, int index) {
-  if (colorValue != 0) {
-    return Color(colorValue);
-  }
-  const fallback = [
-    AppColors.expenseRed,
-    AppColors.warningOrange,
-    AppColors.primary,
-    AppColors.infoBlue,
-    AppColors.incomeGreen,
-  ];
-  return fallback[index % fallback.length];
+Color _chartColor(int colorValue, int index, Brightness brightness) {
+  final value = colorValue == 0
+      ? AppColors.categoryPalette[index % AppColors.categoryPalette.length]
+            .toARGB32()
+      : colorValue;
+  return AppColors.categoryColor(value, brightness);
 }
 
 class _DonutSlice {
@@ -742,7 +749,10 @@ class _BarChart extends StatelessWidget {
                   toY: items[index].amount.toDouble(),
                   width: items.length > 8 ? 16 : 24,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
-                  color: AppColors.expenseRed.withValues(alpha: 0.82),
+                  color: AppColors.readableAccent(
+                    AppColors.expenseBlue,
+                    theme.brightness,
+                  ).withValues(alpha: 0.82),
                 ),
               ],
             ),
@@ -878,11 +888,11 @@ class _BudgetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = switch (item.status) {
-      BudgetStatus.safe => AppColors.incomeGreen,
+    final color = AppColors.readableAccent(switch (item.status) {
+      BudgetStatus.safe => AppColors.incomeBlue,
       BudgetStatus.nearLimit => AppColors.warningOrange,
-      BudgetStatus.exceeded => AppColors.expenseRed,
-    };
+      BudgetStatus.exceeded => AppColors.dangerRed,
+    }, theme.brightness);
 
     return PressableSurface(
       onTap: onTap,
@@ -1134,8 +1144,8 @@ class _BudgetHeader extends StatelessWidget {
           constraints: const BoxConstraints(minWidth: 96),
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.expenseRed,
-              side: const BorderSide(color: AppColors.expenseRed),
+              foregroundColor: AppColors.dangerRed,
+              side: const BorderSide(color: AppColors.dangerRed),
             ),
             onPressed: onReset,
             child: const Text(

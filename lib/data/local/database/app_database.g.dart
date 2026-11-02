@@ -2998,6 +2998,18 @@ class $AppSettingEntriesTable extends AppSettingEntries
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _monthlyResetDayMeta = const VerificationMeta(
+    'monthlyResetDay',
+  );
+  @override
+  late final GeneratedColumn<int> monthlyResetDay = GeneratedColumn<int>(
+    'monthly_reset_day',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -3028,6 +3040,7 @@ class $AppSettingEntriesTable extends AppSettingEntries
     themeMode,
     hideBalance,
     onboardingCompleted,
+    monthlyResetDay,
     createdAt,
     updatedAt,
   ];
@@ -3082,6 +3095,15 @@ class $AppSettingEntriesTable extends AppSettingEntries
         ),
       );
     }
+    if (data.containsKey('monthly_reset_day')) {
+      context.handle(
+        _monthlyResetDayMeta,
+        monthlyResetDay.isAcceptableOrUnknown(
+          data['monthly_reset_day']!,
+          _monthlyResetDayMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -3131,6 +3153,10 @@ class $AppSettingEntriesTable extends AppSettingEntries
         DriftSqlType.bool,
         data['${effectivePrefix}onboarding_completed'],
       )!,
+      monthlyResetDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}monthly_reset_day'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -3155,6 +3181,7 @@ class AppSettingEntry extends DataClass implements Insertable<AppSettingEntry> {
   final String themeMode;
   final bool hideBalance;
   final bool onboardingCompleted;
+  final int monthlyResetDay;
   final DateTime createdAt;
   final DateTime updatedAt;
   const AppSettingEntry({
@@ -3164,6 +3191,7 @@ class AppSettingEntry extends DataClass implements Insertable<AppSettingEntry> {
     required this.themeMode,
     required this.hideBalance,
     required this.onboardingCompleted,
+    required this.monthlyResetDay,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -3178,6 +3206,7 @@ class AppSettingEntry extends DataClass implements Insertable<AppSettingEntry> {
     map['theme_mode'] = Variable<String>(themeMode);
     map['hide_balance'] = Variable<bool>(hideBalance);
     map['onboarding_completed'] = Variable<bool>(onboardingCompleted);
+    map['monthly_reset_day'] = Variable<int>(monthlyResetDay);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -3193,6 +3222,7 @@ class AppSettingEntry extends DataClass implements Insertable<AppSettingEntry> {
       themeMode: Value(themeMode),
       hideBalance: Value(hideBalance),
       onboardingCompleted: Value(onboardingCompleted),
+      monthlyResetDay: Value(monthlyResetDay),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -3212,6 +3242,7 @@ class AppSettingEntry extends DataClass implements Insertable<AppSettingEntry> {
       onboardingCompleted: serializer.fromJson<bool>(
         json['onboardingCompleted'],
       ),
+      monthlyResetDay: serializer.fromJson<int>(json['monthlyResetDay']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -3226,6 +3257,7 @@ class AppSettingEntry extends DataClass implements Insertable<AppSettingEntry> {
       'themeMode': serializer.toJson<String>(themeMode),
       'hideBalance': serializer.toJson<bool>(hideBalance),
       'onboardingCompleted': serializer.toJson<bool>(onboardingCompleted),
+      'monthlyResetDay': serializer.toJson<int>(monthlyResetDay),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -3238,6 +3270,7 @@ class AppSettingEntry extends DataClass implements Insertable<AppSettingEntry> {
     String? themeMode,
     bool? hideBalance,
     bool? onboardingCompleted,
+    int? monthlyResetDay,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => AppSettingEntry(
@@ -3247,6 +3280,7 @@ class AppSettingEntry extends DataClass implements Insertable<AppSettingEntry> {
     themeMode: themeMode ?? this.themeMode,
     hideBalance: hideBalance ?? this.hideBalance,
     onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+    monthlyResetDay: monthlyResetDay ?? this.monthlyResetDay,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -3262,6 +3296,9 @@ class AppSettingEntry extends DataClass implements Insertable<AppSettingEntry> {
       onboardingCompleted: data.onboardingCompleted.present
           ? data.onboardingCompleted.value
           : this.onboardingCompleted,
+      monthlyResetDay: data.monthlyResetDay.present
+          ? data.monthlyResetDay.value
+          : this.monthlyResetDay,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -3276,6 +3313,7 @@ class AppSettingEntry extends DataClass implements Insertable<AppSettingEntry> {
           ..write('themeMode: $themeMode, ')
           ..write('hideBalance: $hideBalance, ')
           ..write('onboardingCompleted: $onboardingCompleted, ')
+          ..write('monthlyResetDay: $monthlyResetDay, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -3290,6 +3328,7 @@ class AppSettingEntry extends DataClass implements Insertable<AppSettingEntry> {
     themeMode,
     hideBalance,
     onboardingCompleted,
+    monthlyResetDay,
     createdAt,
     updatedAt,
   );
@@ -3303,6 +3342,7 @@ class AppSettingEntry extends DataClass implements Insertable<AppSettingEntry> {
           other.themeMode == this.themeMode &&
           other.hideBalance == this.hideBalance &&
           other.onboardingCompleted == this.onboardingCompleted &&
+          other.monthlyResetDay == this.monthlyResetDay &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -3314,6 +3354,7 @@ class AppSettingEntriesCompanion extends UpdateCompanion<AppSettingEntry> {
   final Value<String> themeMode;
   final Value<bool> hideBalance;
   final Value<bool> onboardingCompleted;
+  final Value<int> monthlyResetDay;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const AppSettingEntriesCompanion({
@@ -3323,6 +3364,7 @@ class AppSettingEntriesCompanion extends UpdateCompanion<AppSettingEntry> {
     this.themeMode = const Value.absent(),
     this.hideBalance = const Value.absent(),
     this.onboardingCompleted = const Value.absent(),
+    this.monthlyResetDay = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -3333,6 +3375,7 @@ class AppSettingEntriesCompanion extends UpdateCompanion<AppSettingEntry> {
     this.themeMode = const Value.absent(),
     this.hideBalance = const Value.absent(),
     this.onboardingCompleted = const Value.absent(),
+    this.monthlyResetDay = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
   }) : createdAt = Value(createdAt),
@@ -3344,6 +3387,7 @@ class AppSettingEntriesCompanion extends UpdateCompanion<AppSettingEntry> {
     Expression<String>? themeMode,
     Expression<bool>? hideBalance,
     Expression<bool>? onboardingCompleted,
+    Expression<int>? monthlyResetDay,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -3355,6 +3399,7 @@ class AppSettingEntriesCompanion extends UpdateCompanion<AppSettingEntry> {
       if (hideBalance != null) 'hide_balance': hideBalance,
       if (onboardingCompleted != null)
         'onboarding_completed': onboardingCompleted,
+      if (monthlyResetDay != null) 'monthly_reset_day': monthlyResetDay,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -3367,6 +3412,7 @@ class AppSettingEntriesCompanion extends UpdateCompanion<AppSettingEntry> {
     Value<String>? themeMode,
     Value<bool>? hideBalance,
     Value<bool>? onboardingCompleted,
+    Value<int>? monthlyResetDay,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
   }) {
@@ -3377,6 +3423,7 @@ class AppSettingEntriesCompanion extends UpdateCompanion<AppSettingEntry> {
       themeMode: themeMode ?? this.themeMode,
       hideBalance: hideBalance ?? this.hideBalance,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      monthlyResetDay: monthlyResetDay ?? this.monthlyResetDay,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -3403,6 +3450,9 @@ class AppSettingEntriesCompanion extends UpdateCompanion<AppSettingEntry> {
     if (onboardingCompleted.present) {
       map['onboarding_completed'] = Variable<bool>(onboardingCompleted.value);
     }
+    if (monthlyResetDay.present) {
+      map['monthly_reset_day'] = Variable<int>(monthlyResetDay.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -3421,6 +3471,7 @@ class AppSettingEntriesCompanion extends UpdateCompanion<AppSettingEntry> {
           ..write('themeMode: $themeMode, ')
           ..write('hideBalance: $hideBalance, ')
           ..write('onboardingCompleted: $onboardingCompleted, ')
+          ..write('monthlyResetDay: $monthlyResetDay, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -3967,7 +4018,7 @@ class $$CategoryEntriesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$CategoryEntriesTable, CategoryEntry>(table),
                   $$CategoryEntriesTableReferences(db, table, e),
                 ),
               )
@@ -3989,10 +4040,11 @@ class $$CategoryEntriesTableTableManager
                   getPrefetchedDataCallback: (items) async {
                     return [
                       if (transactionEntriesRefs)
-                        await $_getPrefetchedData<
+                        await $_getPrefetchedDataByColumns<
                           CategoryEntry,
                           $CategoryEntriesTable,
-                          TransactionEntry
+                          TransactionEntry,
+                          $TransactionEntriesTable
                         >(
                           currentTable: table,
                           referencedTable: $$CategoryEntriesTableReferences
@@ -4003,17 +4055,16 @@ class $$CategoryEntriesTableTableManager
                                 table,
                                 p0,
                               ).transactionEntriesRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.categoryId == item.id,
-                              ),
+                          currentColumn: 'id',
+                          referencedColumn: 'category_id',
                           typedResults: items,
                         ),
                       if (budgetEntriesRefs)
-                        await $_getPrefetchedData<
+                        await $_getPrefetchedDataByColumns<
                           CategoryEntry,
                           $CategoryEntriesTable,
-                          BudgetEntry
+                          BudgetEntry,
+                          $BudgetEntriesTable
                         >(
                           currentTable: table,
                           referencedTable: $$CategoryEntriesTableReferences
@@ -4024,17 +4075,16 @@ class $$CategoryEntriesTableTableManager
                                 table,
                                 p0,
                               ).budgetEntriesRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.categoryId == item.id,
-                              ),
+                          currentColumn: 'id',
+                          referencedColumn: 'category_id',
                           typedResults: items,
                         ),
                       if (quickTemplateEntriesRefs)
-                        await $_getPrefetchedData<
+                        await $_getPrefetchedDataByColumns<
                           CategoryEntry,
                           $CategoryEntriesTable,
-                          QuickTemplateEntry
+                          QuickTemplateEntry,
+                          $QuickTemplateEntriesTable
                         >(
                           currentTable: table,
                           referencedTable: $$CategoryEntriesTableReferences
@@ -4045,10 +4095,8 @@ class $$CategoryEntriesTableTableManager
                                 table,
                                 p0,
                               ).quickTemplateEntriesRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.categoryId == item.id,
-                              ),
+                          currentColumn: 'id',
+                          referencedColumn: 'category_id',
                           typedResults: items,
                         ),
                     ];
@@ -4373,7 +4421,7 @@ class $$WalletEntriesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$WalletEntriesTable, WalletEntry>(table),
                   $$WalletEntriesTableReferences(db, table, e),
                 ),
               )
@@ -4388,10 +4436,11 @@ class $$WalletEntriesTableTableManager
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (quickTemplateEntriesRefs)
-                    await $_getPrefetchedData<
+                    await $_getPrefetchedDataByColumns<
                       WalletEntry,
                       $WalletEntriesTable,
-                      QuickTemplateEntry
+                      QuickTemplateEntry,
+                      $QuickTemplateEntriesTable
                     >(
                       currentTable: table,
                       referencedTable: $$WalletEntriesTableReferences
@@ -4402,8 +4451,8 @@ class $$WalletEntriesTableTableManager
                             table,
                             p0,
                           ).quickTemplateEntriesRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.walletId == item.id),
+                      currentColumn: 'id',
+                      referencedColumn: 'wallet_id',
                       typedResults: items,
                     ),
                 ];
@@ -4936,7 +4985,9 @@ class $$TransactionEntriesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$TransactionEntriesTable, TransactionEntry>(
+                    table,
+                  ),
                   $$TransactionEntriesTableReferences(db, table, e),
                 ),
               )
@@ -5313,7 +5364,7 @@ class $$BudgetEntriesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$BudgetEntriesTable, BudgetEntry>(table),
                   $$BudgetEntriesTableReferences(db, table, e),
                 ),
               )
@@ -5816,7 +5867,9 @@ class $$QuickTemplateEntriesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$QuickTemplateEntriesTable, QuickTemplateEntry>(
+                    table,
+                  ),
                   $$QuickTemplateEntriesTableReferences(db, table, e),
                 ),
               )
@@ -5905,6 +5958,7 @@ typedef $$AppSettingEntriesTableCreateCompanionBuilder =
       Value<String> themeMode,
       Value<bool> hideBalance,
       Value<bool> onboardingCompleted,
+      Value<int> monthlyResetDay,
       required DateTime createdAt,
       required DateTime updatedAt,
     });
@@ -5916,6 +5970,7 @@ typedef $$AppSettingEntriesTableUpdateCompanionBuilder =
       Value<String> themeMode,
       Value<bool> hideBalance,
       Value<bool> onboardingCompleted,
+      Value<int> monthlyResetDay,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -5956,6 +6011,11 @@ class $$AppSettingEntriesTableFilterComposer
 
   ColumnFilters<bool> get onboardingCompleted => $composableBuilder(
     column: $table.onboardingCompleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get monthlyResetDay => $composableBuilder(
+    column: $table.monthlyResetDay,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6009,6 +6069,11 @@ class $$AppSettingEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get monthlyResetDay => $composableBuilder(
+    column: $table.monthlyResetDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -6048,6 +6113,11 @@ class $$AppSettingEntriesTableAnnotationComposer
 
   GeneratedColumn<bool> get onboardingCompleted => $composableBuilder(
     column: $table.onboardingCompleted,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get monthlyResetDay => $composableBuilder(
+    column: $table.monthlyResetDay,
     builder: (column) => column,
   );
 
@@ -6104,6 +6174,7 @@ class $$AppSettingEntriesTableTableManager
                 Value<String> themeMode = const Value.absent(),
                 Value<bool> hideBalance = const Value.absent(),
                 Value<bool> onboardingCompleted = const Value.absent(),
+                Value<int> monthlyResetDay = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => AppSettingEntriesCompanion(
@@ -6113,6 +6184,7 @@ class $$AppSettingEntriesTableTableManager
                 themeMode: themeMode,
                 hideBalance: hideBalance,
                 onboardingCompleted: onboardingCompleted,
+                monthlyResetDay: monthlyResetDay,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -6124,6 +6196,7 @@ class $$AppSettingEntriesTableTableManager
                 Value<String> themeMode = const Value.absent(),
                 Value<bool> hideBalance = const Value.absent(),
                 Value<bool> onboardingCompleted = const Value.absent(),
+                Value<int> monthlyResetDay = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
               }) => AppSettingEntriesCompanion.insert(
@@ -6133,11 +6206,21 @@ class $$AppSettingEntriesTableTableManager
                 themeMode: themeMode,
                 hideBalance: hideBalance,
                 onboardingCompleted: onboardingCompleted,
+                monthlyResetDay: monthlyResetDay,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$AppSettingEntriesTable, AppSettingEntry>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $AppSettingEntriesTable,
+                    AppSettingEntry
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),

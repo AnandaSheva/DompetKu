@@ -1,6 +1,6 @@
 # Roadmap
 
-FadDompet is maintained as a lightweight offline-first Android finance tracker. The roadmap is intentionally conservative.
+Dompet Sheva is maintained as a lightweight offline-first Android finance tracker. The roadmap is intentionally conservative.
 
 ## Near Term
 

@@ -17,13 +17,23 @@ class AppTheme {
         ).copyWith(
           primary: AppColors.primary,
           onPrimary: AppColors.onDark,
-          secondary: AppColors.infoBlue,
+          secondary: AppColors.incomeBlue,
+          onSecondary: AppColors.onDark,
+          primaryContainer: AppColors.surfaceBlue,
+          onPrimaryContainer: AppColors.primaryDark,
+          secondaryContainer: AppColors.surfaceBlue,
+          onSecondaryContainer: AppColors.primaryDark,
+          tertiary: AppColors.primaryDark,
+          onTertiary: AppColors.onDark,
+          tertiaryContainer: AppColors.backgroundSoft,
+          onTertiaryContainer: AppColors.deepNavy,
+          surfaceTint: AppColors.primary,
           surface: AppColors.surface,
           surfaceContainerHighest: AppColors.surfaceSoft,
           onSurface: AppColors.textPrimary,
           onSurfaceVariant: AppColors.textSecondary,
           outline: AppColors.borderSubtle,
-          error: AppColors.expenseRed,
+          error: AppColors.dangerRed,
         );
 
     return ThemeData(
@@ -118,7 +128,7 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceSoft,
-        selectedColor: AppColors.surfaceMint,
+        selectedColor: AppColors.surfaceBlue,
         disabledColor: AppColors.surfaceSoft.withValues(alpha: 0.56),
         checkmarkColor: AppColors.primary,
         labelPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
@@ -156,7 +166,7 @@ class AppTheme {
         helperStyle: textTheme.labelSmall?.copyWith(
           color: AppColors.textSecondary,
         ),
-        errorStyle: textTheme.labelSmall?.copyWith(color: AppColors.expenseRed),
+        errorStyle: textTheme.labelSmall?.copyWith(color: AppColors.dangerRed),
         border: OutlineInputBorder(
           borderRadius: AppRadius.input,
           borderSide: const BorderSide(color: AppColors.borderSubtle),
@@ -171,11 +181,11 @@ class AppTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: AppRadius.input,
-          borderSide: const BorderSide(color: AppColors.expenseRed),
+          borderSide: const BorderSide(color: AppColors.dangerRed),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: AppRadius.input,
-          borderSide: const BorderSide(color: AppColors.expenseRed, width: 1.2),
+          borderSide: const BorderSide(color: AppColors.dangerRed, width: 1.2),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: AppRadius.input,
@@ -203,15 +213,25 @@ class AppTheme {
           seedColor: AppColors.primary,
           brightness: Brightness.dark,
         ).copyWith(
-          primary: AppColors.softMint,
+          primary: AppColors.brightBlue,
           onPrimary: AppColors.darkBackground,
-          secondary: AppColors.infoBlue,
+          secondary: AppColors.softBlue,
+          onSecondary: AppColors.darkBackground,
+          primaryContainer: AppColors.darkSurfaceSoft,
+          onPrimaryContainer: AppColors.softBlue,
+          secondaryContainer: AppColors.darkSurfaceElevated,
+          onSecondaryContainer: AppColors.softBlue,
+          tertiary: AppColors.softBlue,
+          onTertiary: AppColors.darkBackground,
+          tertiaryContainer: AppColors.darkSurfaceSoft,
+          onTertiaryContainer: AppColors.softBlue,
+          surfaceTint: AppColors.brightBlue,
           surface: AppColors.darkSurface,
           surfaceContainerHighest: AppColors.darkSurfaceSoft,
           onSurface: AppColors.darkTextPrimary,
           onSurfaceVariant: AppColors.darkTextSecondary,
           outline: AppColors.darkBorderSubtle,
-          error: AppColors.expenseRed,
+          error: AppColors.dangerRed,
         );
 
     return ThemeData(
@@ -253,7 +273,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.softMint,
+          backgroundColor: AppColors.brightBlue,
           foregroundColor: AppColors.darkBackground,
           disabledBackgroundColor: AppColors.darkSurfaceSoft,
           disabledForegroundColor: AppColors.darkTextTertiary,
@@ -268,7 +288,7 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.softMint,
+          foregroundColor: AppColors.brightBlue,
           disabledForegroundColor: AppColors.darkTextTertiary,
           minimumSize: const Size.fromHeight(52),
           padding: const EdgeInsets.symmetric(
@@ -282,7 +302,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.softMint,
+          foregroundColor: AppColors.brightBlue,
           disabledForegroundColor: AppColors.darkTextTertiary,
           minimumSize: const Size(AppSpacing.iconTile, AppSpacing.iconTile),
           padding: const EdgeInsets.symmetric(
@@ -305,9 +325,9 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.darkSurfaceSoft,
-        selectedColor: AppColors.softMint.withValues(alpha: 0.16),
+        selectedColor: AppColors.brightBlue.withValues(alpha: 0.16),
         disabledColor: AppColors.darkSurfaceSoft.withValues(alpha: 0.52),
-        checkmarkColor: AppColors.softMint,
+        checkmarkColor: AppColors.brightBlue,
         labelPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
@@ -321,7 +341,7 @@ class AppTheme {
           color: AppColors.darkTextPrimary,
         ),
         secondaryLabelStyle: textTheme.labelLarge?.copyWith(
-          color: AppColors.softMint,
+          color: AppColors.brightBlue,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -335,7 +355,7 @@ class AppTheme {
           color: AppColors.darkTextSecondary,
         ),
         floatingLabelStyle: textTheme.labelLarge?.copyWith(
-          color: AppColors.softMint,
+          color: AppColors.brightBlue,
         ),
         hintStyle: textTheme.bodyMedium?.copyWith(
           color: AppColors.darkTextSecondary,
@@ -343,7 +363,7 @@ class AppTheme {
         helperStyle: textTheme.labelSmall?.copyWith(
           color: AppColors.darkTextSecondary,
         ),
-        errorStyle: textTheme.labelSmall?.copyWith(color: AppColors.expenseRed),
+        errorStyle: textTheme.labelSmall?.copyWith(color: AppColors.dangerRed),
         border: OutlineInputBorder(
           borderRadius: AppRadius.input,
           borderSide: const BorderSide(color: AppColors.darkBorderSubtle),
@@ -354,15 +374,15 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadius.input,
-          borderSide: const BorderSide(color: AppColors.softMint, width: 1.2),
+          borderSide: const BorderSide(color: AppColors.brightBlue, width: 1.2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: AppRadius.input,
-          borderSide: const BorderSide(color: AppColors.expenseRed),
+          borderSide: const BorderSide(color: AppColors.dangerRed),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: AppRadius.input,
-          borderSide: const BorderSide(color: AppColors.expenseRed, width: 1.2),
+          borderSide: const BorderSide(color: AppColors.dangerRed, width: 1.2),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: AppRadius.input,

@@ -1,12 +1,21 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:faddompet/core/enums/analytics_period.dart';
+import 'package:dompet_sheva/core/enums/analytics_period.dart';
 
 void main() {
   test('currentMonth starts at the beginning of the month', () {
     final now = DateTime(2026, 7, 3, 14, 30);
 
     expect(AnalyticsPeriod.currentMonth.startDate(now), DateTime(2026, 7));
+  });
+
+  test('currentMonth honors the selected reset day', () {
+    final now = DateTime(2026, 7, 3, 14, 30);
+
+    expect(
+      AnalyticsPeriod.currentMonth.startDate(now, 10),
+      DateTime(2026, 6, 10),
+    );
   });
 
   test('yearToDate starts at January 1', () {

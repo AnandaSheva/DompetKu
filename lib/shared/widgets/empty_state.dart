@@ -51,14 +51,14 @@ class EmptyState extends StatelessWidget {
             height: compact ? 54 : 66,
             decoration: BoxDecoration(
               color: isDark
-                  ? AppColors.softMint.withValues(alpha: 0.14)
-                  : AppColors.surfaceMint,
+                  ? AppColors.softBlue.withValues(alpha: 0.14)
+                  : AppColors.surfaceBlue,
               borderRadius: BorderRadius.circular(AppRadius.xl),
             ),
             child: Icon(
               icon,
               size: compact ? 27 : 32,
-              color: isDark ? AppColors.softMint : AppColors.primary,
+              color: isDark ? AppColors.softBlue : AppColors.primary,
             ),
           ),
           SizedBox(height: compact ? AppSpacing.lg : AppSpacing.xl),

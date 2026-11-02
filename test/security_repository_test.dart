@@ -1,7 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:faddompet/data/repositories/security_repository.dart';
+import 'package:dompet_sheva/data/repositories/security_repository.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:faddompet/core/formatters/currency_formatter.dart';
+import 'package:dompet_sheva/core/formatters/currency_formatter.dart';
 
 void main() {
   test('formats Rupiah with Indonesian thousand separators', () {

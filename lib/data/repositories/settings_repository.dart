@@ -72,4 +72,19 @@ class SettingsRepository {
           .toCompanion(true),
     );
   }
+
+  Future<void> setMonthlyResetDay(int value) async {
+    if (value < 1 || value > 31) {
+      throw ArgumentError.value(value, 'value', 'Harus antara 1 dan 31.');
+    }
+
+    final settings = await _database.appSettingsDao.getSettings();
+    if (settings == null) return;
+
+    await _database.appSettingsDao.updateSettings(
+      settings
+          .copyWith(monthlyResetDay: value, updatedAt: DateTime.now())
+          .toCompanion(true),
+    );
+  }
 }

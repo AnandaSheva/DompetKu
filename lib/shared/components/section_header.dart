@@ -50,7 +50,7 @@ class SectionHeader extends StatelessWidget {
                 actionLabel!,
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: theme.colorScheme.brightness == Brightness.dark
-                      ? AppColors.softMint
+                      ? AppColors.softBlue
                       : AppColors.primary,
                 ),
               ),

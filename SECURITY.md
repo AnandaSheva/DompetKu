@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Security fixes are focused on the latest public release of FadDompet.
+Security fixes are focused on the latest public release of Dompet Sheva.
 
 | Version | Supported |
 | --- | --- |
@@ -11,7 +11,7 @@ Security fixes are focused on the latest public release of FadDompet.
 
 ## Security Model
 
-FadDompet is an offline-first Android app for personal finance tracking.
+Dompet Sheva is an offline-first Android app for personal finance tracking.
 
 - No account is required.
 - No cloud sync is used.
@@ -24,7 +24,7 @@ FadDompet is an offline-first Android app for personal finance tracking.
 - Backup files contain financial data and should be stored safely.
 - APK files installed from GitHub may trigger Android or Play Protect sideload warnings.
 
-Do not treat FadDompet as a replacement for device-level security, encrypted storage, or a password manager.
+Do not treat Dompet Sheva as a replacement for device-level security, encrypted storage, or a password manager.
 
 ## Reporting a Vulnerability
 
@@ -42,14 +42,14 @@ Please include:
 
 ## Backup Safety
 
-Backup and restore are user-controlled. FadDompet validates backup files before restore, but users should keep backup files in a safe place and avoid sharing them publicly.
+Backup and restore are user-controlled. Dompet Sheva validates backup files before restore, but users should keep backup files in a safe place and avoid sharing them publicly.
 
 ## APK Verification
 
 When a release includes a SHA256 checksum, verify the APK before installing it:
 
 ```powershell
-Get-FileHash .\FadDompet-vX.X.X-arm64.apk -Algorithm SHA256
+Get-FileHash .\DompetSheva-vX.X.X-arm64.apk -Algorithm SHA256
 ```
 
-FadDompet does not claim to be "100% secure". Security is handled as an ongoing maintenance responsibility.
+Dompet Sheva does not claim to be "100% secure". Security is handled as an ongoing maintenance responsibility.

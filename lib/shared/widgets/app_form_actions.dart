@@ -23,7 +23,7 @@ class AppFormActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final primaryStyle = danger
         ? FilledButton.styleFrom(
-            backgroundColor: AppColors.expenseRed,
+            backgroundColor: AppColors.dangerRed,
             foregroundColor: AppColors.onDark,
           )
         : null;

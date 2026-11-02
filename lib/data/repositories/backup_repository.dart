@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../local/database/app_database.dart';
 import '../local/seed/default_seed_data.dart';
 
@@ -16,7 +17,7 @@ class BackupRepository {
   Future<String> exportJson() async {
     final payload = await _backupPayload();
     final name =
-        'faddompet-backup-${DateTime.now().millisecondsSinceEpoch}.json';
+        '${AppConstants.fileSlug}-backup-${DateTime.now().millisecondsSinceEpoch}.json';
     final file = _xFile(
       name: name,
       content: const JsonEncoder.withIndent('  ').convert(payload),
@@ -25,7 +26,8 @@ class BackupRepository {
     await SharePlus.instance.share(
       ShareParams(
         files: [file],
-        text: 'Cadangan FadDompet. Simpan file ini di tempat yang aman.',
+        text:
+            'Cadangan ${AppConstants.appName}. Simpan file ini di tempat yang aman.',
       ),
     );
     return name;
@@ -65,14 +67,14 @@ class BackupRepository {
     ];
 
     final name =
-        'faddompet-transaksi-${DateTime.now().millisecondsSinceEpoch}.csv';
+        '${AppConstants.fileSlug}-transaksi-${DateTime.now().millisecondsSinceEpoch}.csv';
     final file = _xFile(
       name: name,
       content: csv.encode(rows),
       mimeType: 'text/csv',
     );
     await SharePlus.instance.share(
-      ShareParams(files: [file], text: 'CSV transaksi FadDompet'),
+      ShareParams(files: [file], text: 'CSV transaksi ${AppConstants.appName}'),
     );
     return name;
   }
@@ -345,6 +347,10 @@ class BackupRepository {
     );
     _optionalBool(item, 'hide_balance');
     _optionalBool(item, 'onboarding_completed');
+    final resetDay = _optionalInt(item, 'monthly_reset_day') ?? 1;
+    if (resetDay < 1 || resetDay > 31) {
+      throw FormatException('File cadangan tidak valid.');
+    }
   }
 
   Map<String, dynamic> _transactionToJson(TransactionEntry entry) => {
@@ -390,6 +396,7 @@ class BackupRepository {
     'theme_mode': entry.themeMode,
     'hide_balance': entry.hideBalance,
     'onboarding_completed': entry.onboardingCompleted,
+    'monthly_reset_day': entry.monthlyResetDay,
   };
 
   TransactionEntriesCompanion _transactionFromJson(
@@ -469,6 +476,7 @@ class BackupRepository {
       onboardingCompleted: Value(
         _optionalBool(item, 'onboarding_completed') ?? true,
       ),
+      monthlyResetDay: Value(_optionalInt(item, 'monthly_reset_day') ?? 1),
       createdAt: now,
       updatedAt: now,
     );

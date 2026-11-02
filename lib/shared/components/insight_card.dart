@@ -35,13 +35,13 @@ class InsightCard extends StatelessWidget {
             width: AppSpacing.iconTile,
             height: AppSpacing.iconTile,
             decoration: BoxDecoration(
-              color: (isDark ? AppColors.softMint : AppColors.surfaceMint)
+              color: (isDark ? AppColors.softBlue : AppColors.surfaceBlue)
                   .withValues(alpha: isDark ? 0.18 : 1),
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             child: Icon(
               Icons.lightbulb_outline_rounded,
-              color: isDark ? AppColors.softMint : AppColors.primary,
+              color: isDark ? AppColors.softBlue : AppColors.primary,
               size: 22,
             ),
           ),

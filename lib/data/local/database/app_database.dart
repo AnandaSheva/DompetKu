@@ -99,6 +99,7 @@ class AppSettingEntries extends Table {
   BoolColumn get hideBalance => boolean().withDefault(const Constant(false))();
   BoolColumn get onboardingCompleted =>
       boolean().withDefault(const Constant(false))();
+  IntColumn get monthlyResetDay => integer().withDefault(const Constant(1))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 }
@@ -426,6 +427,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.defaults()
     : super(
         driftDatabase(
+          // Keep the existing database name so rebranding retains local data.
           name: 'faddompet',
           web: kIsWeb
               ? DriftWebOptions(
@@ -437,7 +439,7 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -446,6 +448,12 @@ class AppDatabase extends _$AppDatabase {
         if (from < 2) {
           await m.addColumn(walletEntries, walletEntries.isArchived);
           await m.addColumn(categoryEntries, categoryEntries.isArchived);
+        }
+        if (from < 3) {
+          await m.addColumn(
+            appSettingEntries,
+            appSettingEntries.monthlyResetDay,
+          );
         }
       },
       beforeOpen: (details) async {

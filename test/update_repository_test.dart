@@ -1,4 +1,4 @@
-import 'package:faddompet/data/repositories/update_repository.dart';
+import 'package:dompet_sheva/data/repositories/update_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -27,24 +27,26 @@ void main() {
     );
   });
 
-  test('picks arm64 APK asset from release assets', () {
-    final asset = UpdateRepository.pickArm64ApkAsset([
-      {
-        'name': 'FadDompet-v1.2.1-armeabi-v7a.apk',
-        'browser_download_url': 'https://example.com/arm.apk',
-        'size': 10,
-      },
-      {
-        'name': 'FadDompet-v1.2.1-arm64.apk',
-        'browser_download_url': 'https://example.com/arm64.apk',
-        'size': 20,
-      },
-    ]);
+  for (final brand in ['DompetSheva', 'FadDompet']) {
+    test('picks arm64 APK from $brand release assets', () {
+      final asset = UpdateRepository.pickArm64ApkAsset([
+        {
+          'name': '$brand-v1.2.1-armeabi-v7a.apk',
+          'browser_download_url': 'https://example.com/arm.apk',
+          'size': 10,
+        },
+        {
+          'name': '$brand-v1.2.1-arm64.apk',
+          'browser_download_url': 'https://example.com/arm64.apk',
+          'size': 20,
+        },
+      ]);
 
-    expect(asset?.name, 'FadDompet-v1.2.1-arm64.apk');
-    expect(asset?.downloadUrl, 'https://example.com/arm64.apk');
-    expect(asset?.sizeBytes, 20);
-  });
+      expect(asset?.name, '$brand-v1.2.1-arm64.apk');
+      expect(asset?.downloadUrl, 'https://example.com/arm64.apk');
+      expect(asset?.sizeBytes, 20);
+    });
+  }
 
   test('extracts SHA256 from release body', () {
     final hash = UpdateRepository.extractSha256(
@@ -60,12 +62,12 @@ void main() {
   test('treats v1.2.0 release as up to date for 1.2.0+2004 app', () {
     final info = UpdateRepository.parseRelease({
       'tag_name': 'v1.2.0',
-      'name': 'FadDompet v1.2.0',
+      'name': 'Dompet Sheva v1.2.0',
       'body': '',
       'published_at': '2026-07-02T00:00:00Z',
       'assets': [
         {
-          'name': 'FadDompet-v1.2.0-arm64.apk',
+          'name': 'DompetSheva-v1.2.0-arm64.apk',
           'browser_download_url': 'https://example.com/arm64.apk',
           'size': 20,
         },

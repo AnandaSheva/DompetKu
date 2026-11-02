@@ -7,6 +7,7 @@ import '../../../app/providers/app_providers.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_radius.dart';
 import '../../../app/theme/app_spacing.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../data/repositories/update_repository.dart';
 import '../../../shared/widgets/app_form_actions.dart';
 import '../../../shared/widgets/top_toast.dart';
@@ -158,7 +159,7 @@ class _AppUpdateSheetState extends ConsumerState<AppUpdateSheet> {
               _InfoPill(
                 label: _downloaded!.verified
                     ? 'File pembaruan sudah diperiksa.'
-                    : 'File berhasil diunduh. Pastikan pembaruan berasal dari rilis resmi FadDompet.',
+                    : 'File berhasil diunduh. Pastikan pembaruan berasal dari rilis resmi ${AppConstants.appName}.',
               ),
             ],
             if (_errorMessage != null) ...[
@@ -280,7 +281,7 @@ class _AppUpdateSheetState extends ConsumerState<AppUpdateSheet> {
         return 'Pembaruan belum bisa diperiksa';
       case AppUpdateStatus.upToDate:
       case null:
-        return 'FadDompet sudah versi terbaru';
+        return '${AppConstants.appName} sudah versi terbaru';
     }
   }
 
@@ -289,7 +290,7 @@ class _AppUpdateSheetState extends ConsumerState<AppUpdateSheet> {
       return 'Cek dan download pembaruan bisa digunakan di aplikasi Android.';
     }
     if (_checking) {
-      return 'Tunggu sebentar, FadDompet sedang memeriksa versi terbaru.';
+      return 'Tunggu sebentar, ${AppConstants.appName} sedang memeriksa versi terbaru.';
     }
     if (_downloading) {
       return 'Pembaruan sedang diunduh. Pastikan koneksi tetap stabil.';
@@ -301,7 +302,7 @@ class _AppUpdateSheetState extends ConsumerState<AppUpdateSheet> {
     final info = _info;
     switch (info?.status) {
       case AppUpdateStatus.updateAvailable:
-        return 'FadDompet v${info!.latestVersion} sudah tersedia. Unduh pembaruan untuk mendapatkan perbaikan dan peningkatan terbaru.';
+        return '${AppConstants.appName} v${info!.latestVersion} sudah tersedia. Unduh pembaruan untuk mendapatkan perbaikan dan peningkatan terbaru.';
       case AppUpdateStatus.unavailable:
         return 'Versi terbaru sudah ditemukan, tetapi file Android arm64 belum tersedia.';
       case AppUpdateStatus.error:
@@ -332,12 +333,12 @@ class _StatusIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (status) {
+    final color = AppColors.readableAccent(switch (status) {
       AppUpdateStatus.updateAvailable => AppColors.primary,
-      AppUpdateStatus.upToDate => AppColors.incomeGreen,
+      AppUpdateStatus.upToDate => AppColors.incomeBlue,
       AppUpdateStatus.unavailable => AppColors.infoBlue,
       AppUpdateStatus.error => AppColors.warningOrange,
-    };
+    }, Theme.of(context).brightness);
     final icon = switch (status) {
       AppUpdateStatus.updateAvailable => Icons.download_rounded,
       AppUpdateStatus.upToDate => Icons.check_rounded,

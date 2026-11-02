@@ -9,6 +9,7 @@ import '../../app/providers/app_providers.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_radius.dart';
 import '../../app/theme/app_spacing.dart';
+import '../../core/constants/app_constants.dart';
 import '../../data/repositories/security_repository.dart';
 import '../../shared/widgets/app_brand_mark.dart';
 import '../../shared/widgets/pressable_surface.dart';
@@ -231,7 +232,9 @@ class _AppLockScreenState extends ConsumerState<_AppLockScreen> {
       setState(() => _message = error.message.toString());
     } catch (_) {
       if (!mounted) return;
-      setState(() => _message = 'Gunakan PIN untuk membuka FadDompet.');
+      setState(
+        () => _message = 'Gunakan PIN untuk membuka ${AppConstants.appName}.',
+      );
     }
   }
 
@@ -275,13 +278,13 @@ class _AppLockScreenState extends ConsumerState<_AppLockScreen> {
                   const AppBrandMark(size: 60, radius: AppRadius.lg),
                   const SizedBox(height: AppSpacing.xxl),
                   Text(
-                    'Buka FadDompet',
+                    'Buka ${AppConstants.appName}',
                     style: theme.textTheme.headlineSmall,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Masukkan PIN untuk membuka FadDompet',
+                    'Masukkan PIN untuk membuka ${AppConstants.appName}',
                     style: theme.textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
@@ -300,7 +303,7 @@ class _AppLockScreenState extends ConsumerState<_AppLockScreen> {
                           decoration: BoxDecoration(
                             color: index < _pin.length
                                 ? (isDark
-                                      ? AppColors.softMint
+                                      ? AppColors.softBlue
                                       : AppColors.primary)
                                 : theme.colorScheme.outline,
                             borderRadius: BorderRadius.circular(AppRadius.full),
@@ -317,7 +320,7 @@ class _AppLockScreenState extends ConsumerState<_AppLockScreen> {
                     child: Text(
                       _message ?? '',
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: AppColors.expenseRed,
+                        color: AppColors.dangerRed,
                       ),
                       textAlign: TextAlign.center,
                     ),

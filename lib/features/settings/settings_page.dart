@@ -8,6 +8,7 @@ import '../../app/providers/app_providers.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_radius.dart';
 import '../../app/theme/app_spacing.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/enums/category_type.dart';
 import '../../data/local/database/app_database.dart';
 import '../../shared/helpers/category_icon_mapper.dart';
@@ -76,6 +77,17 @@ class SettingsPage extends ConsumerWidget {
             ),
           ),
           _SettingsTile(
+            icon: Icons.event_repeat_rounded,
+            title: 'Tanggal reset bulanan',
+            subtitle:
+                'Periode dimulai tanggal ${settings?.monthlyResetDay ?? 1}',
+            onTap: () => _showMonthlyResetDaySheet(
+              context,
+              ref,
+              settings?.monthlyResetDay ?? 1,
+            ),
+          ),
+          _SettingsTile(
             icon: Icons.insights_rounded,
             title: 'Analitik & Budget',
             subtitle: 'Lihat grafik dan atur budget bulanan',
@@ -129,33 +141,35 @@ class SettingsPage extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.volunteer_activism_rounded,
             title: 'Dukung Pengembangan',
-            subtitle: 'Dukungan opsional untuk pengembangan FadDompet.',
+            subtitle:
+                'Dukungan opsional untuk pengembangan ${AppConstants.appName}.',
             onTap: () => _confirmExternalLink(
               context,
-              url: 'https://tako.id/fadhol_pemula',
+              url: 'https://tako.id/c/shevaanandaa',
               actionLabel: 'Lanjutkan',
               note: 'Dukungan bersifat opsional.',
             ),
-          ),
-          _SettingsTile(
-            icon: Icons.integration_instructions_rounded,
-            title: 'Repositori GitHub',
-            subtitle: 'Lihat kode sumber dan perkembangan proyek.',
-            onTap: () => _confirmExternalLink(
-              context,
-              url: 'https://github.com/fadd3079-prog/faddompet',
-              actionLabel: 'Buka GitHub',
-            ),
+          // ),
+          // _SettingsTile(
+          //   icon: Icons.integration_instructions_rounded,
+          //   title: 'Repositori GitHub',
+          //   subtitle: 'Lihat kode sumber dan perkembangan proyek.',
+          //   onTap: () => _confirmExternalLink(
+          //     context,
+          //     url: 'https://github.com/fadd3079-prog/faddompet',
+          //     actionLabel: 'Buka GitHub',
+          //   ),
           ),
           _SettingsTile(
             icon: Icons.system_update_alt_rounded,
             title: 'Pembaruan Aplikasi',
-            subtitle: 'Periksa dan unduh versi terbaru FadDompet.',
+            subtitle:
+                'Periksa dan unduh versi terbaru ${AppConstants.appName}.',
             onTap: () => _showUpdateSheet(context),
           ),
           _SettingsTile(
             icon: Icons.info_rounded,
-            title: 'Tentang FadDompet',
+            title: 'Tentang ${AppConstants.appName}',
             subtitle: aboutSubtitle,
             onTap: () => _showAboutSheet(context, versionLabel),
           ),
@@ -196,6 +210,66 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
+  void _showMonthlyResetDaySheet(
+    BuildContext context,
+    WidgetRef ref,
+    int selected,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.75,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.screen),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _SheetHeader(
+                  title: 'Tanggal reset bulanan',
+                  subtitle:
+                      'Periode dimulai pada tanggal pilihan dan berakhir sehari sebelum tanggal itu di bulan berikutnya. Jika tanggal tidak tersedia, seperti tanggal 31 di Februari, digunakan hari terakhir bulan.',
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: 31,
+                    itemBuilder: (context, index) {
+                      final day = index + 1;
+                      return _SheetOption(
+                        title: 'Tanggal $day',
+                        subtitle: day == 1 ? 'Default' : null,
+                        selected: selected == day,
+                        onTap: () => _setMonthlyResetDay(context, ref, day),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _setMonthlyResetDay(
+    BuildContext context,
+    WidgetRef ref,
+    int value,
+  ) async {
+    await ref.read(settingsRepositoryProvider).setMonthlyResetDay(value);
+    if (!context.mounted) return;
+    Navigator.pop(context);
+    TopToast.show(
+      context,
+      'Tanggal reset bulanan diubah ke tanggal $value.',
+      type: TopToastType.success,
+    );
+  }
+
   Future<void> _setTheme(
     BuildContext context,
     WidgetRef ref,
@@ -222,7 +296,7 @@ class SettingsPage extends ConsumerWidget {
                     const _SheetHeader(
                       title: 'Keamanan',
                       subtitle:
-                          'Kunci FadDompet dengan PIN. Biometrik tetap punya PIN cadangan.',
+                          'Kunci ${AppConstants.appName} dengan PIN. Biometrik tetap punya PIN cadangan.',
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     if (settings.pinEnabled) ...[
@@ -420,7 +494,8 @@ class SettingsPage extends ConsumerWidget {
               _SheetOption(
                 icon: Icons.restore_rounded,
                 title: 'Pulihkan dari Cadangan',
-                subtitle: 'Impor file cadangan FadDompet dari perangkat lama.',
+                subtitle:
+                    'Impor file cadangan ${AppConstants.appName} dari perangkat lama.',
                 onTap: () => _startImport(context, ref),
               ),
               _SheetOption(
@@ -610,7 +685,7 @@ class SettingsPage extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'FadDompet',
+                          AppConstants.appName,
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         const SizedBox(height: AppSpacing.xs),
@@ -672,7 +747,7 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.colorScheme.brightness == Brightness.dark;
-    final accent = danger ? AppColors.expenseRed : theme.colorScheme.primary;
+    final accent = danger ? AppColors.dangerRed : theme.colorScheme.primary;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -684,7 +759,7 @@ class _SettingsTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.xl),
             border: Border.all(
               color: danger
-                  ? AppColors.expenseRed.withValues(alpha: 0.28)
+                  ? AppColors.dangerRed.withValues(alpha: 0.28)
                   : isDark
                   ? AppColors.darkBorderSubtle
                   : AppColors.borderSubtle,
@@ -795,7 +870,7 @@ class _SheetOption extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.colorScheme.brightness == Brightness.dark;
     final accent = destructive
-        ? AppColors.expenseRed
+        ? AppColors.dangerRed
         : theme.colorScheme.primary;
 
     return Padding(
@@ -837,7 +912,7 @@ class _SheetOption extends StatelessWidget {
                     Text(
                       title,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: destructive ? AppColors.expenseRed : null,
+                        color: destructive ? AppColors.dangerRed : null,
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -917,7 +992,7 @@ class _PinSetupDialogState extends State<_PinSetupDialog> {
               _error!,
               style: Theme.of(
                 context,
-              ).textTheme.labelLarge?.copyWith(color: AppColors.expenseRed),
+              ).textTheme.labelLarge?.copyWith(color: AppColors.dangerRed),
             ),
           ],
         ],
@@ -1313,12 +1388,18 @@ class _CategoryTile extends StatelessWidget {
                 width: AppSpacing.iconTileSmall,
                 height: AppSpacing.iconTileSmall,
                 decoration: BoxDecoration(
-                  color: Color(category.colorValue).withValues(alpha: 0.12),
+                  color: AppColors.categoryColor(
+                    category.colorValue,
+                    theme.brightness,
+                  ).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: Icon(
                   categoryIconForEntry(category),
-                  color: Color(category.colorValue),
+                  color: AppColors.categoryColor(
+                    category.colorValue,
+                    theme.brightness,
+                  ),
                   size: 20,
                 ),
               ),
@@ -1369,14 +1450,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
   late CategoryType _type;
   late int _colorValue;
 
-  static const _colors = [
-    AppColors.expenseRed,
-    AppColors.incomeGreen,
-    AppColors.primary,
-    AppColors.infoBlue,
-    AppColors.warningOrange,
-    AppColors.textSecondary,
-  ];
+  static const _colors = AppColors.categoryPalette;
 
   @override
   void initState() {
@@ -1389,7 +1463,10 @@ class _CategoryDialogState extends State<_CategoryDialog> {
     _type = category?.type == 'income'
         ? CategoryType.income
         : CategoryType.expense;
-    _colorValue = category?.colorValue ?? AppColors.primary.toARGB32();
+    _colorValue = AppColors.categoryColor(
+      category?.colorValue ?? AppColors.primary.toARGB32(),
+      Brightness.light,
+    ).toARGB32();
   }
 
   @override
@@ -1451,7 +1528,12 @@ class _CategoryDialogState extends State<_CategoryDialog> {
                   ChoiceChip(
                     label: const SizedBox(width: AppSpacing.md),
                     selected: _colorValue == color.toARGB32(),
-                    avatar: CircleAvatar(backgroundColor: color),
+                    avatar: CircleAvatar(
+                      backgroundColor: AppColors.readableAccent(
+                        color,
+                        Theme.of(context).brightness,
+                      ),
+                    ),
                     onSelected: (_) =>
                         setState(() => _colorValue = color.toARGB32()),
                   ),

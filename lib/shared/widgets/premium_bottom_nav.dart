@@ -119,7 +119,7 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.colorScheme.brightness == Brightness.dark;
-    final activeColor = isDark ? AppColors.softMint : AppColors.primary;
+    final activeColor = isDark ? AppColors.softBlue : AppColors.primary;
     final inactiveColor = isDark
         ? AppColors.darkTextSecondary
         : AppColors.textSecondary;
@@ -225,7 +225,7 @@ class _QuickAddButton extends StatelessWidget {
             height: AppSpacing.navActionSize,
             margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.softMint : AppColors.primary,
+              color: isDark ? AppColors.softBlue : AppColors.primary,
               borderRadius: BorderRadius.circular(AppRadius.hero),
               boxShadow: [...AppShadows.nav(theme.colorScheme.brightness)],
             ),

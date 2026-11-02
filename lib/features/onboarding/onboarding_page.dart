@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers/app_providers.dart';
 import '../../app/theme/app_radius.dart';
 import '../../app/theme/app_spacing.dart';
+import '../../core/constants/app_constants.dart';
 import '../../core/formatters/currency_formatter.dart';
 import '../../core/formatters/rupiah_input_formatter.dart';
 import '../../data/repositories/app_models.dart';
@@ -76,7 +77,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   ),
                   const SizedBox(height: AppSpacing.xxl),
                   Text(
-                    'Selamat datang di FadDompet',
+                    'Selamat datang di ${AppConstants.appName}',
                     style: theme.textTheme.displayMedium,
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -108,7 +109,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   FilledButton(
                     onPressed: _saving ? null : () => _finish(items),
                     child: Text(
-                      _saving ? 'Menyiapkan...' : 'Mulai Pakai FadDompet',
+                      _saving
+                          ? 'Menyiapkan...'
+                          : 'Mulai Pakai ${AppConstants.appName}',
                     ),
                   ),
                 ],
@@ -141,7 +144,8 @@ class _NameField extends StatelessWidget {
       decoration: const InputDecoration(
         labelText: 'Nama pengguna',
         hintText: 'Contoh: Rina',
-        helperText: 'Nama ini hanya dipakai untuk menyapa kamu di FadDompet.',
+        helperText:
+            'Nama ini hanya dipakai untuk menyapa kamu di ${AppConstants.appName}.',
       ),
     );
   }

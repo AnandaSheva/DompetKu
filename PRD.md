@@ -1,12 +1,12 @@
-# FadDompet PRD
+# Dompet Sheva PRD
 
 ## 1. Product Overview
 
-**FadDompet** adalah aplikasi mobile personal money management untuk mencatat, memantau, dan menganalisis keuangan pribadi secara cepat, ringan, dan offline.
+**Dompet Sheva** adalah aplikasi mobile personal money management untuk mencatat, memantau, dan menganalisis keuangan pribadi secara cepat, ringan, dan offline.
 
-Nama FadDompet berasal dari gabungan **Fadd** dan **Dompet**. Aplikasi ini dibuat untuk penggunaan keuangan pribadi sehari-hari, terutama bagi pengguna yang ingin mencatat pemasukan, pengeluaran, dompet, dan budget tanpa akun online atau proses yang rumit.
+Dompet Sheva dibuat untuk penggunaan keuangan pribadi sehari-hari, terutama bagi pengguna yang ingin mencatat pemasukan, pengeluaran, dompet, dan budget tanpa akun online atau proses yang rumit.
 
-FadDompet bukan aplikasi akuntansi kompleks, bukan aplikasi bank, dan bukan platform finansial online. Fokus utamanya adalah membantu pengguna memahami kondisi uang pribadi secara cepat: saldo tersisa, pemasukan bulan ini, pengeluaran bulan ini, kategori paling boros, budget, dan riwayat transaksi.
+Dompet Sheva bukan aplikasi akuntansi kompleks, bukan aplikasi bank, dan bukan platform finansial online. Fokus utamanya adalah membantu pengguna memahami kondisi uang pribadi secara cepat: saldo tersisa, pemasukan bulan ini, pengeluaran bulan ini, kategori paling boros, budget, dan riwayat transaksi.
 
 Aplikasi harus terasa **simple, elegant, premium, cepat, stabil, offline-first, dan iOS-like**, tetapi tetap nyaman digunakan di Android.
 
@@ -16,7 +16,7 @@ Aplikasi harus terasa **simple, elegant, premium, cepat, stabil, offline-first, 
 
 Membuat aplikasi pengelola keuangan pribadi yang terasa seperti aplikasi bawaan sistem modern: ringan, cepat, bersih, visualnya elegan, dan tidak membuat pengguna malas mencatat transaksi.
 
-FadDompet harus membantu pengguna menjawab pertanyaan utama dalam beberapa detik:
+Dompet Sheva harus membantu pengguna menjawab pertanyaan utama dalam beberapa detik:
 
 - Uang saya sekarang tersisa berapa?
 - Bulan ini saya sudah keluar uang berapa?
@@ -109,7 +109,7 @@ Masalah utama bukan hanya mencatat transaksi, tetapi membuat proses mencatat men
 
 ## 6. Non-Goals
 
-FadDompet v1.0 tidak bertujuan menjadi:
+Dompet Sheva v1.0 tidak bertujuan menjadi:
 
 - Aplikasi bank.
 - Aplikasi investasi.
@@ -202,7 +202,7 @@ Dashboard harus menjawab kondisi keuangan pengguna secara cepat dan visual.
 
 ## 8.3 Transaction Input
 
-FadDompet harus mengutamakan input transaksi yang cepat.
+Dompet Sheva harus mengutamakan input transaksi yang cepat.
 
 Jenis transaksi:
 
@@ -505,7 +505,7 @@ Contoh:
 
 ## 10.1 Design Personality
 
-FadDompet harus terasa:
+Dompet Sheva harus terasa:
 
 - iOS-like
 - Premium
@@ -541,7 +541,7 @@ Prinsip visual:
 
 ## 10.3 Anti-Generic UI Rules
 
-FadDompet tidak boleh terlihat seperti:
+Dompet Sheva tidak boleh terlihat seperti:
 
 - Default Flutter counter app
 - Default Material purple theme
@@ -580,7 +580,7 @@ Yang tidak boleh disalin mentah:
 - Apple Wallet clone
 - iOS-only interaction yang aneh di Android
 
-FadDompet harus menjadi aplikasi Android yang terinspirasi iOS, bukan aplikasi yang pura-pura menjadi iPhone.
+Dompet Sheva harus menjadi aplikasi Android yang terinspirasi iOS, bukan aplikasi yang pura-pura menjadi iPhone.
 
 ---
 
@@ -685,7 +685,7 @@ Rules:
 
 ## 13. Performance Requirements
 
-FadDompet harus:
+Dompet Sheva harus:
 
 - Cepat dibuka
 - Tidak berat saat scroll
@@ -706,7 +706,7 @@ Target pengalaman:
 
 ## 14. Accessibility Requirements
 
-FadDompet harus memperhatikan:
+Dompet Sheva harus memperhatikan:
 
 - Kontras teks yang cukup
 - Ukuran teks nyaman dibaca
@@ -720,7 +720,7 @@ FadDompet harus memperhatikan:
 
 ## 15. Open Source Requirements
 
-Karena FadDompet akan diunggah sebagai repo open-source, project harus memiliki:
+Karena Dompet Sheva akan diunggah sebagai repo open-source, project harus memiliki:
 
 - README.md
 - LICENSE
@@ -748,7 +748,7 @@ Kode harus:
 
 ## 16.1 Version 1.0 Scope
 
-FadDompet v1.0 dianggap layak digunakan jika sudah memiliki:
+Dompet Sheva v1.0 dianggap layak digunakan jika sudah memiliki:
 
 - Onboarding
 - Dashboard
@@ -804,7 +804,7 @@ Scope:
 
 Output:
 
-- UI awal sudah terasa seperti FadDompet, bukan Flutter starter app.
+- UI awal sudah terasa seperti Dompet Sheva, bukan Flutter starter app.
 
 ---
 
@@ -904,13 +904,13 @@ Scope:
 
 Output:
 
-- FadDompet siap dipakai pribadi dan dipublikasikan sebagai open-source project.
+- Dompet Sheva siap dipakai pribadi dan dipublikasikan sebagai open-source project.
 
 ---
 
 ## 18. Success Metrics
 
-FadDompet berhasil jika:
+Dompet Sheva berhasil jika:
 
 - Pengguna bisa mencatat transaksi harian tanpa merasa ribet.
 - Aplikasi bisa dipakai offline.
@@ -936,7 +936,7 @@ Setiap perubahan UI harus melewati pertanyaan berikut:
 7. Apakah ini nyaman digunakan di Android?
 8. Apakah animasi membantu, bukan mengganggu?
 9. Apakah input masih cepat?
-10. Apakah ini sesuai karakter FadDompet?
+10. Apakah ini sesuai karakter Dompet Sheva?
 
 Jika jawabannya lemah, desain harus direvisi.
 
@@ -944,6 +944,6 @@ Jika jawabannya lemah, desain harus direvisi.
 
 ## 20. Final Product Statement
 
-FadDompet is an offline-first personal money management app for Android, designed for everyday income, expense, wallet, and budget tracking. It focuses on fast transaction input, clear financial summaries, useful analytics, and a premium iOS-inspired interface adapted for Android.
+Dompet Sheva is an offline-first personal money management app for Android, designed for everyday income, expense, wallet, and budget tracking. It focuses on fast transaction input, clear financial summaries, useful analytics, and a premium iOS-inspired interface adapted for Android.
 
 The app must be private, lightweight, stable, elegant, and practical for daily use.

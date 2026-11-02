@@ -36,6 +36,7 @@ class DashboardSummary {
     required this.budgetSpent,
     required this.recentTransactions,
     required this.topExpenseCategory,
+    this.monthlyPeriodLabel = '',
     this.budgetCount = 0,
     this.hasMonthlyBudget = false,
     this.categoryBudgetLimitTotal = 0,
@@ -50,6 +51,7 @@ class DashboardSummary {
   final int budgetSpent;
   final List<TransactionDetail> recentTransactions;
   final String? topExpenseCategory;
+  final String monthlyPeriodLabel;
   final int budgetCount;
   final bool hasMonthlyBudget;
   final int categoryBudgetLimitTotal;

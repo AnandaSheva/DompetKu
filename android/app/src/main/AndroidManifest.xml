@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
 
     <application
-        android:label="FadDompet"
+        android:label="Dompet Sheva"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -35,7 +35,7 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/faddompet_file_paths" />
+                android:resource="@xml/dompet_sheva_file_paths" />
         </provider>
     </application>
     <queries>

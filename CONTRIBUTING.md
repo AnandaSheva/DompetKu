@@ -1,8 +1,8 @@
-# Contributing to FadDompet
+# Contributing to Dompet Sheva
 
-Thanks for your interest in improving FadDompet.
+Thanks for your interest in improving Dompet Sheva.
 
-FadDompet is an offline-first Android personal finance app. Contributions should keep the app simple, lightweight, private by default, and comfortable on lower-end Android devices.
+Dompet Sheva is an offline-first Android personal finance app. Contributions should keep the app simple, lightweight, private by default, and comfortable on lower-end Android devices.
 
 ## Local Setup
 

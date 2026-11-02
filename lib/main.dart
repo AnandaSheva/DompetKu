@@ -18,5 +18,5 @@ Future<void> main() async {
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
-  runApp(const ProviderScope(child: FadDompetApp()));
+  runApp(const ProviderScope(child: DompetShevaApp()));
 }

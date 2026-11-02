@@ -1,10 +1,10 @@
 # AGENTS.md
 
-This file is the primary guide for AI coding agents working on FadDompet.
+This file is the primary guide for AI coding agents working on Dompet Sheva.
 
 ## Project Overview
 
-FadDompet is an offline-first Android personal finance tracker built with Flutter. The app helps users manage income, expenses, transfers, wallets, budgets, backups, and app updates locally on their device.
+Dompet Sheva is an offline-first Android personal finance tracker built with Flutter. The app helps users manage income, expenses, transfers, wallets, budgets, backups, and app updates locally on their device.
 
 ## Tech Stack
 
@@ -46,10 +46,11 @@ flutter build apk --release --split-per-abi
 
 ## Coding Rules
 
-- Keep FadDompet offline-first.
+- Keep Dompet Sheva offline-first.
 - Keep data local by default.
-- Keep user-facing app name as `FadDompet`.
-- Technical slug and package names may remain `faddompet`.
+- Keep user-facing app name as `Dompet Sheva`.
+- Use `dompet_sheva` for the Dart package and `dompet-sheva` for export filenames.
+- Preserve the legacy Android application ID, native update channel, and database name for installed-app and local-data compatibility. Repository URLs must point to an existing release source.
 - Keep UI text in Bahasa Indonesia.
 - Prefer small, reviewable changes.
 - Use existing repositories, providers, theme tokens, and shared components.
