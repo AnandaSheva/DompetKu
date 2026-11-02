@@ -161,4 +161,4 @@ https://tako.id/shevaanandaa
 
 Dompet Sheva is released under the [MIT License](LICENSE).
 
-Copyright (c) 2026 Mufaddhol.
+Copyright (c) 2026 Sheva.
