@@ -56,7 +56,7 @@ Dompet Sheva uses the internet only for user-triggered actions such as checking 
 
 Download the latest Android APK from GitHub Releases:
 
-https://github.com/fadd3079-prog/faddompet/releases/latest
+https://github.com/AnandaSheva/DompetKu/releases/
 
 For most modern Android phones, use the `arm64` APK.
 
