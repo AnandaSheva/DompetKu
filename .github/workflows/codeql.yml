@@ -1,13 +1,17 @@
 name: CodeQL
 
 on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
   schedule:
     - cron: "24 3 * * 1"
 
 jobs:
   analyze:
-    name: Analyze Android host code
+    name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     permissions:
       security-events: write
@@ -15,33 +19,59 @@ jobs:
       actions: read
       contents: read
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: actions
+            build-mode: none
+          - language: c-cpp
+            build-mode: none
+          - language: java-kotlin
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
       - name: Set up Java
+        if: matrix.language == 'java-kotlin'
         uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Set up Flutter
+        if: matrix.language == 'java-kotlin'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
+      - name: Configure Android SDK paths
+        if: matrix.language == 'java-kotlin'
+        shell: bash
+        run: |
+          printf 'sdk.dir=%s\nflutter.sdk=%s\n' \
+            "$ANDROID_HOME" "$FLUTTER_ROOT" > android/local.properties
+
       - name: Install dependencies
+        if: matrix.language == 'java-kotlin'
         run: flutter pub get
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
-          languages: java-kotlin
-          build-mode: manual
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
 
       - name: Build Android debug APK for analysis
+        if: matrix.language == 'java-kotlin'
         run: flutter build apk --debug
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"
