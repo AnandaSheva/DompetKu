@@ -13,11 +13,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/fadd3079-prog/DompetKu/actions/workflows/flutter-ci.yml"><img alt="Flutter CI" src="https://img.shields.io/github/actions/workflow/status/fadd3079-prog/DompetKu/flutter-ci.yml?branch=main&style=flat-square&label=Flutter%20CI"></a>
+  <a href="https://github.com/AnandaSheva/DompetKu/actions/workflows/flutter-ci.yml"><img alt="Flutter CI" src="https://img.shields.io/github/actions/workflow/status/AnandaSheva/DompetKu/flutter-ci.yml?branch=main&style=flat-square&label=Flutter%20CI"></a>
   <img alt="Flutter" src="https://img.shields.io/badge/Flutter-3.x-02569B?style=flat-square&logo=flutter&logoColor=white">
   <img alt="Android" src="https://img.shields.io/badge/Android-primary-3DDC84?style=flat-square&logo=android&logoColor=white">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-blue?style=flat-square"></a>
-  <a href="https://github.com/fadd3079-prog/DompetKureleases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/fadd3079-prog/DompetKu?style=flat-square"></a>
+  <a href="https://github.com/AnandaSheva/DompetKu/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/AnandaSheva/DompetKu?style=flat-square"></a>
   <img alt="Offline first" src="https://img.shields.io/badge/Offline-first-2563EB?style=flat-square">
 </p>
 
@@ -56,7 +56,7 @@ Dompet Sheva uses the internet only for user-triggered actions such as checking 
 
 Download the latest Android APK from GitHub Releases:
 
-https://github.com/fadd3079-prog/DompetKu/releases/latest
+https://github.com/AnandaSheva/DompetKu/releases/
 
 For most modern Android phones, use the `arm64` APK.
 
@@ -155,10 +155,10 @@ See [SECURITY.md](SECURITY.md).
 
 If Dompet Sheva helps you, you can support its ongoing development here:
 
-https://tako.id/fadhol_pemula
+https://tako.id/shevaanandaa
 
 ## License
 
 Dompet Sheva is released under the [MIT License](LICENSE).
 
-Copyright (c) 2026 Mufaddhol.
+Copyright (c) 2026 Sheva.
