@@ -145,7 +145,7 @@ class SettingsPage extends ConsumerWidget {
                 'Dukungan opsional untuk pengembangan ${AppConstants.appName}.',
             onTap: () => _confirmExternalLink(
               context,
-              url: 'https://tako.id/c/shevaanandaa',
+              url: 'https://tako.id/shevaanandaa/gift',
               actionLabel: 'Lanjutkan',
               note: 'Dukungan bersifat opsional.',
             ),
