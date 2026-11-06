@@ -155,7 +155,7 @@ See [SECURITY.md](SECURITY.md).
 
 If DompetKu helps you, you can support its ongoing development here:
 
-https://tako.id/shevaanandaa
+https://tako.id/shevaanandaa/gift
 
 ## License
 
