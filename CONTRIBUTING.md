@@ -1,8 +1,8 @@
-# Contributing to Dompet Sheva
+# Contributing to DompetKu
 
-Thanks for your interest in improving Dompet Sheva.
+Thanks for your interest in improving DompetKu.
 
-Dompet Sheva is an offline-first Android personal finance app. Contributions should keep the app simple, lightweight, private by default, and comfortable on lower-end Android devices.
+DompetKu is an offline-first Android personal finance app. Contributions should keep the app simple, lightweight, private by default, and comfortable on lower-end Android devices.
 
 ## Local Setup
 

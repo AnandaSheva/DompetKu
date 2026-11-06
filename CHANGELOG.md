@@ -1,13 +1,13 @@
 # Changelog
 
-All notable changes to Dompet Sheva are documented in this file.
+All notable changes to DompetKu are documented in this file.
 
 ## [Unreleased]
 
 - Apply a blue/bright-blue palette across light and dark themes, financial accents, categories, charts, app icons, and web metadata.
 - Display earlier/imported category colors in the blue palette without rewriting stored financial data.
 
-- Rebrand the app as Dompet Sheva across Android, web, onboarding, settings, app lock, and update messages.
+- Rebrand the app as DompetKu across Android, web, onboarding, settings, app lock, and update messages.
 - Rename new backup, CSV export, and downloaded APK files to use the new brand.
 - Rename the Dart package to `dompet_sheva` and update project documentation and CI artifact naming.
 - Preserve the existing Android application ID, database, backup format, and release source for compatibility.

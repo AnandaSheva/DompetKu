@@ -17,7 +17,7 @@ void main() {
     await initializeDateFormatting('id_ID');
   });
 
-  testWidgets('Dompet Sheva app shell renders', (WidgetTester tester) async {
+  testWidgets('DompetKu app shell renders', (WidgetTester tester) async {
     await tester.pumpWidget(_withOverrides(const DompetShevaApp()));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -26,7 +26,7 @@ void main() {
     expect(find.text('Beranda'), findsOneWidget);
     expect(
       tester.widget<MaterialApp>(find.byType(MaterialApp)).title,
-      'Dompet Sheva',
+      'DompetKu',
     );
   });
 
@@ -40,7 +40,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Total Saldo'), findsOneWidget);
-    expect(find.text('Dompet Sheva'), findsOneWidget);
+    expect(find.text('DompetKu'), findsOneWidget);
     expect(find.text('Ringkasan periode'), findsOneWidget);
     expect(find.text('Riwayat terbaru'), findsOneWidget);
   });

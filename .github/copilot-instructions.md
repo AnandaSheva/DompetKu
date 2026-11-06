@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions
 
-Dompet Sheva is a Flutter/Dart Android app for offline-first personal finance tracking.
+DompetKu is a Flutter/Dart Android app for offline-first personal finance tracking.
 
 Follow these rules when suggesting changes:
 
@@ -11,7 +11,7 @@ Follow these rules when suggesting changes:
 - Keep database logic out of UI widgets.
 - Use existing theme tokens, spacing, radius, typography, and shared components.
 - Keep user-facing UI copy in Bahasa Indonesia.
-- Keep the public app name as `Dompet Sheva`.
+- Keep the public app name as `DompetKu`.
 - Avoid unnecessary dependencies and Android permissions.
 - Consider low-end Android performance.
 - Avoid broad rewrites of working systems.

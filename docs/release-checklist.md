@@ -1,6 +1,6 @@
 # Release Checklist
 
-Use this checklist before publishing a Dompet Sheva GitHub Release. Replace `{VERSION}` with the version from `pubspec.yaml`, without the `+build` suffix, throughout this checklist.
+Use this checklist before publishing a DompetKu GitHub Release. Replace `{VERSION}` with the version from `pubspec.yaml`, without the `+build` suffix, throughout this checklist.
 
 ## Before Build
 
@@ -57,7 +57,7 @@ Add checksums to the GitHub Release notes.
 
 - Upload APK files to GitHub Releases.
 - Push tag `v{VERSION}`.
-- Create GitHub Release `Dompet Sheva v{VERSION}`.
+- Create GitHub Release `DompetKu v{VERSION}`.
 - Include a short changelog.
 - Include SHA256 checksums.
 - Include SHA256 in release notes.

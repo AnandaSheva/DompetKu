@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem in Dompet Sheva.
+description: Report a reproducible problem in DompetKu.
 title: "bug: "
 labels: ["bug"]
 body:

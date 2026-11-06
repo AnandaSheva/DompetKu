@@ -1,10 +1,10 @@
 # AGENTS.md
 
-This file is the primary guide for AI coding agents working on Dompet Sheva.
+This file is the primary guide for AI coding agents working on DompetKu.
 
 ## Project Overview
 
-Dompet Sheva is an offline-first Android personal finance tracker built with Flutter. The app helps users manage income, expenses, transfers, wallets, budgets, backups, and app updates locally on their device.
+DompetKu is an offline-first Android personal finance tracker built with Flutter. The app helps users manage income, expenses, transfers, wallets, budgets, backups, and app updates locally on their device.
 
 ## Tech Stack
 
@@ -46,9 +46,9 @@ flutter build apk --release --split-per-abi
 
 ## Coding Rules
 
-- Keep Dompet Sheva offline-first.
+- Keep DompetKu offline-first.
 - Keep data local by default.
-- Keep user-facing app name as `Dompet Sheva`.
+- Keep user-facing app name as `DompetKu`.
 - Use `dompet_sheva` for the Dart package and `dompet-sheva` for export filenames.
 - Preserve the legacy Android application ID, native update channel, and database name for installed-app and local-data compatibility. Repository URLs must point to an existing release source.
 - Keep UI text in Bahasa Indonesia.

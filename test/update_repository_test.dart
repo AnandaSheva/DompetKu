@@ -62,7 +62,7 @@ void main() {
   test('treats v1.2.0 release as up to date for 1.2.0+2004 app', () {
     final info = UpdateRepository.parseRelease({
       'tag_name': 'v1.2.0',
-      'name': 'Dompet Sheva v1.2.0',
+      'name': 'DompetKu v1.2.0',
       'body': '',
       'published_at': '2026-07-02T00:00:00Z',
       'assets': [

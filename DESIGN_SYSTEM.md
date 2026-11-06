@@ -1,8 +1,8 @@
-# Dompet Sheva Design System
+# DompetKu Design System
 
 ## 1. Design Direction
 
-Dompet Sheva menggunakan pendekatan visual **iOS-inspired premium mobile interface** yang diadaptasi untuk Android.
+DompetKu menggunakan pendekatan visual **iOS-inspired premium mobile interface** yang diadaptasi untuk Android.
 
 Arah desain ini mengambil inspirasi dari kualitas visual iOS modern seperti:
 
@@ -16,7 +16,7 @@ Arah desain ini mengambil inspirasi dari kualitas visual iOS modern seperti:
 - interaksi yang terasa natural
 - fokus pada konten utama
 
-Namun Dompet Sheva **bukan clone iOS**, bukan Apple Wallet clone, dan bukan aplikasi yang memaksakan pola iPhone mentah ke Android.
+Namun DompetKu **bukan clone iOS**, bukan Apple Wallet clone, dan bukan aplikasi yang memaksakan pola iPhone mentah ke Android.
 
 Targetnya adalah:
 
@@ -26,7 +26,7 @@ Targetnya adalah:
 
 ## 2. Design Personality
 
-Dompet Sheva harus terasa:
+DompetKu harus terasa:
 
 - calm
 - premium
@@ -39,7 +39,7 @@ Dompet Sheva harus terasa:
 - lightweight
 - personal
 
-Dompet Sheva tidak boleh terasa:
+DompetKu tidak boleh terasa:
 
 - generic AI dashboard
 - template SaaS analytics
@@ -57,7 +57,7 @@ Dompet Sheva tidak boleh terasa:
 
 ## 3. Product Feel
 
-Ketika pengguna membuka Dompet Sheva, kesan yang harus muncul:
+Ketika pengguna membuka DompetKu, kesan yang harus muncul:
 
 1. Uang saya mudah dipahami.
 2. Aplikasi ini ringan dan cepat.
@@ -205,7 +205,7 @@ Hindari:
 
 ## 6.1 Brand Palette
 
-Palet Dompet Sheva menggunakan royal blue, sky blue, dan navy. Token warna berada di `lib/app/theme/app_colors.dart`.
+Palet DompetKu menggunakan royal blue, sky blue, dan navy. Token warna berada di `lib/app/theme/app_colors.dart`.
 
 ```txt
 Primary Blue       #2563EB
@@ -372,7 +372,7 @@ Button vertical padding         14-18
 Bottom sheet padding            20-28
 ```
 
-UI Dompet Sheva harus terasa lega. Jangan padat seperti aplikasi admin dashboard.
+UI DompetKu harus terasa lega. Jangan padat seperti aplikasi admin dashboard.
 
 ---
 
@@ -448,7 +448,7 @@ Do not:
 
 ## 11. Component System
 
-Dompet Sheva harus memakai custom reusable components. Jangan terlalu bergantung pada widget default tanpa styling.
+DompetKu harus memakai custom reusable components. Jangan terlalu bergantung pada widget default tanpa styling.
 
 ## 11.1 Required Components
 
@@ -775,7 +775,7 @@ Group settings:
 * Tampilan
 * Data & Backup
 * Keamanan
-* Tentang Dompet Sheva
+* Tentang DompetKu
 
 List tile harus:
 
@@ -802,7 +802,7 @@ Contoh tone:
 
 ```txt
 Belum ada transaksi
-Tambahkan transaksi pertama agar Dompet Sheva bisa mulai membaca pola keuanganmu.
+Tambahkan transaksi pertama agar DompetKu bisa mulai membaca pola keuanganmu.
 ```
 
 Empty state tidak boleh terasa seperti halaman rusak atau kosong.
@@ -890,7 +890,7 @@ Microcopy harus membantu.
 Contoh baik:
 
 ```txt
-Tambahkan transaksi pertama agar Dompet Sheva bisa membaca pola keuanganmu.
+Tambahkan transaksi pertama agar DompetKu bisa membaca pola keuanganmu.
 Budget makan sudah terpakai 80%.
 Pengeluaran bulan ini lebih rendah dari bulan lalu.
 ```
@@ -1070,7 +1070,7 @@ Jangan:
 
 ## 28. Accessibility Rules
 
-Dompet Sheva harus memperhatikan:
+DompetKu harus memperhatikan:
 
 * kontras teks
 * touch target
@@ -1186,6 +1186,6 @@ Setiap screen harus memenuhi standar:
 
 ## 32. Final Design Statement
 
-Dompet Sheva should feel like a calm, premium, iOS-inspired personal finance app adapted for Android. It must prioritize fast input, readable financial information, soft visual hierarchy, elegant surfaces, smooth motion, and offline-first practicality.
+DompetKu should feel like a calm, premium, iOS-inspired personal finance app adapted for Android. It must prioritize fast input, readable financial information, soft visual hierarchy, elegant surfaces, smooth motion, and offline-first practicality.
 
 The design must never look like a generic AI-generated dashboard or default Flutter Material app.

@@ -1,15 +1,15 @@
 <p align="center">
-  <img src="assets/icons/app_icon.png" width="96" alt="Dompet Sheva logo">
+  <img src="assets/icons/app_icon.png" width="96" alt="DompetKu logo">
 </p>
 
-<h1 align="center">Dompet Sheva</h1>
+<h1 align="center">DompetKu</h1>
 
 <p align="center">
   Offline-first personal finance tracker for Android.
 </p>
 
 <p align="center">
-  Dompet Sheva helps users track income, expenses, wallets, budgets, backups, and app updates locally on their device.
+  DompetKu helps users track income, expenses, wallets, budgets, backups, and app updates locally on their device.
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@
 
 ## Branding and Compatibility
 
-The app is now named **Dompet Sheva**, with Dart package `dompet_sheva`.
+The app is now named **DompetKu**, with Dart package `dompet_sheva`.
 The Android application ID, native update channel, database name, and backup format remain compatible with existing installations. Updating an existing installation requires the same signing key.
 
 The GitHub repository and update endpoint still use the existing repository URL. Historical release notes, published APK filenames, and screenshots in `docs/` describe earlier releases; they have not been rewritten as new releases. The wallet icon uses the blue brand palette. Run `scripts/render-brand-icons.ps1` on Windows to render the SVG sources, then `dart run flutter_launcher_icons` to regenerate Android launchers.
@@ -50,7 +50,7 @@ The GitHub repository and update endpoint still use the existing repository URL.
 - Data stays on the device
 - Backup files contain financial data and should be stored safely
 
-Dompet Sheva uses the internet only for user-triggered actions such as checking app updates, downloading an APK update, opening external links, or sharing exported files through Android.
+DompetKu uses the internet only for user-triggered actions such as checking app updates, downloading an APK update, opening external links, or sharing exported files through Android.
 
 ## Download
 
@@ -60,7 +60,7 @@ https://github.com/AnandaSheva/DompetKu/releases/
 
 For most modern Android phones, use the `arm64` APK.
 
-APK naming for future Dompet Sheva releases (replace `{VERSION}` with the release version):
+APK naming for future DompetKu releases (replace `{VERSION}` with the release version):
 
 ```txt
 DompetSheva-v{VERSION}-arm64.apk
@@ -138,7 +138,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## AI-Assisted Development
 
-Dompet Sheva includes repository-level instructions for AI-assisted development. AI-generated changes must follow the same standards as human contributions: small scope, no secrets, no unnecessary permissions, and passing checks.
+DompetKu includes repository-level instructions for AI-assisted development. AI-generated changes must follow the same standards as human contributions: small scope, no secrets, no unnecessary permissions, and passing checks.
 
 - [AGENTS.md](AGENTS.md)
 - [AI-assisted development guide](docs/ai-assisted-development.md)
@@ -153,12 +153,12 @@ See [SECURITY.md](SECURITY.md).
 
 ## Support Development
 
-If Dompet Sheva helps you, you can support its ongoing development here:
+If DompetKu helps you, you can support its ongoing development here:
 
 https://tako.id/shevaanandaa
 
 ## License
 
-Dompet Sheva is released under the [MIT License](LICENSE).
+DompetKu is released under the [MIT License](LICENSE).
 
 Copyright (c) 2026 Sheva.

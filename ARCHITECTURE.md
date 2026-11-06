@@ -1,8 +1,8 @@
-# Dompet Sheva Architecture
+# DompetKu Architecture
 
 ## 1. Architecture Overview
 
-Dompet Sheva menggunakan arsitektur **feature-first Flutter architecture** dengan pemisahan yang jelas antara:
+DompetKu menggunakan arsitektur **feature-first Flutter architecture** dengan pemisahan yang jelas antara:
 
 - app configuration
 - core utilities
@@ -19,7 +19,7 @@ Tujuan arsitektur ini adalah menjaga project tetap:
 - cocok untuk open-source
 - aman untuk dikerjakan bersama Codex/GPT
 
-Dompet Sheva adalah aplikasi **offline-first personal money management**, sehingga arsitektur harus memprioritaskan data lokal, performa, stabilitas, dan maintainability.
+DompetKu adalah aplikasi **offline-first personal money management**, sehingga arsitektur harus memprioritaskan data lokal, performa, stabilitas, dan maintainability.
 
 ---
 
@@ -47,7 +47,7 @@ Tidak boleh ada dependency wajib ke server untuk v1.0.
 
 ## 2.2 Android-First
 
-Target utama Dompet Sheva adalah Android.
+Target utama DompetKu adalah Android.
 
 Web hanya digunakan untuk preview development.
 
@@ -1220,6 +1220,6 @@ Sebelum menerima pull request atau perubahan Codex, cek:
 
 ## 28. Final Architecture Statement
 
-Dompet Sheva uses a feature-first Flutter architecture with local-first data storage, reusable premium UI components, centralized design tokens, and clear separation between app, core, data, features, and shared layers.
+DompetKu uses a feature-first Flutter architecture with local-first data storage, reusable premium UI components, centralized design tokens, and clear separation between app, core, data, features, and shared layers.
 
 The architecture must support a lightweight offline Android app that is elegant, stable, maintainable, and open-source ready.
