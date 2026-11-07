@@ -1,11 +1,12 @@
 import 'package:drift/drift.dart';
 
 import '../local/database/app_database.dart';
+import '../store/finance_store.dart';
 
 class SettingsRepository {
   const SettingsRepository(this._database);
 
-  final AppDatabase _database;
+  final FinanceStore _database;
 
   Stream<AppSettingEntry?> watchSettings() {
     return _database.appSettingsDao.watchSettings();

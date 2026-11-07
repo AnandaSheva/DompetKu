@@ -4,12 +4,13 @@ import '../../core/enums/transaction_type.dart';
 import '../../core/helpers/calculation_helper.dart';
 import '../../core/helpers/monthly_period.dart';
 import '../local/database/app_database.dart';
+import '../store/finance_store.dart';
 import 'app_models.dart';
 
 class DashboardRepository {
   const DashboardRepository(this._database);
 
-  final AppDatabase _database;
+  final FinanceStore _database;
 
   Stream<DashboardSummary> watchSummary() {
     final controller = StreamController<DashboardSummary>();

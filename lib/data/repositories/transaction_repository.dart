@@ -4,12 +4,13 @@ import 'package:drift/drift.dart';
 
 import '../../core/enums/transaction_type.dart';
 import '../local/database/app_database.dart';
+import '../store/finance_store.dart';
 import 'app_models.dart';
 
 class TransactionRepository {
   const TransactionRepository(this._database);
 
-  final AppDatabase _database;
+  final FinanceStore _database;
 
   Stream<List<TransactionDetail>> watchDetails() {
     final controller = StreamController<List<TransactionDetail>>();

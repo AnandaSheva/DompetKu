@@ -47,7 +47,7 @@ flutter build apk --release --split-per-abi
 ## Coding Rules
 
 - Keep DompetKu offline-first.
-- Keep data local by default.
+- Keep Android data local by default. Web uses Google sign-in and per-account Firebase Firestore, as explicitly requested.
 - Keep user-facing app name as `DompetKu`.
 - Use `dompet_sheva` for the Dart package and `dompet-sheva` for export filenames.
 - Preserve the legacy Android application ID, native update channel, and database name for installed-app and local-data compatibility. Repository URLs must point to an existing release source.
@@ -56,7 +56,7 @@ flutter build apk --release --split-per-abi
 - Use existing repositories, providers, theme tokens, and shared components.
 - Do not rewrite working systems without a clear reason.
 - Do not add unnecessary dependencies.
-- Do not add backend, login, cloud sync, ads, tracking, or analytics.
+- Do not add a custom backend, ads, tracking, or analytics. Google login and Firestore are allowed only for web; keep Android offline without accounts.
 - Do not commit generated junk, local exports, backups, or temporary reports.
 
 ## UI and UX Rules
@@ -83,12 +83,12 @@ flutter build apk --release --split-per-abi
 
 ## Privacy Rules
 
-- No account requirement.
-- No cloud sync for core features.
+- Android requires no account. Web requires Google sign-in.
+- Android core features stay local. Web financial data syncs only within the authenticated Firebase UID.
 - No ads.
 - No analytics or tracking.
-- No hidden network activity.
-- Internet access should remain tied to user-triggered actions such as update checks, APK downloads, external links, or sharing exports.
+- No hidden network activity. Explain Google sign-in, Firestore sync, and optional persistent browser cache in web privacy copy.
+- Android internet access remains tied to user-triggered update checks, APK downloads, external links, or sharing exports. Web may use Firebase Auth and Firestore after account sign-in.
 
 ## Data Rules
 
@@ -97,6 +97,18 @@ flutter build apk --release --split-per-abi
 - Validate imports before destructive restore.
 - Transfers must not count as income or expense.
 - Preserve migration safety for existing local data.
+
+## Web Firebase Rules
+
+- Gate web account repositories behind completed auth-state initialization.
+- Scope every cloud path to the Firebase UID and enforce ownership in Firestore Security Rules.
+- Keep one shared subscription per account collection; never create a listener per widget.
+- Ask for trusted-device consent before persistent browser caching.
+- Preserve pending writes and block logout until synchronization succeeds.
+- Legacy local migration needs a downloaded backup, visible target account, and explicit user action.
+- Stage destructive imports before atomically activating the replacement dataset.
+- Use Firebase emulators for account isolation, rules, and offline-write tests; never test on production financial data.
+- Do not add Firebase Analytics or upload Google credentials to Firestore.
 
 ## Release Rules
 
@@ -109,8 +121,8 @@ flutter build apk --release --split-per-abi
 ## Do Not Do
 
 - Do not add backend services.
-- Do not add login or online accounts.
-- Do not add cloud sync.
+- Do not add login or online accounts to Android. Google sign-in is allowed for web.
+- Do not add cloud sync to Android. Web may use Firestore on the Spark plan; never enable billing automatically.
 - Do not add ads, analytics, or tracking.
 - Do not add chatbot or AI features to the app.
 - Do not add broad storage, overlay, accessibility, SMS, contacts, or location permissions.

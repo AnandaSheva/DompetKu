@@ -1,10 +1,10 @@
-import '../local/database/app_database.dart';
+import '../store/finance_store.dart';
 import '../local/seed/default_seed_data.dart';
 
 class BootstrapRepository {
   const BootstrapRepository(this._database);
 
-  final AppDatabase _database;
+  final FinanceStore _database;
 
   Future<void> ensureSeeded() async {
     final now = DateTime.now();

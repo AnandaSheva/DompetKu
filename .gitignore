@@ -67,3 +67,8 @@ tmp/
 temp/
 # Widget Preview related
 .widget_preview/
+
+# Firebase emulators and tooling
+.firebase/
+**/node_modules/
+.vercel/

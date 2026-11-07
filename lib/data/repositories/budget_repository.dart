@@ -6,12 +6,13 @@ import '../../core/enums/transaction_type.dart';
 import '../../core/helpers/calculation_helper.dart';
 import '../../core/helpers/monthly_period.dart';
 import '../local/database/app_database.dart';
+import '../store/finance_store.dart';
 import 'app_models.dart';
 
 class BudgetRepository {
   const BudgetRepository(this._database);
 
-  final AppDatabase _database;
+  final FinanceStore _database;
 
   Stream<List<BudgetProgress>> watchProgress() {
     final controller = StreamController<List<BudgetProgress>>();

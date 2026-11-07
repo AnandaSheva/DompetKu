@@ -4,6 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/constants/app_constants.dart';
 import '../features/onboarding/onboarding_page.dart';
+import '../features/auth/web_auth_gate.dart';
+import '../features/auth/cloud_account_panel.dart';
+import '../features/auth/cloud_sync_banner.dart';
+import '../features/auth/legacy_migration_gate.dart';
+import '../data/auth/browser_session.dart';
+import 'providers/auth_providers.dart';
 import '../features/security/app_lock_gate.dart';
 import '../shared/layouts/main_shell.dart';
 import '../shared/widgets/loading_state.dart';
@@ -15,11 +21,31 @@ class DompetShevaApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    return ref.watch(webPlatformProvider)
+        ? const WebAuthGate()
+        : const FinanceApp();
+  }
+}
+
+class FinanceApp extends ConsumerWidget {
+  const FinanceApp({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref
         .watch(appSettingsProvider)
         .maybeWhen(data: (value) => value, orElse: () => null);
 
+    final cloud = ref.watch(cloudStoreProvider);
+    final status = cloud == null
+        ? null
+        : ref.watch(cloudStatusProvider).asData?.value;
+    if (status != null) {
+      warnBeforeLeaving(status.pending || status.error != null);
+    }
+
     return MaterialApp(
+      key: ValueKey(status?.dataset ?? 'local'),
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
@@ -40,7 +66,14 @@ class DompetShevaApp extends ConsumerWidget {
                 ? Brightness.light
                 : Brightness.dark,
           ),
-          child: child ?? const SizedBox.shrink(),
+          child: status == null
+              ? child ?? const SizedBox.shrink()
+              : Column(
+                  children: [
+                    CloudSyncBanner(status: status),
+                    Expanded(child: child ?? const SizedBox.shrink()),
+                  ],
+                ),
         );
       },
       home: const AppLockGate(child: _AppGate()),
@@ -66,23 +99,33 @@ class _AppGate extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final bootstrap = ref.watch(appBootstrapProvider);
 
+    final cloud = ref.watch(cloudStoreProvider);
+    final cloudStatus = cloud == null
+        ? null
+        : ref.watch(cloudStatusProvider).asData?.value;
+    if (bootstrap.hasValue && cloudStatus?.loading == true) {
+      if (cloudStatus?.error != null) {
+        return CloudStartupError(error: cloudStatus!.error);
+      }
+      return const LoadingState(message: 'Menyiapkan data akun');
+    }
     return bootstrap.when(
       data: (_) {
         final settings = ref.watch(appSettingsProvider);
         return settings.when(
           data: (value) {
             if (value?.onboardingCompleted ?? false) {
-              return const MainShell();
+              return const LegacyMigrationGate(child: MainShell());
             }
-            return const OnboardingPage();
+            return const LegacyMigrationGate(child: OnboardingPage());
           },
           loading: () => const LoadingState(message: 'Menyiapkan data lokal'),
-          error: (_, _) => const OnboardingPage(),
+          error: (_, _) => const CloudStartupError(),
         );
       },
       loading: () =>
           const LoadingState(message: 'Menyiapkan ${AppConstants.appName}'),
-      error: (_, _) => const LoadingState(message: 'Data belum bisa dimuat'),
+      error: (error, _) => CloudStartupError(error: error),
     );
   }
 }

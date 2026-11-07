@@ -27,7 +27,7 @@ DompetKu adalah aplikasi **offline-first personal money management**, sehingga a
 
 ## 2.1 Offline-First
 
-Semua fitur inti harus bisa berjalan tanpa internet.
+Pada Android, semua fitur inti harus bisa berjalan tanpa internet. Versi web memakai login Google dan Firestore per akun; login pertama membutuhkan internet, sedangkan data yang sudah dicache dapat dipakai offline.
 
 Fitur yang wajib offline:
 
@@ -49,7 +49,7 @@ Tidak boleh ada dependency wajib ke server untuk v1.0.
 
 Target utama DompetKu adalah Android.
 
-Web hanya digunakan untuk preview development.
+Web menggunakan Firebase Authentication dan Cloud Firestore. Android tetap menggunakan Drift lokal tanpa akun.
 
 Prioritas platform:
 
@@ -980,7 +980,7 @@ Rules:
 * jangan menambah package hanya untuk hal kecil
 * jangan menambah package UI besar tanpa alasan
 * jangan menambah backend package untuk v1.0
-* jangan menambah Firebase/Supabase untuk v1.0
+* Firebase Auth dan Firestore hanya digunakan oleh versi web; jangan tambahkan Firebase Analytics atau cloud sync Android
 * jangan menambah analytics/tracking package
 * jangan menambah ads package
 
@@ -1223,3 +1223,29 @@ Sebelum menerima pull request atau perubahan Codex, cek:
 DompetKu uses a feature-first Flutter architecture with local-first data storage, reusable premium UI components, centralized design tokens, and clear separation between app, core, data, features, and shared layers.
 
 The architecture must support a lightweight offline Android app that is elegant, stable, maintainable, and open-source ready.
+
+
+## Web account storage
+
+`FinanceStore` is the storage contract used by the existing financial repositories.
+`AppDatabase` implements it with Drift for Android. `CloudFinanceStore` implements it
+with shared Firestore listeners for web. Existing immutable Drift row objects remain
+value objects at this boundary so financial calculations and forms stay compatible.
+
+Each authenticated UID owns `users/{uid}` and versioned account datasets at
+`users/{uid}/datasets/{dataset}/{collection}/{numericId}`. Numeric IDs for new cloud
+records are random safe integers, avoiding cross-device auto-increment collisions.
+Amounts remain integer Rupiah. One subscription per collection is shared by all
+repositories; opening another screen does not create another backend listener.
+
+Auth loading, signed-out, and signed-in states have separate widget trees. The
+signed-in subtree and its Navigator are disposed when the UID changes. Native
+bootstrap never initializes Firebase. Persistent web cache is opt-in; pending
+writes remain visible and prevent logout from discarding them. Failed writes can
+be retried and included in a JSON export. On a trusted device a UID-scoped outbox
+also preserves rejected writes across refreshes.
+
+Imports and resets upload a separate dataset in bounded batches, then atomically
+switch `activeDataset` only after upload succeeds. Legacy migration is explicit,
+requires a backup, and records an immutable migration fingerprint in the profile.
+See `docs/firebase-web.md` for setup, tests, quotas, and deployment checks.

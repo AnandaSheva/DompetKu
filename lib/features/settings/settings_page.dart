@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/providers/app_providers.dart';
+import '../auth/cloud_account_panel.dart';
+import '../../data/store/cloud_finance_store.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_radius.dart';
 import '../../app/theme/app_spacing.dart';
@@ -39,7 +41,9 @@ class SettingsPage extends ConsumerWidget {
       error: (_, _) => 'Versi aplikasi belum bisa dimuat',
     );
     final aboutSubtitle = packageInfo.when(
-      data: (info) => 'Versi ${info.version}, offline tanpa akun',
+      data: (info) => kIsWeb
+          ? 'Versi ${info.version}, terhubung ke akun Google'
+          : 'Versi ${info.version}, offline tanpa akun',
       loading: () => 'Memuat versi...',
       error: (_, _) => 'Versi aplikasi belum bisa dimuat',
     );
@@ -57,6 +61,7 @@ class SettingsPage extends ConsumerWidget {
         children: [
           Text('Pengaturan', style: theme.textTheme.displayMedium),
           const SizedBox(height: AppSpacing.xxl),
+          if (kIsWeb) const CloudAccountPanel(),
           _SettingsTile(
             icon: Icons.dark_mode_rounded,
             title: 'Tampilan',
@@ -149,16 +154,16 @@ class SettingsPage extends ConsumerWidget {
               actionLabel: 'Lanjutkan',
               note: 'Dukungan bersifat opsional.',
             ),
-          // ),
-          // _SettingsTile(
-          //   icon: Icons.integration_instructions_rounded,
-          //   title: 'Repositori GitHub',
-          //   subtitle: 'Lihat kode sumber dan perkembangan proyek.',
-          //   onTap: () => _confirmExternalLink(
-          //     context,
-          //     url: 'https://github.com/fadd3079-prog/DompetKu',
-          //     actionLabel: 'Buka GitHub',
-          //   ),
+            // ),
+            // _SettingsTile(
+            //   icon: Icons.integration_instructions_rounded,
+            //   title: 'Repositori GitHub',
+            //   subtitle: 'Lihat kode sumber dan perkembangan proyek.',
+            //   onTap: () => _confirmExternalLink(
+            //     context,
+            //     url: 'https://github.com/fadd3079-prog/DompetKu',
+            //     actionLabel: 'Buka GitHub',
+            //   ),
           ),
           _SettingsTile(
             icon: Icons.system_update_alt_rounded,
@@ -546,7 +551,7 @@ class SettingsPage extends ConsumerWidget {
         context: context,
         title: 'Pulihkan cadangan?',
         message:
-            'Memulihkan cadangan akan mengganti data yang ada di perangkat ini. Pastikan kamu sudah mencadangkan data terbaru.\n\nIsi cadangan: ${preview.transactions} transaksi, ${preview.wallets} dompet, ${preview.categories} kategori, dan ${preview.budgets} budget.',
+            'Memulihkan cadangan akan mengganti data yang ada ${kIsWeb ? 'di akun Google ini dan semua perangkat yang terhubung' : 'di perangkat ini'}. Pastikan kamu sudah mencadangkan data terbaru.\n\nIsi cadangan: ${preview.transactions} transaksi, ${preview.wallets} dompet, ${preview.categories} kategori, dan ${preview.budgets} budget.',
         confirmLabel: 'Pulihkan',
         danger: true,
       );
@@ -559,11 +564,13 @@ class SettingsPage extends ConsumerWidget {
         'Data berhasil dipulihkan.',
         type: TopToastType.success,
       );
-    } catch (_) {
+    } catch (error) {
       if (!context.mounted) return;
       TopToast.show(
         context,
-        'File cadangan tidak valid.',
+        error is FormatException
+            ? 'File cadangan tidak valid.'
+            : cloudErrorMessage(error),
         type: TopToastType.warning,
       );
     }
@@ -577,15 +584,24 @@ class SettingsPage extends ConsumerWidget {
     if (confirmed != true) return;
     final backupRepository = ref.read(backupRepositoryProvider);
     final securityRepository = ref.read(securityRepositoryProvider);
-    await backupRepository.resetData();
-    await securityRepository.disablePin();
-    if (!context.mounted) return;
-    ref.invalidate(securitySettingsProvider);
-    TopToast.show(
-      context,
-      'Data berhasil direset.',
-      type: TopToastType.success,
-    );
+    try {
+      await backupRepository.resetData();
+      if (!kIsWeb) await securityRepository.disablePin();
+      if (!context.mounted) return;
+      ref.invalidate(securitySettingsProvider);
+      TopToast.show(
+        context,
+        'Data berhasil direset.',
+        type: TopToastType.success,
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      TopToast.show(
+        context,
+        cloudErrorMessage(error),
+        type: TopToastType.warning,
+      );
+    }
   }
 
   void _showCategoriesSheet(BuildContext context) {
@@ -690,7 +706,9 @@ class SettingsPage extends ConsumerWidget {
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          'Aplikasi pencatat keuangan pribadi offline.',
+                          kIsWeb
+                              ? 'Catatan keuangan pribadi dengan akun Google.'
+                              : 'Aplikasi pencatat keuangan pribadi offline.',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ],
@@ -709,7 +727,9 @@ class SettingsPage extends ConsumerWidget {
                   ),
                 ),
                 child: Text(
-                  '$versionLabel\nData tersimpan lokal di perangkat. Tidak perlu akun atau koneksi cloud.',
+                  kIsWeb
+                      ? '$versionLabel\nData keuangan disimpan di Google Firebase sesuai akun. Cache browser mengikuti pilihan perangkat pribadi. Tanpa iklan dan analytics.'
+                      : '$versionLabel\nData tersimpan lokal di perangkat. Tidak perlu akun atau koneksi cloud.',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),
@@ -1127,8 +1147,10 @@ class _ResetDialogState extends State<_ResetDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Semua transaksi, dompet, kategori, budget, dan pengaturan akan dihapus dari perangkat ini. Data tidak bisa dikembalikan kecuali kamu punya cadangan.',
+          Text(
+            kIsWeb
+                ? 'Data akun akan direset pada semua perangkat yang terhubung. Sinkronkan semua perangkat dan simpan cadangan terlebih dahulu. Data lokal lama yang belum dipindahkan tetap terpisah.'
+                : 'Semua transaksi, dompet, kategori, budget, dan pengaturan akan dihapus dari perangkat ini. Data tidak bisa dikembalikan kecuali kamu punya cadangan.',
           ),
           const SizedBox(height: AppSpacing.lg),
           TextField(

@@ -2,11 +2,12 @@ import 'package:drift/drift.dart';
 
 import '../../core/enums/category_type.dart';
 import '../local/database/app_database.dart';
+import '../store/finance_store.dart';
 
 class CategoryRepository {
   const CategoryRepository(this._database);
 
-  final AppDatabase _database;
+  final FinanceStore _database;
 
   Stream<List<CategoryEntry>> watchAll() {
     return _database.categoriesDao.watchAll();

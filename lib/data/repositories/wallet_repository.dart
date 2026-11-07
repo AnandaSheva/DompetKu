@@ -4,12 +4,13 @@ import 'package:drift/drift.dart';
 
 import '../../core/helpers/calculation_helper.dart';
 import '../local/database/app_database.dart';
+import '../store/finance_store.dart';
 import 'app_models.dart';
 
 class WalletRepository {
   const WalletRepository(this._database);
 
-  final AppDatabase _database;
+  final FinanceStore _database;
 
   Stream<List<WalletBalance>> watchWalletBalances() {
     final controller = StreamController<List<WalletBalance>>();

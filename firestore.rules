@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    function identifier(value) {
+      return value is int && value > 0 && value <= 9007199254740991;
+    }
+    function optionalId(value) { return value == null || identifier(value); }
+    function money(value) {
+      return value is int && value >= -9007199254740991 && value <= 9007199254740991;
+    }
+    function text(value, maximum) {
+      return value is string && value.size() > 0 && value.size() <= maximum;
+    }
+    function optionalText(value, maximum) {
+      return value == null || (value is string && value.size() <= maximum);
+    }
+    function base(data, documentId) {
+      return identifier(data.id) && string(data.id) == documentId
+        && identifier(data.createdAt) && identifier(data.updatedAt);
+    }
+    function validWallet(d) {
+      return d.keys().hasOnly(['id','name','type','initialBalance','isArchived','createdAt','updatedAt'])
+        && text(d.name, 80) && d.type in ['cash','ewallet','bank','savings']
+        && money(d.initialBalance) && d.isArchived is bool;
+    }
+    function validCategory(d) {
+      return d.keys().hasOnly(['id','name','type','groupName','iconKey','colorValue','isDefault','isArchived','createdAt','updatedAt'])
+        && text(d.name,80) && d.type in ['income','expense','both']
+        && text(d.groupName,80) && text(d.iconKey,80)
+        && d.colorValue is int && d.colorValue >= 0 && d.colorValue <= 4294967295
+        && d.isDefault is bool && d.isArchived is bool;
+    }
+    function validTransaction(d) {
+      return d.keys().hasOnly(['id','type','amount','categoryId','walletId','transferWalletId','date','note','createdAt','updatedAt'])
+        && d.type in ['income','expense','transfer'] && money(d.amount) && d.amount > 0
+        && identifier(d.walletId) && identifier(d.date) && optionalText(d.note,4000)
+        && (d.type == 'transfer'
+          ? (d.categoryId == null && identifier(d.transferWalletId) && d.walletId != d.transferWalletId)
+          : (identifier(d.categoryId) && d.transferWalletId == null));
+    }
+    function validBudget(d) {
+      return d.keys().hasOnly(['id','categoryId','month','limitAmount','createdAt','updatedAt'])
+        && optionalId(d.categoryId) && d.month is string
+        && d.month.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+        && money(d.limitAmount) && d.limitAmount > 0;
+    }
+    function validSettings(d) {
+      return d.keys().hasOnly(['id','userName','currency','themeMode','hideBalance','onboardingCompleted','monthlyResetDay','createdAt','updatedAt'])
+        && d.id == 1 && optionalText(d.userName,80) && d.currency == 'IDR'
+        && d.themeMode in ['system','light','dark'] && d.hideBalance is bool
+        && d.onboardingCompleted is bool && d.monthlyResetDay is int
+        && d.monthlyResetDay >= 1 && d.monthlyResetDay <= 31;
+    }
+    function validTemplate(d) {
+      return d.keys().hasOnly(['id','title','transactionType','defaultAmount','categoryId','walletId','iconKey','colorValue','createdAt','updatedAt'])
+        && text(d.title,80) && d.transactionType in ['income','expense','transfer']
+        && (d.defaultAmount == null || (money(d.defaultAmount) && d.defaultAmount > 0))
+        && optionalId(d.categoryId) && optionalId(d.walletId) && text(d.iconKey,80)
+        && d.colorValue is int && d.colorValue >= 0 && d.colorValue <= 4294967295;
+    }
+    function knownCollection(collection) {
+      return collection in ['wallets','categories','transactions','budgets','settings','quick_templates'];
+    }
+    function validRow(collection, data) {
+      return (collection == 'wallets' && validWallet(data))
+        || (collection == 'categories' && validCategory(data))
+        || (collection == 'transactions' && validTransaction(data))
+        || (collection == 'budgets' && validBudget(data))
+        || (collection == 'settings' && validSettings(data))
+        || (collection == 'quick_templates' && validTemplate(data));
+    }
+    function profile(d) {
+      return d.keys().hasOnly(['schemaVersion','activeDataset','createdAt','legacyMigration','retiredDatasets'])
+        && d.schemaVersion == 1 && identifier(d.createdAt)
+        && d.activeDataset is string && d.activeDataset.matches('^[a-zA-Z0-9_-]{1,128}$')
+        && (d.legacyMigration == null || (d.legacyMigration is string && d.legacyMigration.matches('^[a-f0-9]{64}$')))
+        && d.get('retiredDatasets', []) is list && d.get('retiredDatasets', []).size() <= 100;
+    }
+    match /users/{uid} {
+      allow get: if owner(uid);
+      allow create: if owner(uid) && profile(request.resource.data);
+      allow update: if owner(uid) && profile(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (resource.data.legacyMigration == null
+          || request.resource.data.legacyMigration == resource.data.legacyMigration);
+      match /datasets/{dataset}/{collection}/{documentId} {
+        allow read: if owner(uid) && knownCollection(collection);
+        allow create, update: if owner(uid) && knownCollection(collection)
+          && base(request.resource.data, documentId)
+          && validRow(collection, request.resource.data);
+        allow delete: if owner(uid) && knownCollection(collection);
+      }
+    }
+  }
+}

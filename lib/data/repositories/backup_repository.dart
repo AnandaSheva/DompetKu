@@ -7,12 +7,13 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../local/database/app_database.dart';
+import '../store/finance_store.dart';
 import '../local/seed/default_seed_data.dart';
 
 class BackupRepository {
   const BackupRepository(this._database);
 
-  final AppDatabase _database;
+  final FinanceStore _database;
 
   Future<String> exportJson() async {
     final payload = await _backupPayload();
@@ -107,9 +108,10 @@ class BackupRepository {
   }
 
   Future<void> restoreImport(BackupImportPreview preview) async {
+    final payload = _decodeAndValidate(jsonEncode(preview.payload));
     await _database.transaction(() async {
       await _database.backupDao.clearUserData();
-      await _restore(preview.payload);
+      await _restore(payload);
     });
   }
 
@@ -123,12 +125,26 @@ class BackupRepository {
     });
   }
 
+  Future<Map<String, dynamic>> exportPayload() => _backupPayload();
+
+  BackupImportPreview previewFromJson(String raw) {
+    final payload = _decodeAndValidate(raw);
+    return BackupImportPreview(
+      payload: payload,
+      transactions: _requiredList(payload, 'transactions').length,
+      wallets: _requiredList(payload, 'wallets').length,
+      categories: _requiredList(payload, 'categories').length,
+      budgets: _requiredList(payload, 'budgets').length,
+    );
+  }
+
   Future<Map<String, dynamic>> _backupPayload() async {
     final transactions = await _database.transactionsDao.getAll();
     final categories = await _database.categoriesDao.getAll();
     final wallets = await _database.walletsDao.getAll();
     final budgets = await _database.budgetsDao.getAll();
     final settings = await _database.appSettingsDao.getSettings();
+    final templates = await _database.getQuickTemplates();
 
     return {
       'version': 1,
@@ -137,7 +153,20 @@ class BackupRepository {
       'categories': categories.map(_categoryToJson).toList(),
       'wallets': wallets.map(_walletToJson).toList(),
       'budgets': budgets.map(_budgetToJson).toList(),
-      'quick_templates': <Map<String, dynamic>>[],
+      'quick_templates': templates
+          .map(
+            (entry) => {
+              'id': entry.id,
+              'title': entry.title,
+              'transaction_type': entry.transactionType,
+              'default_amount': entry.defaultAmount,
+              'category_id': entry.categoryId,
+              'wallet_id': entry.walletId,
+              'icon_key': entry.iconKey,
+              'color_value': entry.colorValue,
+            },
+          )
+          .toList(),
       'app_settings': settings == null ? null : _settingsToJson(settings),
     };
   }
@@ -181,6 +210,22 @@ class BackupRepository {
       await _database.budgetsDao.add(_budgetFromJson(item, now));
     }
 
+    await _database.seedDao.insertQuickTemplates([
+      for (final item in _requiredList(payload, 'quick_templates'))
+        QuickTemplateEntriesCompanion.insert(
+          id: Value(_requiredId(item, 'id')),
+          title: _requiredString(item, 'title'),
+          transactionType: _requiredString(item, 'transaction_type'),
+          defaultAmount: Value(_optionalInt(item, 'default_amount')),
+          categoryId: Value(_optionalId(item, 'category_id')),
+          walletId: Value(_optionalId(item, 'wallet_id')),
+          iconKey: _requiredString(item, 'icon_key'),
+          colorValue: _requiredInt(item, 'color_value'),
+          createdAt: now,
+          updatedAt: now,
+        ),
+    ]);
+
     await _database.seedDao.insertSettings(
       settings is Map<String, dynamic>
           ? _settingsFromJson(settings, now)
@@ -208,6 +253,30 @@ class BackupRepository {
     final categoryTypes = _validateCategories(categories);
     _validateTransactions(transactions, walletIds, categoryTypes);
     _validateBudgets(budgets, categoryTypes.keys.toSet());
+    // Older version-1 exports may omit this optional collection.
+    decoded.putIfAbsent('quick_templates', () => <Map<String, dynamic>>[]);
+    final templateIds = <int>{};
+    for (final item in _requiredList(decoded, 'quick_templates')) {
+      if (!templateIds.add(_requiredId(item, 'id'))) {
+        throw const FormatException('File cadangan tidak valid.');
+      }
+      _requiredString(item, 'title');
+      _requiredString(
+        item,
+        'transaction_type',
+        allowed: const {'income', 'expense', 'transfer'},
+      );
+      _requiredString(item, 'icon_key');
+      _requiredInt(item, 'color_value');
+      final amount = _optionalInt(item, 'default_amount');
+      final wallet = _optionalId(item, 'wallet_id');
+      final category = _optionalId(item, 'category_id');
+      if ((amount != null && amount <= 0) ||
+          (wallet != null && !walletIds.contains(wallet)) ||
+          (category != null && !categoryTypes.containsKey(category))) {
+        throw const FormatException('File cadangan tidak valid.');
+      }
+    }
     if (settings != null) _validateSettings(_map(settings));
 
     return decoded;

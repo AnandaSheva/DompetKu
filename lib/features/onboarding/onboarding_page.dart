@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers/app_providers.dart';
@@ -82,7 +83,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Text(
-                    'Mulai catat pemasukan, pengeluaran, dan transfer secara offline.',
+                    kIsWeb
+                        ? 'Catat pemasukan, pengeluaran, dan transfer. Data disimpan sesuai akun Google kamu.'
+                        : 'Mulai catat pemasukan, pengeluaran, dan transfer secara offline.',
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: AppSpacing.xxxl),

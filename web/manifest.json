@@ -5,7 +5,7 @@
     "display": "standalone",
     "background_color": "#F5F8FF",
     "theme_color": "#2563EB",
-    "description": "Aplikasi pencatat keuangan pribadi offline.",
+    "description": "Aplikasi keuangan pribadi dengan login Google dan penyimpanan data per akun.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

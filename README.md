@@ -5,7 +5,7 @@
 <h1 align="center">DompetKu</h1>
 
 <p align="center">
-  Offline-first personal finance tracker for Android.
+  Personal finance tracker: offline-first on Android, Google sign-in and Firebase sync on web.
 </p>
 
 <p align="center">
@@ -43,14 +43,14 @@ The GitHub repository and update endpoint still use the existing repository URL.
 
 ## Privacy Model
 
-- No account
-- No cloud sync
+- Android: no account and no cloud sync
+- Web: Google sign-in and financial data stored under the Firebase UID
 - No ads
 - No analytics or tracking
-- Data stays on the device
+- Android data stays on the device; web data is stored in Google Firebase
 - Backup files contain financial data and should be stored safely
 
-DompetKu uses the internet only for user-triggered actions such as checking app updates, downloading an APK update, opening external links, or sharing exported files through Android.
+On Android, DompetKu uses the internet for user-triggered update checks, APK downloads, external links, and sharing. On web, Firebase Authentication handles Google sign-in and Firestore synchronizes account data. Persistent browser cache requires trusted-device consent. Browser caches and backup files are not full database encryption. See [web setup and verification](docs/firebase-web.md).
 
 ## Download
 

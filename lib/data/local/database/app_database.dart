@@ -2,6 +2,8 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../store/finance_store.dart';
+
 part 'app_database.g.dart';
 
 @DataClassName('TransactionEntry')
@@ -114,29 +116,38 @@ class AppSettingEntries extends Table {
     AppSettingEntries,
   ],
 )
-class SeedDao extends DatabaseAccessor<AppDatabase> with _$SeedDaoMixin {
+class SeedDao extends DatabaseAccessor<AppDatabase>
+    with _$SeedDaoMixin
+    implements SeedStore {
   SeedDao(super.db);
 
+  @override
   Future<int> walletCount() =>
       select(walletEntries).get().then((v) => v.length);
+  @override
   Future<int> categoryCount() =>
       select(categoryEntries).get().then((v) => v.length);
+  @override
   Future<int> settingsCount() =>
       select(appSettingEntries).get().then((v) => v.length);
+  @override
   Future<void> insertWallets(List<WalletEntriesCompanion> values) async {
     await batch((batch) => batch.insertAll(walletEntries, values));
   }
 
+  @override
   Future<void> insertCategories(List<CategoryEntriesCompanion> values) async {
     await batch((batch) => batch.insertAll(categoryEntries, values));
   }
 
+  @override
   Future<void> insertQuickTemplates(
     List<QuickTemplateEntriesCompanion> values,
   ) async {
     await batch((batch) => batch.insertAll(quickTemplateEntries, values));
   }
 
+  @override
   Future<void> insertSettings(AppSettingEntriesCompanion value) {
     return into(appSettingEntries).insert(value);
   }
@@ -144,9 +155,11 @@ class SeedDao extends DatabaseAccessor<AppDatabase> with _$SeedDaoMixin {
 
 @DriftAccessor(tables: [TransactionEntries])
 class TransactionsDao extends DatabaseAccessor<AppDatabase>
-    with _$TransactionsDaoMixin {
+    with _$TransactionsDaoMixin
+    implements TransactionsStore {
   TransactionsDao(super.db);
 
+  @override
   Stream<List<TransactionEntry>> watchAll() {
     return (select(transactionEntries)..orderBy([
           (table) =>
@@ -159,6 +172,7 @@ class TransactionsDao extends DatabaseAccessor<AppDatabase>
         .watch();
   }
 
+  @override
   Future<List<TransactionEntry>> getAll() {
     return (select(transactionEntries)..orderBy([
           (table) =>
@@ -167,26 +181,31 @@ class TransactionsDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
+  @override
   Future<TransactionEntry?> getById(int id) {
     return (select(
       transactionEntries,
     )..where((table) => table.id.equals(id))).getSingleOrNull();
   }
 
+  @override
   Future<int> add(TransactionEntriesCompanion entry) {
     return into(transactionEntries).insert(entry);
   }
 
+  @override
   Future<void> updateEntry(TransactionEntriesCompanion entry) {
     return update(transactionEntries).replace(entry);
   }
 
+  @override
   Future<int> deleteById(int id) {
     return (delete(
       transactionEntries,
     )..where((table) => table.id.equals(id))).go();
   }
 
+  @override
   Future<int> countByWallet(int walletId) {
     return (select(transactionEntries)..where(
           (table) =>
@@ -197,6 +216,7 @@ class TransactionsDao extends DatabaseAccessor<AppDatabase>
         .then((value) => value.length);
   }
 
+  @override
   Future<int> countByCategory(int categoryId) {
     return (select(transactionEntries)
           ..where((table) => table.categoryId.equals(categoryId)))
@@ -207,9 +227,11 @@ class TransactionsDao extends DatabaseAccessor<AppDatabase>
 
 @DriftAccessor(tables: [CategoryEntries])
 class CategoriesDao extends DatabaseAccessor<AppDatabase>
-    with _$CategoriesDaoMixin {
+    with _$CategoriesDaoMixin
+    implements CategoriesStore {
   CategoriesDao(super.db);
 
+  @override
   Stream<List<CategoryEntry>> watchAll() {
     return (select(categoryEntries)..orderBy([
           (table) => OrderingTerm(expression: table.groupName),
@@ -218,8 +240,10 @@ class CategoriesDao extends DatabaseAccessor<AppDatabase>
         .watch();
   }
 
+  @override
   Future<List<CategoryEntry>> getAll() => select(categoryEntries).get();
 
+  @override
   Future<List<CategoryEntry>> getByType(String type) {
     return (select(categoryEntries)
           ..where(
@@ -234,20 +258,24 @@ class CategoriesDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
+  @override
   Future<int> add(CategoryEntriesCompanion entry) {
     return into(categoryEntries).insert(entry);
   }
 
+  @override
   Future<void> updateEntry(CategoryEntriesCompanion entry) {
     return update(categoryEntries).replace(entry);
   }
 
+  @override
   Future<int> deleteById(int id) {
     return (delete(
       categoryEntries,
     )..where((table) => table.id.equals(id))).go();
   }
 
+  @override
   Future<int> countDuplicate({
     required String name,
     required String type,
@@ -269,17 +297,22 @@ class CategoriesDao extends DatabaseAccessor<AppDatabase>
 }
 
 @DriftAccessor(tables: [WalletEntries])
-class WalletsDao extends DatabaseAccessor<AppDatabase> with _$WalletsDaoMixin {
+class WalletsDao extends DatabaseAccessor<AppDatabase>
+    with _$WalletsDaoMixin
+    implements WalletsStore {
   WalletsDao(super.db);
 
+  @override
   Stream<List<WalletEntry>> watchAll() {
     return (select(
       walletEntries,
     )..orderBy([(table) => OrderingTerm(expression: table.id)])).watch();
   }
 
+  @override
   Future<List<WalletEntry>> getAll() => select(walletEntries).get();
 
+  @override
   Future<int> countDuplicate({required String name, int? exceptId}) {
     final query = select(walletEntries)
       ..where((table) => table.name.lower().equals(name.toLowerCase()));
@@ -289,23 +322,29 @@ class WalletsDao extends DatabaseAccessor<AppDatabase> with _$WalletsDaoMixin {
     return query.get().then((value) => value.length);
   }
 
+  @override
   Future<int> add(WalletEntriesCompanion entry) {
     return into(walletEntries).insert(entry);
   }
 
+  @override
   Future<void> updateEntry(WalletEntriesCompanion entry) {
     return update(walletEntries).replace(entry);
   }
 
+  @override
   Future<int> deleteById(int id) {
     return (delete(walletEntries)..where((table) => table.id.equals(id))).go();
   }
 }
 
 @DriftAccessor(tables: [BudgetEntries])
-class BudgetsDao extends DatabaseAccessor<AppDatabase> with _$BudgetsDaoMixin {
+class BudgetsDao extends DatabaseAccessor<AppDatabase>
+    with _$BudgetsDaoMixin
+    implements BudgetsStore {
   BudgetsDao(super.db);
 
+  @override
   Stream<List<BudgetEntry>> watchAll() {
     return (select(budgetEntries)..orderBy([
           (table) =>
@@ -314,14 +353,17 @@ class BudgetsDao extends DatabaseAccessor<AppDatabase> with _$BudgetsDaoMixin {
         .watch();
   }
 
+  @override
   Future<List<BudgetEntry>> getAll() => select(budgetEntries).get();
 
+  @override
   Future<BudgetEntry?> getById(int id) {
     return (select(
       budgetEntries,
     )..where((table) => table.id.equals(id))).getSingleOrNull();
   }
 
+  @override
   Future<int> countDuplicate({
     required String month,
     required int? categoryId,
@@ -340,18 +382,22 @@ class BudgetsDao extends DatabaseAccessor<AppDatabase> with _$BudgetsDaoMixin {
     return query.get().then((value) => value.length);
   }
 
+  @override
   Future<int> add(BudgetEntriesCompanion entry) {
     return into(budgetEntries).insert(entry);
   }
 
+  @override
   Future<void> updateEntry(BudgetEntriesCompanion entry) {
     return update(budgetEntries).replace(entry);
   }
 
+  @override
   Future<int> deleteById(int id) {
     return (delete(budgetEntries)..where((table) => table.id.equals(id))).go();
   }
 
+  @override
   Future<int> deleteByMonth(String month) {
     return (delete(
       budgetEntries,
@@ -361,17 +407,21 @@ class BudgetsDao extends DatabaseAccessor<AppDatabase> with _$BudgetsDaoMixin {
 
 @DriftAccessor(tables: [AppSettingEntries])
 class AppSettingsDao extends DatabaseAccessor<AppDatabase>
-    with _$AppSettingsDaoMixin {
+    with _$AppSettingsDaoMixin
+    implements SettingsStore {
   AppSettingsDao(super.db);
 
+  @override
   Stream<AppSettingEntry?> watchSettings() {
     return (select(appSettingEntries)..limit(1)).watchSingleOrNull();
   }
 
+  @override
   Future<AppSettingEntry?> getSettings() {
     return (select(appSettingEntries)..limit(1)).getSingleOrNull();
   }
 
+  @override
   Future<void> updateSettings(AppSettingEntriesCompanion entry) {
     return update(appSettingEntries).replace(entry);
   }
@@ -387,9 +437,12 @@ class AppSettingsDao extends DatabaseAccessor<AppDatabase>
     AppSettingEntries,
   ],
 )
-class BackupDao extends DatabaseAccessor<AppDatabase> with _$BackupDaoMixin {
+class BackupDao extends DatabaseAccessor<AppDatabase>
+    with _$BackupDaoMixin
+    implements BackupStore {
   BackupDao(super.db);
 
+  @override
   Future<void> clearUserData() async {
     await transaction(() async {
       await delete(transactionEntries).go();
@@ -421,7 +474,7 @@ class BackupDao extends DatabaseAccessor<AppDatabase> with _$BackupDaoMixin {
     BackupDao,
   ],
 )
-class AppDatabase extends _$AppDatabase {
+class AppDatabase extends _$AppDatabase implements FinanceStore {
   AppDatabase(super.executor);
 
   AppDatabase.defaults()
@@ -437,6 +490,10 @@ class AppDatabase extends _$AppDatabase {
               : null,
         ),
       );
+
+  @override
+  Future<List<QuickTemplateEntry>> getQuickTemplates() =>
+      select(quickTemplateEntries).get();
 
   @override
   int get schemaVersion => 3;
