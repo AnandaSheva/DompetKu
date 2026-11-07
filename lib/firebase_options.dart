@@ -53,7 +53,8 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAzF6FRJrF7OzoKzmjxUyZ401hv8bZbxgU',
+    // Supplied at build time; keep this binding after running FlutterFire CLI.
+    apiKey: String.fromEnvironment('FIREBASE_WEB_API_KEY'),
     appId: '1:837744778374:web:778057b3b86892819c0507',
     messagingSenderId: '837744778374',
     projectId: 'dompetku-web-f8e4e',

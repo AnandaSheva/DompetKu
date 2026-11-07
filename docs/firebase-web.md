@@ -16,17 +16,37 @@ dibutuhkan untuk fitur web ini.
 2. Aktifkan Google di Authentication, lalu isi support email.
 3. Tambahkan `localhost` dan domain produksi pada Authorized domains.
 4. Jalankan `firebase login`, `dart pub global activate flutterfire_cli`, lalu
-   `flutterfire configure --platforms=web` dari root proyek.
+   `flutterfire configure --platforms=web` dari root proyek jika konfigurasi
+   perlu dibuat ulang. Generator dapat menulis API key langsung ke source;
+   pertahankan `String.fromEnvironment('FIREBASE_WEB_API_KEY')` pada `apiKey`
+   sebelum menyimpan perubahan ke Git.
 5. Terapkan rules dan indexes dengan:
 
    ```powershell
    firebase deploy --project dompetku-web-f8e4e --only 'firestore:rules,firestore:indexes'
    ```
 
-`firebase_options.dart` berisi konfigurasi klien publik. Jangan menambahkan
+`firebase_options.dart` berisi konfigurasi klien publik dengan API key dari
+build environment, tanpa nilai API key yang ditulis langsung ke repository.
+Jangan menambahkan
 service account JSON, private key, token, password Google, atau kredensial admin
 ke aplikasi maupun repository. `measurementId` dari konfigurasi FlutterFire
 tidak mengaktifkan Analytics: aplikasi tidak mengimpor plugin Analytics.
+
+Untuk menjalankan web secara lokal, salin `.env.example` menjadi `.env.local`
+dan isi `FIREBASE_WEB_API_KEY` hanya di file lokal tersebut. `.env.local` sudah
+diabaikan Git dan tidak dimasukkan sebagai asset Flutter.
+
+```powershell
+flutter run -d chrome --dart-define-from-file=.env.local
+```
+
+Firebase web tetap membutuhkan API key di browser, sehingga key dapat dibaca
+dari bundle hasil build atau request jaringan. Environment variable mencegah
+nilai key tersimpan di source repository; perlindungan data tetap menggunakan
+Firestore Security Rules dan kepemilikan UID. Terapkan pembatasan API yang sesuai
+pada key di Google Cloud Console. Menghapus key dari source saat ini tidak
+menghapusnya dari riwayat commit lama.
 
 ## Login dan cache
 
@@ -115,10 +135,15 @@ hanya digunakan pada debug build; release selalu menggunakan konfigurasi proyek.
 ## Deploy dan verifikasi
 
 ```powershell
-flutter build web --release --no-web-resources-cdn
+flutter build web --release --no-web-resources-cdn --dart-define-from-file=.env.local
 ```
 
 Vercel menjalankan `bash scripts/vercel-build.sh` dan melayani `build/web`.
+Sebelum deploy, tambahkan `FIREBASE_WEB_API_KEY` di Project Settings > Environment
+Variables untuk environment Production dan Preview yang digunakan, lalu deploy
+ulang. Masukkan nilainya melalui dashboard Vercel, bukan `vercel.json` atau
+repository. Build dihentikan jika variable belum diisi; script tidak mencetak
+nilainya ke log.
 Deploy rules/indexes Firebase terpisah dari deploy Vercel. Gunakan domain produksi
 yang stabil dan pastikan `/login` mendapat header khusus dari `vercel.json`.
 Jangan menyalin header isolasi halaman `/` ke `/login`, karena popup OAuth perlu
