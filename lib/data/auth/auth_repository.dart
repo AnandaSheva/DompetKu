@@ -11,12 +11,17 @@ class AppAccount {
 
 abstract interface class AuthRepository {
   Stream<AppAccount?> authStateChanges();
+  Future<void> prepareGoogleSignIn({required bool trusted});
   Future<void> signInWithGoogle({required bool trusted});
   Future<void> signOut();
 }
 
 class FirebaseAuthRepository implements AuthRepository {
-  FirebaseAuth get _auth => FirebaseAuth.instance;
+  FirebaseAuthRepository({FirebaseAuth? auth}) : _providedAuth = auth;
+
+  final FirebaseAuth? _providedAuth;
+  FirebaseAuth get _auth => _providedAuth ?? FirebaseAuth.instance;
+  bool? _preparedTrusted;
 
   @override
   Stream<AppAccount?> authStateChanges() => _auth.authStateChanges().map(
@@ -26,14 +31,28 @@ class FirebaseAuthRepository implements AuthRepository {
   );
 
   @override
-  Future<void> signInWithGoogle({required bool trusted}) async {
+  Future<void> prepareGoogleSignIn({required bool trusted}) async {
+    _preparedTrusted = null;
     await _auth.setPersistence(
       trusted ? Persistence.LOCAL : Persistence.SESSION,
     );
+    _preparedTrusted = trusted;
+  }
+
+  @override
+  Future<void> signInWithGoogle({required bool trusted}) {
+    if (_preparedTrusted != trusted) {
+      throw FirebaseAuthException(code: 'session-not-ready');
+    }
     rememberDevice(trusted);
-    await _auth.signInWithPopup(
-      GoogleAuthProvider()..setCustomParameters({'prompt': 'select_account'}),
-    );
+    // Open directly from the tap. Awaiting storage here can lose the user
+    // activation required for popups by Safari and installed mobile PWAs.
+    return _auth
+        .signInWithPopup(
+          GoogleAuthProvider()
+            ..setCustomParameters({'prompt': 'select_account'}),
+        )
+        .then((_) {});
   }
 
   @override
@@ -46,7 +65,9 @@ String authErrorMessage(Object error) {
       'popup-closed-by-user' ||
       'cancelled-popup-request' => 'Login dibatalkan. Silakan coba lagi.',
       'popup-blocked' =>
-        'Izinkan popup untuk masuk dengan Google, lalu coba lagi.',
+        'Popup Google diblokir. Izinkan popup di Safari atau Chrome, lalu coba lagi.',
+      'web-storage-unsupported' || 'session-not-ready' =>
+        'Sesi login belum siap. Izinkan penyimpanan situs di browser, lalu coba lagi.',
       'unauthorized-domain' =>
         'Domain ini belum diizinkan di Firebase Authentication.',
       'operation-not-allowed' =>

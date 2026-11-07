@@ -16,10 +16,37 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   bool _busy = false;
+  bool _preparing = true;
+  bool _sessionReady = false;
   bool _trusted = trustedDevice;
   String? _message = takeSessionNotice();
 
+  @override
+  void initState() {
+    super.initState();
+    _prepareSignIn(clearMessage: false);
+  }
+
+  Future<void> _prepareSignIn({bool clearMessage = true}) async {
+    setState(() {
+      _preparing = true;
+      _sessionReady = false;
+      if (clearMessage) _message = null;
+    });
+    try {
+      await ref
+          .read(authRepositoryProvider)
+          .prepareGoogleSignIn(trusted: _trusted);
+      if (mounted) setState(() => _sessionReady = true);
+    } catch (error) {
+      if (mounted) setState(() => _message = authErrorMessage(error));
+    } finally {
+      if (mounted) setState(() => _preparing = false);
+    }
+  }
+
   Future<void> _signIn() async {
+    if (_busy || !_sessionReady) return;
     setState(() {
       _busy = true;
       _message = null;
@@ -66,7 +93,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                   const SizedBox(height: AppSpacing.xxxl),
                   OutlinedButton(
-                    onPressed: _busy ? null : _signIn,
+                    onPressed: _busy || !_sessionReady ? null : _signIn,
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(56),
                       shape: RoundedRectangleBorder(
@@ -76,7 +103,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (_busy)
+                        if (_busy || _preparing)
                           const SizedBox(
                             width: 20,
                             height: 20,
@@ -86,7 +113,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           const Icon(Icons.login_rounded, size: 22),
                         const SizedBox(width: AppSpacing.md),
                         Text(
-                          _busy ? 'Menghubungkan...' : 'Masuk dengan Google',
+                          _preparing
+                              ? 'Menyiapkan login...'
+                              : _busy
+                              ? 'Menghubungkan...'
+                              : 'Masuk dengan Google',
                         ),
                       ],
                     ),
@@ -96,9 +127,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     contentPadding: EdgeInsets.zero,
                     controlAffinity: ListTileControlAffinity.leading,
                     value: _trusted,
-                    onChanged: _busy
+                    onChanged: _busy || _preparing
                         ? null
-                        : (value) => setState(() => _trusted = value ?? false),
+                        : (value) {
+                            setState(() => _trusted = value ?? false);
+                            _prepareSignIn();
+                          },
                     title: const Text('Ini perangkat pribadi saya'),
                     subtitle: const Text(
                       'Ingat sesi dan simpan cache offline di browser ini.',
@@ -116,6 +150,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                     ),
                   ],
+                  if (!_preparing && !_sessionReady)
+                    TextButton(
+                      onPressed: _prepareSignIn,
+                      child: const Text('Coba lagi'),
+                    ),
                   const SizedBox(height: AppSpacing.xxl),
                   Text(
                     'Data versi web disimpan di Google Firebase sesuai akunmu. Tanpa iklan dan tanpa analytics. '

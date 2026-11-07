@@ -31,6 +31,11 @@ tidak mengaktifkan Analytics: aplikasi tidak mengimpor plugin Analytics.
 ## Login dan cache
 
 - `/login` menampilkan Google login dengan COOP `same-origin-allow-popups`.
+- Penyimpanan sesi disiapkan sebelum tombol Google aktif dan setiap pilihan
+  perangkat pribadi berubah. Popup dipanggil langsung dari ketukan pengguna,
+  tanpa menunggu operasi penyimpanan yang dapat membuat Safari/iOS atau PWA
+  Android memblokirnya. Jika persiapan gagal, login tetap dinonaktifkan sampai
+  pengguna berhasil mencoba lagi.
 - Setelah login, aplikasi kembali ke `/`. Header COOP/COEP di halaman ini
   mempertahankan akses database Drift lama, termasuk OPFS, untuk migrasi.
 - Sesi diperiksa sebelum repository akun dibuat. UID yang berbeda memiliki
