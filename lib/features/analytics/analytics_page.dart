@@ -967,6 +967,7 @@ class _BudgetFormSheet extends StatefulWidget {
 
 class _BudgetFormSheetState extends State<_BudgetFormSheet> {
   late final TextEditingController _amountController;
+  late final TextEditingController _scopeController;
   int? _categoryId;
   String? _error;
 
@@ -974,6 +975,9 @@ class _BudgetFormSheetState extends State<_BudgetFormSheet> {
   void initState() {
     super.initState();
     _categoryId = widget.existing?.budget.categoryId;
+    _scopeController = TextEditingController(
+      text: widget.existing?.label ?? 'Budget bulanan',
+    );
     _amountController = TextEditingController(
       text: widget.existing == null
           ? ''
@@ -984,7 +988,29 @@ class _BudgetFormSheetState extends State<_BudgetFormSheet> {
   @override
   void dispose() {
     _amountController.dispose();
+    _scopeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _chooseScope(List<CategoryEntry> categories) async {
+    FocusScope.of(context).unfocus();
+    final selection =
+        await showModalBottomSheet<({int? categoryId, String name})>(
+          context: context,
+          isScrollControlled: true,
+          showDragHandle: true,
+          useSafeArea: true,
+          builder: (context) => _BudgetScopePicker(
+            categories: categories,
+            selectedCategoryId: _categoryId,
+          ),
+        );
+    if (!mounted || selection == null) return;
+    setState(() {
+      _categoryId = selection.categoryId;
+      _scopeController.text = selection.name;
+      _error = null;
+    });
   }
 
   @override
@@ -1032,41 +1058,18 @@ class _BudgetFormSheetState extends State<_BudgetFormSheet> {
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  DropdownButtonFormField<int?>(
-                    isExpanded: true,
-                    initialValue: _categoryId,
+                  TextField(
+                    controller: _scopeController,
+                    readOnly: true,
+                    enabled: !editing,
+                    enableInteractiveSelection: false,
                     decoration: const InputDecoration(
                       labelText: 'Cakupan',
                       helperText:
                           'Pilih budget bulanan atau kategori tertentu.',
+                      suffixIcon: Icon(Icons.expand_more_rounded),
                     ),
-                    onChanged: editing
-                        ? null
-                        : (value) {
-                            setState(() {
-                              _categoryId = value;
-                              _error = null;
-                            });
-                          },
-                    items: [
-                      const DropdownMenuItem<int?>(
-                        value: null,
-                        child: Text(
-                          'Budget bulanan',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      for (final category in expenseCategories)
-                        DropdownMenuItem<int?>(
-                          value: category.id,
-                          child: Text(
-                            category.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
+                    onTap: () => _chooseScope(expenseCategories),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   TextField(
@@ -1110,6 +1113,129 @@ class _BudgetFormSheetState extends State<_BudgetFormSheet> {
     Navigator.pop(
       context,
       _BudgetFormResult(categoryId: _categoryId, limitAmount: amount),
+    );
+  }
+}
+
+class _BudgetScopePicker extends StatefulWidget {
+  const _BudgetScopePicker({
+    required this.categories,
+    required this.selectedCategoryId,
+  });
+
+  final List<CategoryEntry> categories;
+  final int? selectedCategoryId;
+
+  @override
+  State<_BudgetScopePicker> createState() => _BudgetScopePickerState();
+}
+
+class _BudgetScopePickerState extends State<_BudgetScopePicker> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final keyword = _searchController.text.trim().toLowerCase();
+    final options = <({int? categoryId, String name})>[
+      (categoryId: null, name: 'Budget bulanan'),
+      for (final category in widget.categories)
+        (categoryId: category.id, name: category.name),
+    ].where((option) => option.name.toLowerCase().contains(keyword)).toList();
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SafeArea(
+        top: false,
+        child: Center(
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: kIsWeb ? AppSpacing.webMaxWidth : double.infinity,
+            ),
+            child: SizedBox(
+              height: MediaQuery.sizeOf(context).height * 0.65,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screen,
+                  AppSpacing.sm,
+                  AppSpacing.screen,
+                  AppSpacing.lg,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('Pilih cakupan', style: theme.textTheme.headlineSmall),
+                    const SizedBox(height: AppSpacing.lg),
+                    TextField(
+                      controller: _searchController,
+                      autofocus: true,
+                      textInputAction: TextInputAction.search,
+                      decoration: InputDecoration(
+                        labelText: 'Cari cakupan',
+                        hintText: 'Ketik nama kategori atau budget bulanan',
+                        prefixIcon: const Icon(Icons.search_rounded),
+                        suffixIcon: _searchController.text.isEmpty
+                            ? null
+                            : IconButton(
+                                tooltip: 'Hapus pencarian',
+                                icon: const Icon(Icons.close_rounded),
+                                onPressed: () {
+                                  setState(_searchController.clear);
+                                },
+                              ),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Expanded(
+                      child: options.isEmpty
+                          ? Center(
+                              child: Text(
+                                'Cakupan tidak ditemukan. Coba kata kunci lain.',
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            )
+                          : ListView.builder(
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
+                              itemCount: options.length,
+                              itemBuilder: (context, index) {
+                                final option = options[index];
+                                final selected =
+                                    option.categoryId ==
+                                    widget.selectedCategoryId;
+                                return ListTile(
+                                  minTileHeight: 56,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.md,
+                                  ),
+                                  title: Text(option.name),
+                                  trailing: selected
+                                      ? Icon(
+                                          Icons.check_rounded,
+                                          color: theme.colorScheme.primary,
+                                        )
+                                      : null,
+                                  onTap: () => Navigator.pop(context, option),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
