@@ -19,7 +19,7 @@ Tujuan arsitektur ini adalah menjaga project tetap:
 - cocok untuk open-source
 - aman untuk dikerjakan bersama Codex/GPT
 
-DompetKu adalah aplikasi **offline-first personal money management**, sehingga arsitektur harus memprioritaskan data lokal, performa, stabilitas, dan maintainability.
+DompetKu adalah aplikasi **first personal money management**, sehingga arsitektur harus memprioritaskan data lokal, performa, stabilitas, dan maintainability.
 
 ---
 
