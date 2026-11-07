@@ -4,6 +4,11 @@ Android tetap offline dengan Drift. Web memakai Firebase Authentication dan
 Firestore pada paket Spark, tanpa Firebase Analytics, Cloud Functions, atau
 Cloud Storage. Hosting aplikasi tetap Vercel.
 
+Karena dependency Flutter Firebase juga menyertakan SDK Android, manifest Android
+secara eksplisit menolak initializer Firebase serta izin transitive
+`ACCESS_NETWORK_STATE` dan `READ_GSERVICES`. Tidak ada izin Android baru yang
+dibutuhkan untuk fitur web ini.
+
 ## Setup Firebase
 
 1. Buat proyek Spark dan database Firestore Standard `(default)`. Proyek yang
@@ -40,6 +45,8 @@ tidak mengaktifkan Analytics: aplikasi tidak mengimpor plugin Analytics.
 - Logout menunggu semua perubahan, menghentikan listener, lalu mencoba membersihkan
   cache Firestore. Tab lain dapat menghalangi pembersihan; pengguna mendapat pesan
   untuk menutup tab lain dan menghapus data situs bila menggunakan perangkat bersama.
+- Jika sinkronisasi belum berhasil, pengguna dapat mengunduh cadangan, mengonfirmasi
+  file sudah tersimpan, lalu memilih keluar dan membersihkan perubahan lokal.
 - Cache browser bukan enkripsi penuh. Login baru dan pengisian cache memerlukan
   internet; cache data tidak menjamin seluruh aplikasi dapat dimuat saat cold start offline.
 
