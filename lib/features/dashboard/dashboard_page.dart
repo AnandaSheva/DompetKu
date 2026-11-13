@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers/app_providers.dart';
+import '../../app/providers/auth_providers.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_radius.dart';
 import '../../app/theme/app_shadows.dart';
@@ -28,6 +29,10 @@ class DashboardPage extends ConsumerWidget {
         .watch(appSettingsProvider)
         .maybeWhen(data: (value) => value, orElse: () => null);
     final hideBalance = settings?.hideBalance ?? false;
+    final googleName = ref.watch(currentAccountProvider)?.name?.trim();
+    final userName = googleName == null || googleName.isEmpty
+        ? settings?.userName
+        : googleName;
 
     return summary.when(
       data: (data) => SafeArea(
@@ -45,7 +50,7 @@ class DashboardPage extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _DashboardHeader(userName: settings?.userName),
+                    _DashboardHeader(userName: userName),
                     const SizedBox(height: AppSpacing.xl),
                     BalanceHeroCard(
                       totalBalance: CurrencyFormatter.rupiah(
