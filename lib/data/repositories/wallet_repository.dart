@@ -24,21 +24,7 @@ class WalletRepository {
 
       controller.add([
         for (final wallet in currentWallets)
-          WalletBalance(
-            wallet: wallet,
-            balance: CalculationHelper.walletBalance(
-              walletId: wallet.id,
-              initialBalance: wallet.initialBalance,
-              transactions: currentTransactions.map(
-                (transaction) => (
-                  walletId: transaction.walletId,
-                  transferWalletId: transaction.transferWalletId,
-                  type: transaction.type,
-                  amount: transaction.amount,
-                ),
-              ),
-            ),
-          ),
+          _walletBalance(wallet, currentTransactions),
       ]);
     }
 
@@ -62,6 +48,40 @@ class WalletRepository {
   Future<List<WalletEntry>> getWallets() {
     return _database.walletsDao.getAll();
   }
+
+  Future<WalletBalance?> getWalletBalance({
+    required int walletId,
+    int? excludingTransactionId,
+  }) async {
+    final wallets = await getWallets();
+    final wallet = wallets.where((wallet) => wallet.id == walletId).firstOrNull;
+    if (wallet == null) return null;
+
+    final transactions = await _database.transactionsDao.getAll();
+    return _walletBalance(
+      wallet,
+      transactions.where((entry) => entry.id != excludingTransactionId),
+    );
+  }
+
+  WalletBalance _walletBalance(
+    WalletEntry wallet,
+    Iterable<TransactionEntry> transactions,
+  ) => WalletBalance(
+    wallet: wallet,
+    balance: CalculationHelper.walletBalance(
+      walletId: wallet.id,
+      initialBalance: wallet.initialBalance,
+      transactions: transactions.map(
+        (transaction) => (
+          walletId: transaction.walletId,
+          transferWalletId: transaction.transferWalletId,
+          type: transaction.type,
+          amount: transaction.amount,
+        ),
+      ),
+    ),
+  );
 
   Future<void> addWallet({
     required String name,

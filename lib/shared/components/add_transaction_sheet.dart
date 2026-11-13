@@ -14,6 +14,7 @@ import '../../core/formatters/date_formatter.dart';
 import '../../data/local/database/app_database.dart';
 import '../../data/repositories/app_models.dart';
 import '../helpers/category_icon_mapper.dart';
+import '../widgets/app_confirm_dialog.dart';
 import '../widgets/top_toast.dart';
 import '../widgets/pressable_surface.dart';
 import 'amount_display.dart';
@@ -188,7 +189,9 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     });
   }
 
-  Future<void> _submit(List<WalletBalance> wallets) async {
+  Future<void> _submit() async {
+    if (_saving) return;
+
     if (_amount <= 0) {
       _showNotice('Masukkan nominal terlebih dahulu.', _NoticeTone.warning);
       return;
@@ -221,20 +224,57 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
       }
     }
 
+    final type = _type;
+    final amount = _amount;
+    final categoryId = _selectedCategoryId;
+    final transferWalletId = _toWalletId;
+    final date = _selectedDate;
+    final note = _noteController.text;
+    final transactionId = widget.transaction?.transaction.id;
     setState(() => _saving = true);
 
     try {
+      if (type == TransactionType.expense) {
+        final wallet = await ref
+            .read(walletRepositoryProvider)
+            .getWalletBalance(
+              walletId: walletId,
+              excludingTransactionId: transactionId,
+            );
+        if (!mounted) return;
+        if (wallet == null) {
+          _showNotice('Dompet belum bisa dimuat.', _NoticeTone.warning);
+          return;
+        }
+
+        final remainingBalance = wallet.balance - amount;
+        if (remainingBalance < 0) {
+          final confirmed = await showAppConfirmDialog(
+            context: context,
+            title: 'Arus kas dompet akan minus',
+            message:
+                'Pengeluaran ini melebihi saldo dompet "${wallet.wallet.name}".\n\n'
+                'Saldo sebelum transaksi: ${CurrencyFormatter.rupiah(wallet.balance)}\n'
+                'Pengeluaran: ${CurrencyFormatter.rupiah(amount)}\n'
+                'Saldo setelah transaksi: ${CurrencyFormatter.rupiah(remainingBalance)}',
+            confirmLabel: 'Tetap simpan',
+            cancelLabel: 'Ubah transaksi',
+          );
+          if (!confirmed || !mounted) return;
+        }
+      }
+
       await ref
           .read(transactionRepositoryProvider)
           .save(
-            id: widget.transaction?.transaction.id,
-            type: _type,
-            amount: _amount,
-            categoryId: _selectedCategoryId,
+            id: transactionId,
+            type: type,
+            amount: amount,
+            categoryId: categoryId,
             walletId: walletId,
-            transferWalletId: _toWalletId,
-            date: _selectedDate,
-            note: _noteController.text,
+            transferWalletId: transferWalletId,
+            date: date,
+            note: note,
           );
 
       if (!mounted) return;
@@ -442,7 +482,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                       noticeMessage: _noticeMessage,
                       noticeTone: _noticeTone,
                       saving: _saving,
-                      onSubmit: () => _submit(selectableWallets),
+                      onSubmit: _submit,
                     ),
                   ],
                 ),
