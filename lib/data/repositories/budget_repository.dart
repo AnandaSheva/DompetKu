@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart';
 
+import '../../core/enums/analytics_period.dart';
 import '../../core/enums/transaction_type.dart';
 import '../../core/helpers/calculation_helper.dart';
 import '../../core/helpers/monthly_period.dart';
@@ -10,11 +11,12 @@ import '../store/finance_store.dart';
 import 'app_models.dart';
 
 class BudgetRepository {
-  const BudgetRepository(this._database);
+  const BudgetRepository(this._database, {this.clock});
 
   final FinanceStore _database;
+  final DateTime Function()? clock;
 
-  Stream<List<BudgetProgress>> watchProgress() {
+  Stream<List<BudgetProgress>> watchProgress({AnalyticsPeriod? period}) {
     final controller = StreamController<List<BudgetProgress>>();
     List<BudgetEntry>? budgets;
     List<TransactionEntry>? transactions;
@@ -38,6 +40,7 @@ class BudgetRepository {
           currentTransactions,
           currentCategories,
           resetDay,
+          period,
         ),
       );
     }
@@ -72,12 +75,13 @@ class BudgetRepository {
     return controller.stream;
   }
 
-  Future<List<BudgetProgress>> getProgress() async {
+  Future<List<BudgetProgress>> getProgress({AnalyticsPeriod? period}) async {
     return _progress(
       await _database.budgetsDao.getAll(),
       await _database.transactionsDao.getAll(),
       await _database.categoriesDao.getAll(),
       (await _database.appSettingsDao.getSettings())?.monthlyResetDay ?? 1,
+      period,
     );
   }
 
@@ -129,24 +133,34 @@ class BudgetRepository {
     List<TransactionEntry> transactions,
     List<CategoryEntry> categories,
     int resetDay,
+    AnalyticsPeriod? period,
   ) {
+    final now = clock?.call() ?? DateTime.now();
+    final start = period?.startDate(now, resetDay);
+    final firstMonth = start == null
+        ? null
+        : MonthlyPeriod.containing(start, resetDay).key;
+    final currentMonth = MonthlyPeriod.containing(now, resetDay).key;
     final categoriesById = {
       for (final category in categories) category.id: category,
     };
 
     return [
       for (final budget in budgets)
-        BudgetProgress(
-          budget: budget,
-          label: budget.categoryId == null
-              ? 'Budget bulanan'
-              : categoriesById[budget.categoryId]?.name ?? 'Kategori',
-          spent: _spentForBudget(budget, transactions, resetDay),
-          status: CalculationHelper.budgetStatus(
-            _spentForBudget(budget, transactions, resetDay),
-            budget.limitAmount,
+        if (firstMonth == null ||
+            (budget.month.compareTo(firstMonth) >= 0 &&
+                budget.month.compareTo(currentMonth) <= 0))
+          BudgetProgress(
+            budget: budget,
+            label: budget.categoryId == null
+                ? 'Budget bulanan'
+                : categoriesById[budget.categoryId]?.name ?? 'Kategori',
+            spent: _spentForBudget(budget, transactions, resetDay),
+            status: CalculationHelper.budgetStatus(
+              _spentForBudget(budget, transactions, resetDay),
+              budget.limitAmount,
+            ),
           ),
-        ),
     ];
   }
 

@@ -121,7 +121,7 @@ class UpdateRepository {
 
   // Keep the existing release source until the repository is migrated.
   static final Uri latestReleaseUri = Uri.parse(
-    'https://api.github.com/repos/fadd3079-prog/DompetKu/releases/latest',
+    'https://api.github.com/repos/AnandaSheva/DompetKu/releases/latest',
   );
 
   final http.Client _client;

@@ -82,8 +82,9 @@ final budgetRepositoryProvider = Provider<BudgetRepository>((ref) {
 }, dependencies: [databaseProvider]);
 
 final budgetProgressProvider = StreamProvider<List<BudgetProgress>>((ref) {
-  return ref.watch(budgetRepositoryProvider).watchProgress();
-}, dependencies: [budgetRepositoryProvider]);
+  final period = ref.watch(analyticsPeriodProvider);
+  return ref.watch(budgetRepositoryProvider).watchProgress(period: period);
+}, dependencies: [budgetRepositoryProvider, analyticsPeriodProvider]);
 
 final analyticsRepositoryProvider = Provider<AnalyticsRepository>((ref) {
   return AnalyticsRepository(ref.watch(databaseProvider));

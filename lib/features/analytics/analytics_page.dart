@@ -10,6 +10,7 @@ import '../../app/theme/app_spacing.dart';
 import '../../core/enums/analytics_period.dart';
 import '../../core/enums/budget_status.dart';
 import '../../core/formatters/currency_formatter.dart';
+import '../../core/formatters/date_formatter.dart';
 import '../../core/formatters/rupiah_input_formatter.dart';
 import '../../core/helpers/monthly_period.dart';
 import '../../data/local/database/app_database.dart';
@@ -32,6 +33,7 @@ class AnalyticsPage extends ConsumerWidget {
         .watch(appSettingsProvider)
         .maybeWhen(data: (value) => value, orElse: () => null);
     final resetDay = settings?.monthlyResetDay ?? 1;
+    final currentMonth = MonthlyPeriod.containing(DateTime.now(), resetDay);
     final budgets = ref.watch(budgetProgressProvider);
     final categories = ref
         .watch(categoriesProvider)
@@ -79,6 +81,13 @@ class AnalyticsPage extends ConsumerWidget {
                 ref.read(analyticsPeriodProvider.notifier).setPeriod(period);
               },
             ),
+            if (selectedPeriod == AnalyticsPeriod.currentMonth) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                MonthlyPeriod.label(currentMonth),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
             const SizedBox(height: AppSpacing.xxl),
             if (summary.isEmpty)
               const EmptyState(
@@ -126,6 +135,8 @@ class AnalyticsPage extends ConsumerWidget {
             budgets.when(
               data: (items) => _BudgetSection(
                 items: items,
+                period: selectedPeriod,
+                currentMonth: currentMonth.key,
                 onEdit: (item) =>
                     _showBudgetDialog(context, ref, categories, resetDay, item),
                 onDelete: (item) => _confirmDeleteBudget(context, ref, item),
@@ -165,7 +176,9 @@ class AnalyticsPage extends ConsumerWidget {
           .save(
             id: existing?.budget.id,
             categoryId: result.categoryId,
-            month: MonthlyPeriod.containing(DateTime.now(), resetDay).key,
+            month:
+                existing?.budget.month ??
+                MonthlyPeriod.containing(DateTime.now(), resetDay).key,
             limitAmount: result.limitAmount,
           );
       if (!context.mounted) return;
@@ -829,12 +842,16 @@ class _TopCategoryList extends StatelessWidget {
 class _BudgetSection extends StatelessWidget {
   const _BudgetSection({
     required this.items,
+    required this.period,
+    required this.currentMonth,
     required this.onEdit,
     required this.onDelete,
     required this.onReset,
   });
 
   final List<BudgetProgress> items;
+  final AnalyticsPeriod period;
+  final String currentMonth;
   final ValueChanged<BudgetProgress> onEdit;
   final ValueChanged<BudgetProgress> onDelete;
   final VoidCallback onReset;
@@ -847,16 +864,18 @@ class _BudgetSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _BudgetHeader(
-          showReset: items.isNotEmpty,
+          showReset: items.any((item) => item.budget.month == currentMonth),
           onReset: onReset,
           titleStyle: theme.textTheme.titleLarge,
         ),
         const SizedBox(height: AppSpacing.md),
         if (items.isEmpty)
-          const EmptyState(
+          EmptyState(
             compact: true,
             icon: Icons.savings_rounded,
-            title: 'Belum ada budget',
+            title: period == AnalyticsPeriod.currentMonth
+                ? 'Belum ada budget bulan ini'
+                : 'Belum ada budget pada periode ini',
             message:
                 'Tambahkan budget untuk memantau batas pengeluaran bulan ini.',
           )
@@ -930,6 +949,13 @@ class _BudgetCard extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              DateFormatter.monthLabel(
+                DateTime.parse('${item.budget.month}-01'),
+              ),
+              style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: AppSpacing.md),
             ClipRRect(
@@ -1079,7 +1105,8 @@ class _BudgetFormSheetState extends State<_BudgetFormSheet> {
                     decoration: InputDecoration(
                       labelText: 'Batas budget',
                       hintText: 'Rp500.000',
-                      helperText: 'Masukkan batas pengeluaran bulan ini.',
+                      helperText:
+                          'Masukkan batas pengeluaran untuk periode budget ini.',
                       errorText: _error,
                     ),
                     onChanged: (_) {
@@ -1266,8 +1293,8 @@ class _BudgetHeader extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final resetButton = ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 96),
+        final resetButton = SizedBox(
+          width: 96,
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.dangerRed,
