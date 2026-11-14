@@ -161,7 +161,7 @@ class AnalyticsPage extends ConsumerWidget {
       builder: (context) =>
           _BudgetFormSheet(categories: categories, existing: existing),
     );
-    if (result == null) return;
+    if (result == null || !context.mounted) return;
 
     try {
       await ref
@@ -189,6 +189,13 @@ class AnalyticsPage extends ConsumerWidget {
         error.message.toString(),
         type: TopToastType.warning,
       );
+    } catch (_) {
+      if (!context.mounted) return;
+      TopToast.show(
+        context,
+        'Budget belum bisa disimpan. Coba lagi.',
+        type: TopToastType.error,
+      );
     }
   }
 
@@ -200,18 +207,28 @@ class AnalyticsPage extends ConsumerWidget {
     final confirmed = await showAppConfirmDialog(
       context: context,
       title: 'Hapus budget?',
-      message: 'Budget yang dihapus tidak bisa dikembalikan.',
+      message:
+          'Budget "${item.label}" untuk ${DateFormatter.monthLabel(DateTime.parse('${item.budget.month}-01'))} akan dihapus. Transaksi dan kategori tetap tersimpan.',
       confirmLabel: 'Hapus',
       danger: true,
     );
-    if (!confirmed) return;
-    await ref.read(budgetRepositoryProvider).delete(item.budget.id);
-    if (!context.mounted) return;
-    TopToast.show(
-      context,
-      'Budget berhasil dihapus.',
-      type: TopToastType.success,
-    );
+    if (!confirmed || !context.mounted) return;
+    try {
+      await ref.read(budgetRepositoryProvider).delete(item.budget.id);
+      if (!context.mounted) return;
+      TopToast.show(
+        context,
+        'Budget berhasil dihapus.',
+        type: TopToastType.success,
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      TopToast.show(
+        context,
+        'Budget belum bisa dihapus. Coba lagi.',
+        type: TopToastType.error,
+      );
+    }
   }
 
   Future<void> _confirmResetBudget(
@@ -734,8 +751,8 @@ class _BudgetSection extends StatelessWidget {
           for (final item in items) ...[
             _BudgetCard(
               item: item,
-              onTap: () => onEdit(item),
-              onLongPress: () => onDelete(item),
+              onEdit: () => onEdit(item),
+              onDelete: () => onDelete(item),
             ),
             const SizedBox(height: AppSpacing.md),
           ],
@@ -747,13 +764,13 @@ class _BudgetSection extends StatelessWidget {
 class _BudgetCard extends StatelessWidget {
   const _BudgetCard({
     required this.item,
-    required this.onTap,
-    required this.onLongPress,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   final BudgetProgress item;
-  final VoidCallback onTap;
-  final VoidCallback onLongPress;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -765,8 +782,8 @@ class _BudgetCard extends StatelessWidget {
     }, theme.brightness);
 
     return PressableSurface(
-      onTap: onTap,
-      onLongPress: onLongPress,
+      onTap: onEdit,
+      onLongPress: onDelete,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
@@ -798,6 +815,30 @@ class _BudgetCard extends StatelessWidget {
                       style: theme.textTheme.labelLarge?.copyWith(color: color),
                     ),
                   ),
+                ),
+                PopupMenuButton<String>(
+                  tooltip: 'Kelola budget ${item.label}',
+                  icon: const Icon(Icons.more_horiz_rounded),
+                  onSelected: (action) {
+                    if (action == 'edit') {
+                      onEdit();
+                    } else if (action == 'delete') {
+                      onDelete();
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Text('Edit budget'),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Text(
+                        'Hapus budget',
+                        style: TextStyle(color: theme.colorScheme.error),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -938,7 +979,6 @@ class _BudgetFormSheetState extends State<_BudgetFormSheet> {
                   TextField(
                     controller: _scopeController,
                     readOnly: true,
-                    enabled: !editing,
                     enableInteractiveSelection: false,
                     decoration: const InputDecoration(
                       labelText: 'Cakupan',

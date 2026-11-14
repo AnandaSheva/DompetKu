@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -80,7 +82,7 @@ void main() {
       (widget) =>
           widget is TextField && widget.decoration?.labelText == 'Cakupan',
     );
-    expect(tester.widget<TextField>(scope).enabled, false);
+    expect(tester.widget<TextField>(scope).enabled, isNot(false));
     await tester.enterText(
       find.byWidgetPredicate(
         (widget) =>
@@ -93,6 +95,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.savedId, 2);
+    expect(repository.savedCategoryId, 2);
     expect(
       repository.savedMonth,
       DateFormatter.monthKey(repository.previousMonth),
@@ -100,12 +103,136 @@ void main() {
     expect(repository.savedLimit, 200000);
     TopToast.dismiss();
   });
+
+  for (final (scope, categoryId) in [
+    ('Transportasi', 3),
+    ('Budget bulanan', null),
+  ]) {
+    testWidgets('budget menu can change scope to $scope and edit its limit', (
+      tester,
+    ) async {
+      final repository = _TestBudgetRepository();
+      await _openPage(tester, repository);
+      await _openBudgetMenu(tester, 'Budget Aktif');
+      expect(find.text('Hapus budget'), findsOneWidget);
+      await tester.tap(find.text('Edit budget'));
+      await tester.pumpAndSettle();
+
+      final scopeField = _field('Cakupan');
+      expect(
+        tester.widget<TextField>(scopeField).controller!.text,
+        'Budget Aktif',
+      );
+      await tester.tap(scopeField);
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        _field('Cari cakupan'),
+        scope == 'Transportasi' ? 'tRaNs' : 'bulanan',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(scope));
+      await tester.pumpAndSettle();
+      await tester.enterText(_field('Batas budget'), '350000');
+      await tester.tap(find.text('Simpan'));
+      await tester.pumpAndSettle();
+
+      expect(repository.savedId, 1);
+      expect(repository.savedCategoryId, categoryId);
+      expect(repository.savedLimit, 350000);
+      expect(repository.savedMonth, DateFormatter.monthKey(repository.now));
+      expect(find.text('Budget berhasil diperbarui.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      TopToast.dismiss();
+    });
+  }
+
+  testWidgets(
+    'budget deletion requires confirmation and removes only its card',
+    (tester) async {
+      final repository = _TestBudgetRepository();
+      await _openPage(tester, repository);
+      await _selectPeriod(tester, 'Semua');
+      await _openBudgetMenu(tester, 'Budget Aktif');
+      await tester.tap(find.text('Hapus budget'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hapus budget?'), findsOneWidget);
+      expect(repository.deletedIds, isEmpty);
+
+      await tester.tap(find.text('Batal'));
+      await tester.pumpAndSettle();
+      expect(repository.deletedIds, isEmpty);
+      expect(find.text('Budget Aktif'), findsOneWidget);
+
+      await _openBudgetMenu(tester, 'Budget Aktif');
+      await tester.tap(find.text('Hapus budget'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Hapus'));
+      await tester.pumpAndSettle();
+
+      expect(repository.deletedIds, [1]);
+      expect(find.text('Budget Aktif'), findsNothing);
+      expect(find.text('Budget Lama'), findsOneWidget);
+      expect(find.text('Budget berhasil dihapus.'), findsOneWidget);
+      TopToast.dismiss();
+    },
+  );
+
+  testWidgets(
+    'a failed budget deletion keeps the card and explains the error',
+    (tester) async {
+      final repository = _TestBudgetRepository(failDeletion: true);
+      await _openPage(tester, repository);
+      await _openBudgetMenu(tester, 'Budget Aktif');
+      await tester.tap(find.text('Hapus budget'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Hapus'));
+      await tester.pumpAndSettle();
+
+      expect(repository.deletedIds, isEmpty);
+      expect(find.text('Budget Aktif'), findsOneWidget);
+      expect(
+        find.text('Budget belum bisa dihapus. Coba lagi.'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+      TopToast.dismiss();
+    },
+  );
+
+  testWidgets('a failed budget save shows an error without claiming success', (
+    tester,
+  ) async {
+    final repository = _TestBudgetRepository(failSaving: true);
+    await _openPage(tester, repository);
+    await _openBudgetMenu(tester, 'Budget Aktif');
+    await tester.tap(find.text('Edit budget'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Simpan'));
+    await tester.pumpAndSettle();
+
+    expect(repository.savedId, isNull);
+    expect(find.text('Budget belum bisa disimpan. Coba lagi.'), findsOneWidget);
+    expect(find.text('Budget berhasil diperbarui.'), findsNothing);
+    expect(tester.takeException(), isNull);
+    TopToast.dismiss();
+  });
+}
+
+Finder _field(String label) => find.byWidgetPredicate(
+  (widget) => widget is TextField && widget.decoration?.labelText == label,
+);
+
+Future<void> _openBudgetMenu(WidgetTester tester, String label) async {
+  await _scrollToBudget(tester, label);
+  await tester.tap(find.byTooltip('Kelola budget $label'));
+  await tester.pumpAndSettle();
 }
 
 Future<void> _openPage(
   WidgetTester tester,
   _TestBudgetRepository repository,
 ) async {
+  addTearDown(repository.close);
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(420, 900);
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -126,7 +253,27 @@ Future<void> _openPage(
             ),
           ),
         ),
-        categoriesProvider.overrideWith((ref) => Stream.value([])),
+        categoriesProvider.overrideWith(
+          (ref) => Stream.value([
+            for (final (id, name) in [
+              (1, 'Budget Aktif'),
+              (2, 'Budget Lama'),
+              (3, 'Transportasi'),
+            ])
+              CategoryEntry(
+                id: id,
+                name: name,
+                type: 'expense',
+                groupName: 'Pengujian',
+                iconKey: 'category',
+                colorValue: 0xff2563eb,
+                isDefault: false,
+                isArchived: false,
+                createdAt: now,
+                updatedAt: now,
+              ),
+          ]),
+        ),
         appSettingsProvider.overrideWith(
           (ref) => Stream.value(
             AppSettingEntry(
@@ -152,7 +299,11 @@ Future<void> _openPage(
 }
 
 Future<void> _selectPeriod(WidgetTester tester, String label) async {
-  await tester.ensureVisible(find.text(label));
+  await tester.scrollUntilVisible(
+    find.text(label),
+    -250,
+    scrollable: find.byType(Scrollable).first,
+  );
   await tester.pumpAndSettle();
   await tester.tap(find.text(label));
   await tester.pumpAndSettle();
@@ -168,30 +319,44 @@ Future<void> _scrollToBudget(WidgetTester tester, String label) async {
 }
 
 class _TestBudgetRepository extends BudgetRepository {
-  _TestBudgetRepository({this.hasCurrentBudget = true}) : super(_UnusedStore());
+  _TestBudgetRepository({
+    this.hasCurrentBudget = true,
+    this.failDeletion = false,
+    this.failSaving = false,
+  }) : super(_UnusedStore());
 
   final bool hasCurrentBudget;
+  final bool failDeletion;
+  final bool failSaving;
+  final _changes = StreamController<void>.broadcast();
+  final deletedIds = <int>[];
   final now = DateTime.now();
   final requestedPeriods = <AnalyticsPeriod?>[];
   DateTime get previousMonth => DateTime(now.year, now.month - 1);
   int? savedId;
+  int? savedCategoryId;
   String? savedMonth;
   int? savedLimit;
 
   @override
-  Stream<List<BudgetProgress>> watchProgress({AnalyticsPeriod? period}) {
+  Stream<List<BudgetProgress>> watchProgress({AnalyticsPeriod? period}) async* {
     requestedPeriods.add(period);
-    return Stream.value([
-      if (hasCurrentBudget) _budget(1, 'Budget Aktif', now),
-      if (period != AnalyticsPeriod.currentMonth)
-        _budget(2, 'Budget Lama', previousMonth),
-    ]);
+    yield _items(period);
+    yield* _changes.stream.map((_) => _items(period));
   }
+
+  List<BudgetProgress> _items(AnalyticsPeriod? period) => [
+    if (hasCurrentBudget && !deletedIds.contains(1))
+      _budget(1, 'Budget Aktif', now),
+    if (period != AnalyticsPeriod.currentMonth && !deletedIds.contains(2))
+      _budget(2, 'Budget Lama', previousMonth),
+  ];
 
   BudgetProgress _budget(int id, String label, DateTime month) =>
       BudgetProgress(
         budget: BudgetEntry(
           id: id,
+          categoryId: id,
           month: DateFormatter.monthKey(month),
           limitAmount: 100000,
           createdAt: now,
@@ -209,10 +374,21 @@ class _TestBudgetRepository extends BudgetRepository {
     required String month,
     required int limitAmount,
   }) async {
+    if (failSaving) throw StateError('Storage unavailable');
     savedId = id;
+    savedCategoryId = categoryId;
     savedMonth = month;
     savedLimit = limitAmount;
   }
+
+  @override
+  Future<void> delete(int id) async {
+    if (failDeletion) throw StateError('Storage unavailable');
+    deletedIds.add(id);
+    _changes.add(null);
+  }
+
+  Future<void> close() => _changes.close();
 }
 
 class _UnusedStore implements FinanceStore {

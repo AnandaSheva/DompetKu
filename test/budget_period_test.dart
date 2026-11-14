@@ -180,4 +180,83 @@ void main() {
       expect(await database.budgetsDao.getAll(), hasLength(_months.length));
     },
   );
+
+  test(
+    'editing scope and limit preserves budget identity and recalculates spending',
+    () async {
+      final original = (await database.budgetsDao.getAll()).singleWhere(
+        (budget) => budget.month == '2026-11',
+      );
+      final category = (await database.categoriesDao.getByType('expense')).last;
+
+      await repository.save(
+        id: original.id,
+        categoryId: category.id,
+        month: original.month,
+        limitAmount: 250000,
+      );
+
+      final updated = (await repository.getProgress(
+        period: AnalyticsPeriod.currentMonth,
+      )).single;
+      expect(updated.budget.id, original.id);
+      expect(updated.budget.month, original.month);
+      expect(updated.budget.createdAt, original.createdAt);
+      expect(updated.budget.categoryId, category.id);
+      expect(updated.budget.limitAmount, 250000);
+      expect(updated.label, category.name);
+      expect(updated.spent, 0);
+      expect(await database.budgetsDao.getAll(), hasLength(_months.length));
+    },
+  );
+
+  test(
+    'an edit cannot replace another budget with the same scope and month',
+    () async {
+      final category = (await database.categoriesDao.getByType(
+        'expense',
+      )).first;
+      await repository.save(
+        categoryId: category.id,
+        month: '2026-11',
+        limitAmount: 150000,
+      );
+      final before = await database.budgetsDao.getAll();
+      final categoryBudget = before.singleWhere(
+        (budget) => budget.categoryId == category.id,
+      );
+
+      await expectLater(
+        repository.save(
+          id: categoryBudget.id,
+          month: categoryBudget.month,
+          limitAmount: 300000,
+        ),
+        throwsArgumentError,
+      );
+
+      expect(await database.budgetsDao.getAll(), before);
+    },
+  );
+
+  test(
+    'deleting one budget preserves other budgets, categories and transactions',
+    () async {
+      final budgets = await database.budgetsDao.getAll();
+      final categories = await database.categoriesDao.getAll();
+      final transactions = await database.transactionsDao.getAll();
+      final selected = budgets.singleWhere(
+        (budget) => budget.month == '2026-11',
+      );
+
+      await repository.delete(selected.id);
+
+      expect(
+        await database.budgetsDao.getAll(),
+        budgets.where((budget) => budget.id != selected.id).toList(),
+      );
+      expect(await database.categoriesDao.getAll(), categories);
+      expect(await database.transactionsDao.getAll(), transactions);
+    },
+  );
 }
