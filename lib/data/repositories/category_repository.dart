@@ -92,10 +92,18 @@ class CategoryRepository {
   Future<String?> deleteCategory(CategoryEntry category) async {
     final count = await _database.transactionsDao.countByCategory(category.id);
     if (count > 0) {
-      return 'Kategori ini masih digunakan oleh transaksi.';
+      return 'Kategori masih dipakai transaksi. Gunakan Nonaktifkan.';
     }
     if (category.isDefault) {
-      return 'Kategori bawaan sebaiknya dinonaktifkan saja.';
+      return 'Kategori bawaan tidak bisa dihapus. Gunakan Nonaktifkan.';
+    }
+    final budgets = await _database.budgetsDao.getAll();
+    if (budgets.any((budget) => budget.categoryId == category.id)) {
+      return 'Kategori masih dipakai budget. Gunakan Nonaktifkan.';
+    }
+    final templates = await _database.getQuickTemplates();
+    if (templates.any((template) => template.categoryId == category.id)) {
+      return 'Kategori masih dipakai template. Gunakan Nonaktifkan.';
     }
 
     await _database.categoriesDao.deleteById(category.id);

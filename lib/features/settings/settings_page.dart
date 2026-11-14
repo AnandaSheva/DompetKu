@@ -69,18 +69,18 @@ class SettingsPage extends ConsumerWidget {
             onTap: () =>
                 _showThemeSheet(context, ref, settings?.themeMode ?? 'system'),
           ),
-          _SettingsTile(
-            icon: Icons.visibility_off_rounded,
-            title: 'Sembunyikan saldo',
-            subtitle: settings?.hideBalance ?? false
-                ? 'Nominal disamarkan'
-                : 'Nominal terlihat',
-            trailing: Switch(
-              value: settings?.hideBalance ?? false,
-              onChanged: (value) =>
-                  ref.read(settingsRepositoryProvider).setHideBalance(value),
-            ),
-          ),
+          // _SettingsTile(
+          //   icon: Icons.visibility_off_rounded,
+          //   title: 'Sembunyikan saldo',
+          //   subtitle: settings?.hideBalance ?? false
+          //       ? 'Nominal disamarkan'
+          //       : 'Nominal terlihat',
+          //   trailing: Switch(
+          //     value: settings?.hideBalance ?? false,
+          //     onChanged: (value) =>
+          //         ref.read(settingsRepositoryProvider).setHideBalance(value),
+          //   ),
+          // ),
           _SettingsTile(
             icon: Icons.event_repeat_rounded,
             title: 'Tanggal reset bulanan',
@@ -751,7 +751,6 @@ class _SettingsTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
-    this.trailing,
     this.onTap,
     this.danger = false,
   });
@@ -759,7 +758,6 @@ class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final Widget? trailing;
   final VoidCallback? onTap;
   final bool danger;
 
@@ -797,11 +795,9 @@ class _SettingsTile extends StatelessWidget {
             ),
             title: Text(title, style: theme.textTheme.titleMedium),
             subtitle: Text(subtitle),
-            trailing:
-                trailing ??
-                (onTap == null
-                    ? null
-                    : const Icon(Icons.chevron_right_rounded)),
+            trailing: onTap == null
+                ? null
+                : const Icon(Icons.chevron_right_rounded),
           ),
         ),
       ),
@@ -1249,7 +1245,7 @@ class _CategoryManagerSheet extends ConsumerWidget {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (context) => SafeArea(
+      builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.screen),
           child: Column(
@@ -1265,14 +1261,14 @@ class _CategoryManagerSheet extends ConsumerWidget {
               _SheetOption(
                 title: 'Edit',
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
                   _showCategoryDialog(context, ref, category);
                 },
               ),
               _SheetOption(
                 title: category.isArchived ? 'Aktifkan' : 'Nonaktifkan',
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
                   _setCategoryArchived(
                     context,
                     ref,
@@ -1285,7 +1281,7 @@ class _CategoryManagerSheet extends ConsumerWidget {
                 title: 'Hapus',
                 destructive: true,
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(sheetContext);
                   _deleteCategory(context, ref, category);
                 },
               ),
@@ -1305,7 +1301,7 @@ class _CategoryManagerSheet extends ConsumerWidget {
       context: context,
       builder: (context) => _CategoryDialog(category: category),
     );
-    if (result == null) return;
+    if (result == null || !context.mounted) return;
 
     final repository = ref.read(categoryRepositoryProvider);
     try {
@@ -1355,16 +1351,25 @@ class _CategoryManagerSheet extends ConsumerWidget {
       confirmLabel: 'Hapus',
       danger: true,
     );
-    if (!confirmed) return;
-    final message = await ref
-        .read(categoryRepositoryProvider)
-        .deleteCategory(category);
-    if (!context.mounted) return;
-    TopToast.show(
-      context,
-      message ?? 'Kategori berhasil dihapus.',
-      type: message == null ? TopToastType.success : TopToastType.warning,
-    );
+    if (!confirmed || !context.mounted) return;
+    try {
+      final message = await ref
+          .read(categoryRepositoryProvider)
+          .deleteCategory(category);
+      if (!context.mounted) return;
+      TopToast.show(
+        context,
+        message ?? 'Kategori berhasil dihapus.',
+        type: message == null ? TopToastType.success : TopToastType.warning,
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      TopToast.show(
+        context,
+        'Kategori belum bisa dihapus. Coba lagi.',
+        type: TopToastType.error,
+      );
+    }
   }
 
   Future<void> _setCategoryArchived(
