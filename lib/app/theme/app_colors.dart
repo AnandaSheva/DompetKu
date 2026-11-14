@@ -36,6 +36,14 @@ class AppColors {
   static const Color warningOrange = Color(0xFFC2410C);
   static const Color dangerRed = Color(0xFFDC2626);
 
+  static const expenseChartPalette = [
+    Color(0xFF16A34A),
+    Color(0xFF84CC16),
+    Color(0xFFEAB308),
+    Color(0xFFF97316),
+    dangerRed,
+  ];
+
   static const Color darkBackground = Color(0xFF081222);
   static const Color darkBackgroundSoft = Color(0xFF0C182B);
   static const Color darkSurface = Color(0xFF101E34);

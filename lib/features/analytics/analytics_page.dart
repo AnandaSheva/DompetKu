@@ -100,7 +100,7 @@ class AnalyticsPage extends ConsumerWidget {
               _ChartCard(
                 title: 'Pengeluaran per kategori',
                 subtitle:
-                    'Distribusi pengeluaran berdasarkan periode yang dipilih.',
+                    'Hijau untuk nominal kecil, kuning menengah, merah terbesar.',
                 child: _DonutChart(items: summary.expenseByCategory),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -473,31 +473,35 @@ List<_DonutSlice> _donutSlices(
   List<CategoryAmount> items,
   Brightness brightness,
 ) {
-  final top = items.take(4).toList();
   final rest = items.skip(4).fold<int>(0, (value, item) => value + item.amount);
+  final groups = [
+    for (final item in items.take(4)) (label: item.label, amount: item.amount),
+    if (rest > 0) (label: 'Kategori lainnya', amount: rest),
+  ];
+  final amounts = groups.map((item) => item.amount).toSet().toList()..sort();
 
   return [
-    for (var index = 0; index < top.length; index++)
+    for (final item in groups)
       _DonutSlice(
-        label: top[index].label,
-        amount: top[index].amount,
-        color: _chartColor(top[index].colorValue, index, brightness),
-      ),
-    if (rest > 0)
-      _DonutSlice(
-        label: 'Kategori lainnya',
-        amount: rest,
-        color: AppColors.textTertiary,
+        label: item.label,
+        amount: item.amount,
+        color: _chartColor(
+          amounts.length == 1
+              ? (groups.length == 1 ? 1.0 : 0.5)
+              : amounts.indexOf(item.amount) / (amounts.length - 1),
+          brightness,
+        ),
       ),
   ];
 }
 
-Color _chartColor(int colorValue, int index, Brightness brightness) {
-  final value = colorValue == 0
-      ? AppColors.categoryPalette[index % AppColors.categoryPalette.length]
-            .toARGB32()
-      : colorValue;
-  return AppColors.categoryColor(value, brightness);
+Color _chartColor(double position, Brightness brightness) {
+  final palette = AppColors.expenseChartPalette;
+  final scaled = position * (palette.length - 1);
+  final index = scaled.floor();
+  final next = index + 1 < palette.length ? palette[index + 1] : palette.last;
+  final color = Color.lerp(palette[index], next, scaled - index)!;
+  return AppColors.readableAccent(color, brightness);
 }
 
 class _DonutSlice {
