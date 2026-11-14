@@ -1,4 +1,3 @@
-//import '../local/database/app_database.dart';
 import '../store/finance_store.dart';
 import '../local/seed/default_seed_data.dart';
 
@@ -17,6 +16,7 @@ class BootstrapRepository {
     if (await _database.seedDao.categoryCount() == 0) {
       await _database.seedDao.insertCategories(DefaultSeedData.categories(now));
     }
+    await _database.categoriesDao.mergeFoodAndDrink();
 
     if (await _database.seedDao.settingsCount() == 0) {
       await _database.seedDao.insertSettings(DefaultSeedData.settings(now));

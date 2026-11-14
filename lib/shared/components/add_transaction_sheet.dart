@@ -1068,7 +1068,7 @@ List<String> _frequentLabels(TransactionType type) {
   switch (type) {
     case TransactionType.expense:
       return [
-        'Makanan',
+        'Makanan & Minuman',
         'Transportasi',
         'Belanja Harian',
         'Tagihan',

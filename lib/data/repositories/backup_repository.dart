@@ -115,6 +115,7 @@ class BackupRepository {
       await _database.backupDao.clearUserData();
       await _restore(payload);
     });
+    await _database.categoriesDao.mergeFoodAndDrink();
   }
 
   Future<void> resetData() async {

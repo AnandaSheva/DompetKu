@@ -26,6 +26,8 @@ import 'package:dompet_sheva/data/store/cloud_finance_store.dart';
 import 'package:dompet_sheva/data/store/finance_store.dart';
 import 'package:dompet_sheva/core/enums/transaction_type.dart';
 
+import '../helpers/legacy_food_fixture.dart';
+
 const options = FirebaseOptions(
   apiKey: 'demo-api-key',
   appId: '1:123456789:web:dompetku',
@@ -72,6 +74,15 @@ void main() {
   test('seeds once and shares existing calculations for transfers', () async {
     final wallets = await store.walletsDao.getAll();
     expect(wallets, hasLength(4));
+    final defaults = await store.categoriesDao.getAll();
+    expect(
+      defaults.singleWhere((row) => row.name == 'Makanan & Minuman').id,
+      1,
+    );
+    expect(
+      defaults.where((row) => row.name == 'Makanan' || row.name == 'Minuman'),
+      isEmpty,
+    );
     final categories = (await store.categoriesDao.getByType('income'));
     final repo = TransactionRepository(store);
     await repo.save(
@@ -98,6 +109,129 @@ void main() {
     expect(await second.walletsDao.getAll(), hasLength(4));
     await second.close();
   });
+
+  test(
+    'existing accounts merge over 450 references into the original Makanan ID on startup',
+    () async {
+      final legacy = await seedLegacyFoodFixture(store, transactionCount: 502);
+      await store.waitForSync();
+      final original = await store.transactionsDao.getAll();
+      final budgets = await store.budgetsDao.getAll();
+      final foodBudget = budgets.singleWhere(
+        (row) => row.categoryId == legacy.foodId,
+      );
+      final template = (await store.getQuickTemplates()).single;
+      final bill = (await store.recurringBillsDao.getAll()).single;
+      final dataset = store.status.dataset;
+      await store.close();
+      store = CloudFinanceStore(firestore, auth.currentUser!.uid);
+
+      await store.initialize();
+      await store.waitForSync();
+
+      final base = firestore.collection(
+        'users/${store.uid}/datasets/$dataset/categories',
+      );
+      expect(
+        (await base
+                .doc('${legacy.foodId}')
+                .get(const GetOptions(source: Source.server)))
+            .data()?['name'],
+        'Makanan & Minuman',
+      );
+      expect(
+        (await base
+                .doc('${legacy.drinkId}')
+                .get(const GetOptions(source: Source.server)))
+            .exists,
+        false,
+      );
+      final updated = await firestore
+          .collection('users/${store.uid}/datasets/$dataset/transactions')
+          .get(const GetOptions(source: Source.server));
+      expect(updated.docs, hasLength(502));
+      final originalById = {for (final row in original) row.id: row};
+      for (final doc in updated.docs) {
+        final data = doc.data();
+        expect(data['categoryId'], legacy.foodId);
+        expect(data['amount'], originalById[data['id']]!.amount);
+        expect(data['note'], originalById[data['id']]!.note);
+      }
+      final merged = await firestore
+          .collection('users/${store.uid}/datasets/$dataset/budgets')
+          .get(const GetOptions(source: Source.server));
+      expect(merged.docs, hasLength(3));
+      expect(
+        merged.docs
+            .singleWhere((doc) => doc.data()['id'] == foodBudget.id)
+            .data()['limitAmount'],
+        150000,
+      );
+      for (final (name, id) in [
+        ('quick_templates', template.id),
+        ('recurring_bills', bill.id),
+      ]) {
+        final ref = firestore.doc(
+          'users/${store.uid}/datasets/$dataset/$name/$id',
+        );
+        expect(
+          (await ref.get(
+            const GetOptions(source: Source.server),
+          )).data()?['categoryId'],
+          legacy.foodId,
+        );
+      }
+      await store.categoriesDao.mergeFoodAndDrink();
+      expect(
+        (await firestore
+                .doc(
+                  'users/${store.uid}/datasets/$dataset/budgets/${foodBudget.id}',
+                )
+                .get(const GetOptions(source: Source.server)))
+            .data()?['limitAmount'],
+        150000,
+      );
+    },
+  );
+
+  test(
+    'offline category migration preserves legacy data and pending writes',
+    () async {
+      final legacy = await seedLegacyFoodFixture(store);
+      await store.waitForSync();
+      await firestore.disableNetwork();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      final now = DateTime.now();
+      await store.walletsDao.add(
+        WalletEntriesCompanion.insert(
+          name: 'Antrean lokal',
+          type: 'cash',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      await store.categoriesDao.mergeFoodAndDrink().timeout(
+        const Duration(seconds: 2),
+      );
+
+      expect(
+        (await store.categoriesDao.getAll()).any(
+          (row) => row.id == legacy.drinkId,
+        ),
+        true,
+      );
+      expect(store.status.pending, true);
+      await firestore.enableNetwork();
+      await store.waitForSync();
+      expect(
+        (await store.walletsDao.getAll()).any(
+          (row) => row.name == 'Antrean lokal',
+        ),
+        true,
+      );
+    },
+  );
 
   test(
     'offline writes return promptly, appear locally, and sync on reconnect',

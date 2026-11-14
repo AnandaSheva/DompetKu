@@ -18,8 +18,7 @@ class DefaultSeedData {
   static List<CategoryEntriesCompanion> categories(DateTime now) {
     final expense = <({String group, String name, int color})>[
       ..._group('Kebutuhan Harian', CategoryPalette.values[0], [
-        'Makanan',
-        'Minuman',
+        'Makanan & Minuman',
         'Belanja Harian',
         'Transportasi',
         'Bahan Bakar',
@@ -177,6 +176,7 @@ class DefaultSeedData {
   static String _iconKey(String name) {
     switch (name) {
       case 'Makanan':
+      case 'Makanan & Minuman':
         return 'food';
       case 'Minuman':
         return 'drink';

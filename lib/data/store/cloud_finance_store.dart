@@ -7,6 +7,7 @@ import 'package:drift/drift.dart' show Insertable;
 import '../local/database/app_database.dart';
 import '../auth/browser_session.dart';
 import '../local/seed/default_seed_data.dart';
+import '../local/seed/food_and_drink_merge.dart';
 import 'cloud_codec.dart';
 import 'finance_store.dart';
 
@@ -310,6 +311,7 @@ class CloudFinanceStore implements FinanceStore {
         _emit();
       },
     );
+    await categoriesDao.mergeFoodAndDrink();
   }
 
   Future<void> _bind(String dataset) async {
@@ -852,6 +854,127 @@ class _CloudCategories implements CategoriesStore {
   _CloudCategories(this.store);
   final CloudFinanceStore store;
   _CloudTable<CategoryEntry> get table => store._categories;
+
+  @override
+  Future<void> mergeFoodAndDrink() async {
+    if (FoodAndDrinkMerge.from(await getAll()) == null ||
+        store._tables.any((table) => table.fromCache)) {
+      return;
+    }
+    await store.waitForSync();
+    final dataset = store._dataset;
+    final categories = await store
+        .collection('categories', dataset: dataset)
+        .get(const GetOptions(source: Source.server))
+        .timeout(const Duration(seconds: 15));
+    final merge = FoodAndDrinkMerge.from([
+      for (final doc in categories.docs) CategoryEntry.fromJson(doc.data()),
+    ]);
+    if (merge == null) return;
+    final now = DateTime.now();
+
+    Future<void> checkDataset(Transaction transaction) async {
+      final profile = await transaction.get(store._profile);
+      if (profile.data()?['activeDataset'] != dataset) {
+        throw StateError('Data akun berubah. Buka ulang aplikasi.');
+      }
+    }
+
+    // Keep the source categories until every reference is safely moved. Each
+    // chunk reads the latest documents so concurrent amount/note edits survive.
+    if (merge.sourceIds.isNotEmpty) {
+      for (final name in [
+        'transactions',
+        'quick_templates',
+        'recurring_bills',
+      ]) {
+        final references = await store
+            .collection(name, dataset: dataset)
+            .where('categoryId', whereIn: merge.sourceIds.toList())
+            .get(const GetOptions(source: Source.server))
+            .timeout(const Duration(seconds: 15));
+        for (var offset = 0; offset < references.docs.length; offset += 400) {
+          final chunk = references.docs.skip(offset).take(400).toList();
+          await store.firestore.runTransaction((transaction) async {
+            await checkDataset(transaction);
+            final latest = await Future.wait([
+              for (final doc in chunk) transaction.get(doc.reference),
+            ]);
+            for (final doc in latest) {
+              if (merge.sourceIds.contains(doc.data()?['categoryId'])) {
+                transaction.update(doc.reference, {
+                  'categoryId': merge.target.id,
+                  'updatedAt': now.millisecondsSinceEpoch,
+                });
+              }
+            }
+          }, timeout: const Duration(seconds: 15));
+        }
+      }
+
+      final budgets = await store
+          .collection('budgets', dataset: dataset)
+          .where('categoryId', whereIn: [merge.target.id, ...merge.sourceIds])
+          .get(const GetOptions(source: Source.server))
+          .timeout(const Duration(seconds: 15));
+      final byMonth =
+          <String, List<QueryDocumentSnapshot<Map<String, dynamic>>>>{};
+      for (final doc in budgets.docs) {
+        byMonth.putIfAbsent(doc.data()['month'] as String, () => []).add(doc);
+      }
+      // Sum a month's limits and delete its redundant budgets in one transaction.
+      // Retrying an interrupted migration therefore never adds a limit twice.
+      for (final group in byMonth.values) {
+        await store.firestore.runTransaction((transaction) async {
+          await checkDataset(transaction);
+          final latest = await Future.wait([
+            for (final doc in group) transaction.get(doc.reference),
+          ]);
+          final current = [
+            for (final doc in latest)
+              if (doc.exists) BudgetEntry.fromJson(doc.data()!),
+          ];
+          for (final budget in merge.budgets(current, now)) {
+            transaction.update(
+              store
+                  .collection('budgets', dataset: dataset)
+                  .doc('${budget.retained.id}'),
+              {
+                'categoryId': merge.target.id,
+                'limitAmount': budget.retained.limitAmount,
+                'updatedAt': now.millisecondsSinceEpoch,
+              },
+            );
+            for (final id in budget.removedIds) {
+              transaction.delete(
+                store.collection('budgets', dataset: dataset).doc('$id'),
+              );
+            }
+          }
+        }, timeout: const Duration(seconds: 15));
+      }
+    }
+
+    await store.firestore.runTransaction((transaction) async {
+      await checkDataset(transaction);
+      transaction.update(
+        store
+            .collection('categories', dataset: dataset)
+            .doc('${merge.target.id}'),
+        {
+          'name': FoodAndDrinkMerge.name,
+          'iconKey': 'food',
+          'updatedAt': now.millisecondsSinceEpoch,
+        },
+      );
+      for (final id in merge.sourceIds) {
+        transaction.delete(
+          store.collection('categories', dataset: dataset).doc('$id'),
+        );
+      }
+    }, timeout: const Duration(seconds: 15));
+  }
+
   @override
   Stream<List<CategoryEntry>> watchAll() => table.watch();
   @override

@@ -29,6 +29,7 @@ abstract interface class TransactionsStore {
 }
 
 abstract interface class CategoriesStore {
+  Future<void> mergeFoodAndDrink();
   Stream<List<CategoryEntry>> watchAll();
   Future<List<CategoryEntry>> getAll();
   Future<List<CategoryEntry>> getByType(String type);

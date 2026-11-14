@@ -9,6 +9,10 @@ void main() {
       categoryIconFromKey('category', name: 'Makanan'),
       isNot(Icons.category_rounded),
     );
+    expect(
+      categoryIconFromKey('category', name: 'Makanan & Minuman'),
+      Icons.restaurant_rounded,
+    );
   });
 
   test('cashback and project have distinct icons', () {

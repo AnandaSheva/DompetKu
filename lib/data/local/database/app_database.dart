@@ -3,6 +3,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../store/finance_store.dart';
+import '../seed/food_and_drink_merge.dart';
 
 part 'app_database.g.dart';
 
@@ -262,6 +263,57 @@ class CategoriesDao extends DatabaseAccessor<AppDatabase>
     with _$CategoriesDaoMixin
     implements CategoriesStore {
   CategoriesDao(super.db);
+
+  @override
+  Future<void> mergeFoodAndDrink() => transaction(() async {
+    final merge = FoodAndDrinkMerge.from(await getAll());
+    if (merge == null) return;
+    final now = DateTime.now();
+    if (merge.sourceIds.isNotEmpty) {
+      await (update(
+        db.transactionEntries,
+      )..where((table) => table.categoryId.isIn(merge.sourceIds))).write(
+        TransactionEntriesCompanion(
+          categoryId: Value(merge.target.id),
+          updatedAt: Value(now),
+        ),
+      );
+      await (update(
+        db.quickTemplateEntries,
+      )..where((table) => table.categoryId.isIn(merge.sourceIds))).write(
+        QuickTemplateEntriesCompanion(
+          categoryId: Value(merge.target.id),
+          updatedAt: Value(now),
+        ),
+      );
+      await (update(
+        db.recurringBillEntries,
+      )..where((table) => table.categoryId.isIn(merge.sourceIds))).write(
+        RecurringBillEntriesCompanion(
+          categoryId: Value(merge.target.id),
+          updatedAt: Value(now),
+        ),
+      );
+      for (final budget in merge.budgets(await db.budgetsDao.getAll(), now)) {
+        await db.budgetsDao.updateEntry(budget.retained.toCompanion(true));
+        for (final id in budget.removedIds) {
+          await db.budgetsDao.deleteById(id);
+        }
+      }
+      await (delete(
+        categoryEntries,
+      )..where((table) => table.id.isIn(merge.sourceIds))).go();
+    }
+    await updateEntry(
+      merge.target
+          .copyWith(
+            name: FoodAndDrinkMerge.name,
+            iconKey: 'food',
+            updatedAt: now,
+          )
+          .toCompanion(true),
+    );
+  });
 
   @override
   Stream<List<CategoryEntry>> watchAll() {

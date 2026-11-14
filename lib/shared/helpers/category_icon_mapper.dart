@@ -198,6 +198,7 @@ IconData? _iconByKey(String key) {
 IconData? _iconByName(String name) {
   switch (name) {
     case 'makanan':
+    case 'makanan minuman':
       return Icons.restaurant_rounded;
     case 'minuman':
       return Icons.local_cafe_rounded;
