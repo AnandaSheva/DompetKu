@@ -82,3 +82,45 @@ test('staged import can switch pointer and cannot erase migration marker', async
   await assertFails(updateDoc(ref,{legacyMigration:null}));
   await assertFails(getDocs(collection(db,'users')));
 });
+
+const bill = {id:1,title:'Internet',amount:250000,categoryId:1,walletId:1,
+  nextDueDate:now,frequency:'monthly',anchorDay:31,isActive:true,createdAt:now,updatedAt:now};
+const goal = {id:1,name:'Dana darurat',targetAmount:10000000,savedAmount:250000,
+  targetDate:null,createdAt:now,updatedAt:now};
+
+test('planning collections enforce owner isolation on reads and writes', async () => {
+  const alice=env.authenticatedContext('alice').firestore();
+  for (const [name,row] of [['recurring_bills',bill],['savings_goals',goal]]) {
+    await assertSucceeds(setDoc(doc(alice,path('alice',name)),row));
+    await assertSucceeds(getDocs(collection(alice,`users/alice/datasets/initial/${name}`)));
+    for (const db of [env.unauthenticatedContext().firestore(),env.authenticatedContext('bob').firestore()]) {
+      await assertFails(getDoc(doc(db,path('alice',name))));
+      await assertFails(setDoc(doc(db,path('alice',name)),row));
+      await assertFails(getDocs(collection(db,`users/alice/datasets/initial/${name}`)));
+    }
+  }
+});
+
+test('recurring bills reject invalid recurrence, amount and references', async () => {
+  const db=env.authenticatedContext('alice').firestore();
+  const ref=doc(db,path('alice','recurring_bills'));
+  for (const invalid of [
+    {...bill,title:''},{...bill,amount:0},{...bill,amount:1.5},
+    {...bill,frequency:'daily'},{...bill,anchorDay:0},{...bill,anchorDay:32},
+    {...bill,categoryId:null},{...bill,walletId:-1},{...bill,isActive:'true'},
+    {...bill,nextDueDate:'today'},{...bill,secret:'unexpected'},
+  ]) await assertFails(setDoc(ref,invalid));
+  for (const frequency of ['weekly','monthly','yearly']) {
+    await assertSucceeds(setDoc(ref,{...bill,frequency}));
+  }
+});
+
+test('savings goals accept progress beyond target but reject invalid money', async () => {
+  const db=env.authenticatedContext('alice').firestore();
+  const ref=doc(db,path('alice','savings_goals'));
+  await assertSucceeds(setDoc(ref,{...goal,savedAmount:11000000,targetDate:now}));
+  for (const invalid of [
+    {...goal,name:''},{...goal,targetAmount:0},{...goal,savedAmount:-1},
+    {...goal,savedAmount:1.5},{...goal,targetDate:'tomorrow'},{...goal,pin:'1234'},
+  ]) await assertFails(setDoc(ref,invalid));
+});

@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:dompet_sheva/app/app.dart';
 import 'package:dompet_sheva/app/providers/app_providers.dart';
+import 'package:dompet_sheva/app/providers/planning_providers.dart';
 import 'package:dompet_sheva/app/theme/app_theme.dart';
 import 'package:dompet_sheva/data/local/database/app_database.dart';
 import 'package:dompet_sheva/data/repositories/app_models.dart';
@@ -91,6 +92,8 @@ Widget _withOverrides(Widget child) {
       analyticsSummaryProvider.overrideWith((ref) => Stream.value(analytics)),
       budgetProgressProvider.overrideWith((ref) => const Stream.empty()),
       categoriesProvider.overrideWith((ref) => const Stream.empty()),
+      recurringBillsProvider.overrideWith((ref) => Stream.value([])),
+      savingsGoalsProvider.overrideWith((ref) => Stream.value([])),
       securitySettingsProvider.overrideWith(
         (ref) async => const SecuritySettings(
           pinEnabled: false,

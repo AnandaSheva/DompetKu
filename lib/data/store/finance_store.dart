@@ -7,6 +7,8 @@ abstract interface class FinanceStore {
   CategoriesStore get categoriesDao;
   WalletsStore get walletsDao;
   BudgetsStore get budgetsDao;
+  BillsStore get recurringBillsDao;
+  GoalsStore get savingsGoalsDao;
   SettingsStore get appSettingsDao;
   SeedStore get seedDao;
   BackupStore get backupDao;
@@ -63,6 +65,38 @@ abstract interface class BudgetsStore {
   Future<void> updateEntry(BudgetEntriesCompanion entry);
   Future<int> deleteById(int id);
   Future<int> deleteByMonth(String month);
+}
+
+abstract interface class BillsStore {
+  Stream<List<RecurringBillEntry>> watchAll();
+  Future<List<RecurringBillEntry>> getAll();
+  Future<RecurringBillEntry?> getById(int id);
+  Future<int> add(RecurringBillEntriesCompanion entry);
+  Future<void> updateEntry(RecurringBillEntriesCompanion entry);
+  Future<int> deleteById(int id);
+}
+
+/// Cloud payments compare the occurrence on the server before writing it.
+/// Native storage uses its existing SQLite transaction instead.
+abstract interface class AtomicBillPayments {
+  Future<void> payAndAdvance(
+    RecurringBillEntry expected,
+    TransactionEntriesCompanion payment,
+    RecurringBillEntry advanced,
+  );
+  Future<void> advanceBill(
+    RecurringBillEntry expected,
+    RecurringBillEntry advanced,
+  );
+}
+
+abstract interface class GoalsStore {
+  Stream<List<SavingsGoalEntry>> watchAll();
+  Future<List<SavingsGoalEntry>> getAll();
+  Future<SavingsGoalEntry?> getById(int id);
+  Future<int> add(SavingsGoalEntriesCompanion entry);
+  Future<void> updateEntry(SavingsGoalEntriesCompanion entry);
+  Future<int> deleteById(int id);
 }
 
 abstract interface class SettingsStore {

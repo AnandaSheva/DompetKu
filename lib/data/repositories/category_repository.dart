@@ -90,6 +90,10 @@ class CategoryRepository {
   }
 
   Future<String?> deleteCategory(CategoryEntry category) async {
+    final bills = await _database.recurringBillsDao.getAll();
+    if (bills.any((bill) => bill.categoryId == category.id)) {
+      return 'Kategori masih dipakai jadwal tagihan. Ubah atau hapus jadwal terlebih dahulu.';
+    }
     final count = await _database.transactionsDao.countByCategory(category.id);
     if (count > 0) {
       return 'Kategori masih dipakai transaksi. Gunakan Nonaktifkan.';

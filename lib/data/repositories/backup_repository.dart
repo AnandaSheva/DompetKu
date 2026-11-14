@@ -104,6 +104,8 @@ class BackupRepository {
       wallets: _requiredList(payload, 'wallets').length,
       categories: _requiredList(payload, 'categories').length,
       budgets: _requiredList(payload, 'budgets').length,
+      recurringBills: _requiredList(payload, 'recurring_bills').length,
+      savingsGoals: _requiredList(payload, 'savings_goals').length,
     );
   }
 
@@ -135,6 +137,8 @@ class BackupRepository {
       wallets: _requiredList(payload, 'wallets').length,
       categories: _requiredList(payload, 'categories').length,
       budgets: _requiredList(payload, 'budgets').length,
+      recurringBills: _requiredList(payload, 'recurring_bills').length,
+      savingsGoals: _requiredList(payload, 'savings_goals').length,
     );
   }
 
@@ -145,6 +149,8 @@ class BackupRepository {
     final budgets = await _database.budgetsDao.getAll();
     final settings = await _database.appSettingsDao.getSettings();
     final templates = await _database.getQuickTemplates();
+    final bills = await _database.recurringBillsDao.getAll();
+    final goals = await _database.savingsGoalsDao.getAll();
 
     return {
       'version': 1,
@@ -153,6 +159,8 @@ class BackupRepository {
       'categories': categories.map(_categoryToJson).toList(),
       'wallets': wallets.map(_walletToJson).toList(),
       'budgets': budgets.map(_budgetToJson).toList(),
+      'recurring_bills': bills.map(_billToJson).toList(),
+      'savings_goals': goals.map(_goalToJson).toList(),
       'quick_templates': templates
           .map(
             (entry) => {
@@ -210,6 +218,37 @@ class BackupRepository {
       await _database.budgetsDao.add(_budgetFromJson(item, now));
     }
 
+    for (final item in _requiredList(payload, 'recurring_bills')) {
+      await _database.recurringBillsDao.add(
+        RecurringBillEntriesCompanion.insert(
+          id: Value(_requiredId(item, 'id')),
+          title: _requiredString(item, 'title'),
+          amount: _requiredInt(item, 'amount'),
+          categoryId: _requiredId(item, 'category_id'),
+          walletId: _requiredId(item, 'wallet_id'),
+          nextDueDate: _requiredDate(item, 'next_due_date'),
+          frequency: _requiredString(item, 'frequency'),
+          anchorDay: _requiredInt(item, 'anchor_day'),
+          isActive: Value(_optionalBool(item, 'is_active') ?? true),
+          createdAt: _optionalDate(item, 'created_at') ?? now,
+          updatedAt: _optionalDate(item, 'updated_at') ?? now,
+        ),
+      );
+    }
+    for (final item in _requiredList(payload, 'savings_goals')) {
+      await _database.savingsGoalsDao.add(
+        SavingsGoalEntriesCompanion.insert(
+          id: Value(_requiredId(item, 'id')),
+          name: _requiredString(item, 'name'),
+          targetAmount: _requiredInt(item, 'target_amount'),
+          savedAmount: Value(_requiredInt(item, 'saved_amount')),
+          targetDate: Value(_optionalDate(item, 'target_date')),
+          createdAt: _optionalDate(item, 'created_at') ?? now,
+          updatedAt: _optionalDate(item, 'updated_at') ?? now,
+        ),
+      );
+    }
+
     await _database.seedDao.insertQuickTemplates([
       for (final item in _requiredList(payload, 'quick_templates'))
         QuickTemplateEntriesCompanion.insert(
@@ -253,6 +292,15 @@ class BackupRepository {
     final categoryTypes = _validateCategories(categories);
     _validateTransactions(transactions, walletIds, categoryTypes);
     _validateBudgets(budgets, categoryTypes.keys.toSet());
+    // These collections were introduced after the first version-1 backups.
+    decoded.putIfAbsent('recurring_bills', () => <Map<String, dynamic>>[]);
+    decoded.putIfAbsent('savings_goals', () => <Map<String, dynamic>>[]);
+    _validateBills(
+      _requiredList(decoded, 'recurring_bills'),
+      walletIds,
+      categoryTypes,
+    );
+    _validateGoals(_requiredList(decoded, 'savings_goals'));
     // Older version-1 exports may omit this optional collection.
     decoded.putIfAbsent('quick_templates', () => <Map<String, dynamic>>[]);
     final templateIds = <int>{};
@@ -421,6 +469,102 @@ class BackupRepository {
       throw FormatException('File cadangan tidak valid.');
     }
   }
+
+  void _validateBills(
+    List<Map<String, dynamic>> bills,
+    Set<int> walletIds,
+    Map<int, String> categoryTypes,
+  ) {
+    final ids = <int>{};
+    for (final item in bills) {
+      final id = _requiredId(item, 'id');
+      final categoryId = _requiredId(item, 'category_id');
+      final title = _requiredString(item, 'title');
+      final amount = _requiredInt(item, 'amount');
+      final anchor = _requiredInt(item, 'anchor_day');
+      if (!ids.add(id) ||
+          id > _maxSafeInteger ||
+          title.length > 80 ||
+          amount <= 0 ||
+          amount > _maxSafeInteger ||
+          anchor < 1 ||
+          anchor > 31 ||
+          !walletIds.contains(_requiredId(item, 'wallet_id')) ||
+          !const {'expense', 'both'}.contains(categoryTypes[categoryId])) {
+        throw const FormatException(
+          'Jadwal tagihan dalam cadangan tidak valid.',
+        );
+      }
+      _requiredString(
+        item,
+        'frequency',
+        allowed: const {'weekly', 'monthly', 'yearly'},
+      );
+      _planningDate(_requiredDate(item, 'next_due_date'));
+      if (_optionalBool(item, 'is_active') == null) {
+        throw const FormatException('Status jadwal tagihan tidak valid.');
+      }
+      _optionalDate(item, 'created_at');
+      _optionalDate(item, 'updated_at');
+    }
+  }
+
+  void _validateGoals(List<Map<String, dynamic>> goals) {
+    final ids = <int>{};
+    for (final item in goals) {
+      final id = _requiredId(item, 'id');
+      final name = _requiredString(item, 'name');
+      final target = _requiredInt(item, 'target_amount');
+      final saved = _requiredInt(item, 'saved_amount');
+      if (!ids.add(id) ||
+          id > _maxSafeInteger ||
+          name.length > 80 ||
+          target <= 0 ||
+          target > _maxSafeInteger ||
+          saved < 0 ||
+          saved > _maxSafeInteger) {
+        throw const FormatException(
+          'Target tabungan dalam cadangan tidak valid.',
+        );
+      }
+      final date = _optionalDate(item, 'target_date');
+      if (date != null) _planningDate(date);
+      _optionalDate(item, 'created_at');
+      _optionalDate(item, 'updated_at');
+    }
+  }
+
+  static const _maxSafeInteger = 9007199254740991;
+
+  void _planningDate(DateTime date) {
+    if (date.year < 2000 || date.year > 2100) {
+      throw const FormatException('Tanggal dalam cadangan tidak valid.');
+    }
+  }
+
+  Map<String, dynamic> _billToJson(RecurringBillEntry entry) => {
+    'id': entry.id,
+    'title': entry.title,
+    'amount': entry.amount,
+    'category_id': entry.categoryId,
+    'wallet_id': entry.walletId,
+    'next_due_date': entry.nextDueDate.toIso8601String(),
+    'frequency': entry.frequency,
+    'anchor_day': entry.anchorDay,
+    'is_active': entry.isActive,
+    'created_at': entry.createdAt.toIso8601String(),
+    'updated_at': entry.updatedAt.toIso8601String(),
+  };
+
+  Map<String, dynamic> _goalToJson(SavingsGoalEntry entry) => {
+    'id': entry.id,
+    'name': entry.name,
+    'target_amount': entry.targetAmount,
+    'saved_amount': entry.savedAmount,
+    'target_date': entry.targetDate?.toIso8601String(),
+    'created_at': entry.createdAt.toIso8601String(),
+    'updated_at': entry.updatedAt.toIso8601String(),
+  };
 
   Map<String, dynamic> _transactionToJson(TransactionEntry entry) => {
     'id': entry.id,
@@ -620,6 +764,11 @@ class BackupRepository {
     if (date == null) throw FormatException('File cadangan tidak valid.');
     return date;
   }
+
+  DateTime? _optionalDate(Map<String, dynamic> item, String key) {
+    if (item[key] == null) return null;
+    return _requiredDate(item, key);
+  }
 }
 
 class BackupImportPreview {
@@ -629,6 +778,8 @@ class BackupImportPreview {
     required this.wallets,
     required this.categories,
     required this.budgets,
+    this.recurringBills = 0,
+    this.savingsGoals = 0,
   });
 
   final Map<String, dynamic> payload;
@@ -636,4 +787,6 @@ class BackupImportPreview {
   final int wallets;
   final int categories;
   final int budgets;
+  final int recurringBills;
+  final int savingsGoals;
 }

@@ -16,6 +16,7 @@ import '../../shared/widgets/app_confirm_dialog.dart';
 import '../../shared/widgets/app_form_actions.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/top_toast.dart';
+import '../planning/planning_forms.dart';
 import 'widgets/period_selector.dart';
 import 'widgets/transaction_filter_chips.dart';
 import 'widgets/transaction_list_section.dart';
@@ -271,6 +272,20 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                       ? detail.transaction.note!
                       : 'Tidak ada catatan',
                 ),
+                if (detail.type == TransactionType.expense) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  TextButton.icon(
+                    icon: const Icon(Icons.event_repeat_rounded),
+                    label: const Text('Jadikan tagihan berulang'),
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      showRecurringBillForm(
+                        context,
+                        sourceTransaction: detail.transaction,
+                      );
+                    },
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.xl),
                 AppFormActions(
                   secondaryLabel: 'Edit',

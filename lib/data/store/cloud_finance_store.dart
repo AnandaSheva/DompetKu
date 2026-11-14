@@ -91,6 +91,26 @@ class CloudFinanceStore implements FinanceStore {
       defaults: {'categoryId': null},
       compare: (a, b) => b.month.compareTo(a.month),
     );
+    _bills = _CloudTable(
+      this,
+      'recurring_bills',
+      (json) => RecurringBillEntry.fromJson(
+        _calendarDatesFromCloud(json, ['nextDueDate']),
+      ),
+      calendarDates: const ['nextDueDate'],
+      defaults: {'isActive': true},
+      compare: (a, b) => a.nextDueDate.compareTo(b.nextDueDate),
+    );
+    _goals = _CloudTable(
+      this,
+      'savings_goals',
+      (json) => SavingsGoalEntry.fromJson(
+        _calendarDatesFromCloud(json, ['targetDate']),
+      ),
+      calendarDates: const ['targetDate'],
+      defaults: {'savedAmount': 0, 'targetDate': null},
+      compare: (a, b) => a.createdAt.compareTo(b.createdAt),
+    );
     _settings = _CloudTable(
       this,
       'settings',
@@ -114,6 +134,8 @@ class CloudFinanceStore implements FinanceStore {
     walletsDao = _CloudWallets(this);
     categoriesDao = _CloudCategories(this);
     budgetsDao = _CloudBudgets(this);
+    recurringBillsDao = _CloudBills(this);
+    savingsGoalsDao = _CloudGoals(this);
     appSettingsDao = _CloudSettings(this);
     seedDao = _CloudSeed(this);
     backupDao = _CloudBackup(this);
@@ -125,6 +147,8 @@ class CloudFinanceStore implements FinanceStore {
   late final _CloudTable<WalletEntry> _wallets;
   late final _CloudTable<CategoryEntry> _categories;
   late final _CloudTable<BudgetEntry> _budgets;
+  late final _CloudTable<RecurringBillEntry> _bills;
+  late final _CloudTable<SavingsGoalEntry> _goals;
   late final _CloudTable<AppSettingEntry> _settings;
   late final _CloudTable<QuickTemplateEntry> _templates;
   @override
@@ -135,6 +159,10 @@ class CloudFinanceStore implements FinanceStore {
   late final CategoriesStore categoriesDao;
   @override
   late final BudgetsStore budgetsDao;
+  @override
+  late final BillsStore recurringBillsDao;
+  @override
+  late final GoalsStore savingsGoalsDao;
   @override
   late final SettingsStore appSettingsDao;
   @override
@@ -159,6 +187,8 @@ class CloudFinanceStore implements FinanceStore {
     _categories,
     _transactions,
     _budgets,
+    _bills,
+    _goals,
     _settings,
     _templates,
   ];
@@ -176,6 +206,7 @@ class CloudFinanceStore implements FinanceStore {
   String? _migrationKey;
   bool legacyMigrated = false;
   final _writes = <_QueuedWrite>[];
+  final _billOperations = <Future<void>>{};
 
   CollectionReference<Map<String, dynamic>> collection(
     String name, {
@@ -548,6 +579,9 @@ class CloudFinanceStore implements FinanceStore {
   }
 
   Future<void> waitForSync() async {
+    await Future.wait(
+      List.of(_billOperations),
+    ).timeout(const Duration(seconds: 40));
     await Future.wait([
       for (final write in List.of(_writes))
         if (write.completion != null) write.completion!,
@@ -649,12 +683,14 @@ class _CloudTable<T> {
     this.decode, {
     this.defaults = const {},
     this.compare,
+    this.calendarDates = const [],
   });
   final CloudFinanceStore store;
   final String name;
   final T Function(Map<String, dynamic>) decode;
   final Map<String, dynamic> defaults;
   final int Function(T, T)? compare;
+  final List<String> calendarDates;
   final _events = StreamController<List<T>>.broadcast(sync: true);
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _subscription;
   Completer<void> _ready = Completer<void>();
@@ -722,13 +758,29 @@ class _CloudTable<T> {
     final data = companionToCloud(companion, defaults: defaults);
     final id = fixedId ?? data['id'] as int? ?? newCloudId();
     data['id'] = id;
+    _encodeCalendarDates(data);
     store.write(name, id, data);
     return id;
   }
 
   Future<void> update(Insertable<dynamic> companion) async {
     final data = companionToCloud(companion, defaults: defaults);
+    _encodeCalendarDates(data);
     store.write(name, data['id'] as int, data);
+  }
+
+  void _encodeCalendarDates(Map<String, dynamic> data) {
+    for (final key in calendarDates) {
+      final raw = data[key];
+      if (raw is int) {
+        final day = DateTime.fromMillisecondsSinceEpoch(raw);
+        data[key] = DateTime.utc(
+          day.year,
+          day.month,
+          day.day,
+        ).millisecondsSinceEpoch;
+      }
+    }
   }
 
   Future<int> delete(int id) async {
@@ -941,4 +993,232 @@ class _CloudBackup implements BackupStore {
     }
     replacing[0] = true;
   }
+}
+
+class _CloudBills implements BillsStore, AtomicBillPayments {
+  _CloudBills(this.store);
+  final CloudFinanceStore store;
+  _CloudTable<RecurringBillEntry> get table => store._bills;
+  @override
+  Stream<List<RecurringBillEntry>> watchAll() => table.watch();
+  @override
+  Future<List<RecurringBillEntry>> getAll() => table.getAll();
+  @override
+  Future<RecurringBillEntry?> getById(int id) async =>
+      (await getAll()).where((row) => row.id == id).firstOrNull;
+  @override
+  Future<int> add(RecurringBillEntriesCompanion entry) => table.add(entry);
+  @override
+  Future<void> updateEntry(RecurringBillEntriesCompanion entry) =>
+      table.update(entry);
+  @override
+  Future<int> deleteById(int id) => table.delete(id);
+
+  @override
+  Future<void> payAndAdvance(
+    RecurringBillEntry expected,
+    TransactionEntriesCompanion payment,
+    RecurringBillEntry advanced,
+  ) => _runBillCommit(expected, advanced, payment: payment);
+
+  @override
+  Future<void> advanceBill(
+    RecurringBillEntry expected,
+    RecurringBillEntry advanced,
+  ) => _runBillCommit(expected, advanced);
+
+  Future<void> _runBillCommit(
+    RecurringBillEntry expected,
+    RecurringBillEntry advanced, {
+    TransactionEntriesCompanion? payment,
+  }) async {
+    await store.waitForSync();
+    final operation = _commitBill(expected, advanced, payment: payment);
+    store._billOperations.add(operation);
+    try {
+      await operation;
+    } finally {
+      store._billOperations.remove(operation);
+    }
+  }
+
+  // A cached batch cannot safely advance an occurrence: another device may
+  // already have paid it or advanced further while this browser was offline.
+  Future<void> _commitBill(
+    RecurringBillEntry expected,
+    RecurringBillEntry advanced, {
+    TransactionEntriesCompanion? payment,
+  }) async {
+    final dataset = store._dataset;
+    store._pending++;
+    store._emit();
+    try {
+      final billData = companionToCloud(expected.toCompanion(true));
+      table._encodeCalendarDates(billData);
+      final nextData = companionToCloud(advanced.toCompanion(true));
+      table._encodeCalendarDates(nextData);
+      final paymentData = payment == null
+          ? null
+          : companionToCloud(payment, defaults: store._transactions.defaults);
+      final billRef = store
+          .collection('recurring_bills', dataset: dataset)
+          .doc('${expected.id}');
+      final paymentRef = paymentData == null
+          ? null
+          : store
+                .collection('transactions', dataset: dataset)
+                .doc('${paymentData['id']}');
+      String? conflict;
+      await store.firestore.runTransaction((transaction) async {
+        conflict = null;
+        final profile = await transaction.get(store._profile);
+        final current = await transaction.get(billRef);
+        final existingPayment = paymentRef == null
+            ? null
+            : await transaction.get(paymentRef);
+        // Paying and resuming need live references. Pausing/skipping can still
+        // resolve a schedule whose category or wallet was archived elsewhere.
+        final needsReferences =
+            payment != null ||
+            (advanced.isActive &&
+                (!expected.isActive ||
+                    advanced.nextDueDate == expected.nextDueDate ||
+                    advanced.walletId != expected.walletId ||
+                    advanced.categoryId != expected.categoryId));
+        final wallet = needsReferences
+            ? await transaction.get(
+                store
+                    .collection('wallets', dataset: dataset)
+                    .doc('${advanced.walletId}'),
+              )
+            : null;
+        final category = needsReferences
+            ? await transaction.get(
+                store
+                    .collection('categories', dataset: dataset)
+                    .doc('${advanced.categoryId}'),
+              )
+            : null;
+        if (profile.data()?['activeDataset'] != dataset) {
+          conflict = 'Data akun sudah diganti. Muat ulang sebelum melanjutkan.';
+          return;
+        }
+        final data = current.data();
+        // Compare the complete expected row as two edits can share a timestamp.
+        if (data == null ||
+            billData.entries.any((entry) => data[entry.key] != entry.value)) {
+          conflict =
+              'Tagihan telah berubah di perangkat lain. Periksa jadwal terbaru.';
+          return;
+        }
+        if (existingPayment?.exists == true) {
+          conflict =
+              'Pembayaran periode ini sudah dicatat. Periksa jadwal terbaru.';
+          return;
+        }
+        if (needsReferences &&
+            (wallet?.exists != true ||
+                wallet?.data()?['isArchived'] != false ||
+                category?.exists != true ||
+                category?.data()?['isArchived'] != false ||
+                !['expense', 'both'].contains(category?.data()?['type']))) {
+          conflict =
+              'Dompet atau kategori sudah tidak aktif. Edit tagihan terlebih dahulu.';
+          return;
+        }
+        if (paymentRef != null) transaction.set(paymentRef, paymentData!);
+        transaction.set(billRef, nextData);
+      }, timeout: const Duration(seconds: 15));
+      // Dart exceptions thrown inside the JavaScript transaction callback are
+      // wrapped as NativeError by FlutterFire Web. Reject outside that callback
+      // so the UI receives the original, actionable conflict message.
+      if (conflict != null) throw StateError(conflict!);
+      // Let the shared listener publish the committed server row before another
+      // confirmation reads the local repository again.
+      await table
+          .watch()
+          .firstWhere(
+            (rows) =>
+                rows.every((row) => row.id != advanced.id) ||
+                rows.any(
+                  (row) =>
+                      row.id == advanced.id &&
+                      (row.nextDueDate != expected.nextDueDate ||
+                          row.updatedAt.millisecondsSinceEpoch !=
+                              expected.updatedAt.millisecondsSinceEpoch ||
+                          row.isActive != expected.isActive ||
+                          row.title != expected.title ||
+                          row.amount != expected.amount ||
+                          row.walletId != expected.walletId ||
+                          row.categoryId != expected.categoryId ||
+                          row.frequency != expected.frequency ||
+                          row.anchorDay != expected.anchorDay),
+                ),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (paymentData != null) {
+        await store._transactions
+            .watch()
+            .firstWhere(
+              (rows) => rows.any((row) => row.id == paymentData['id']),
+            )
+            .timeout(const Duration(seconds: 10));
+      }
+    } on FirebaseException catch (error) {
+      if (['unavailable', 'deadline-exceeded'].contains(error.code)) {
+        throw StateError(
+          'Hubungkan internet untuk mengonfirmasi perubahan jadwal.',
+        );
+      }
+      rethrow;
+    } on TimeoutException {
+      throw StateError(
+        'Hubungkan internet lalu periksa jadwal sebelum mencoba lagi.',
+      );
+    } finally {
+      store._pending--;
+      store._emit();
+    }
+  }
+}
+
+class _CloudGoals implements GoalsStore {
+  _CloudGoals(this.store);
+  final CloudFinanceStore store;
+  _CloudTable<SavingsGoalEntry> get table => store._goals;
+  @override
+  Stream<List<SavingsGoalEntry>> watchAll() => table.watch();
+  @override
+  Future<List<SavingsGoalEntry>> getAll() => table.getAll();
+  @override
+  Future<SavingsGoalEntry?> getById(int id) async =>
+      (await getAll()).where((row) => row.id == id).firstOrNull;
+  @override
+  Future<int> add(SavingsGoalEntriesCompanion entry) => table.add(entry);
+  @override
+  Future<void> updateEntry(SavingsGoalEntriesCompanion entry) =>
+      table.update(entry);
+  @override
+  Future<int> deleteById(int id) => table.delete(id);
+}
+
+// Store date-only planning fields as UTC calendar days, then reconstruct local
+// calendar values. An account opened in another timezone keeps the same due day.
+Map<String, dynamic> _calendarDatesFromCloud(
+  Map<String, dynamic> json,
+  List<String> fields,
+) {
+  final result = Map<String, dynamic>.from(json);
+  for (final key in fields) {
+    final raw = result[key];
+    if (raw is int) {
+      final day = DateTime.fromMillisecondsSinceEpoch(raw, isUtc: true);
+      result[key] = DateTime(
+        day.year,
+        day.month,
+        day.day,
+      ).millisecondsSinceEpoch;
+    }
+  }
+  return result;
 }

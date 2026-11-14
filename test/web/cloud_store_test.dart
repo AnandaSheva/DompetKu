@@ -1,6 +1,10 @@
 @TestOn('browser')
 library;
 
+// Browser tests do not launch main.dart's generated web plugin registrant.
+// Register these existing transitive web implementations explicitly for tests.
+// ignore_for_file: depend_on_referenced_packages
+
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,12 +12,18 @@ import 'package:drift/drift.dart' show Value;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+import 'package:firebase_core_web/firebase_core_web.dart';
+import 'package:firebase_auth_web/firebase_auth_web.dart';
+import 'package:cloud_firestore_web/cloud_firestore_web.dart';
 
 import 'package:dompet_sheva/data/local/database/app_database.dart';
 import 'package:dompet_sheva/data/repositories/backup_repository.dart';
+import 'package:dompet_sheva/data/repositories/planning_repository.dart';
 import 'package:dompet_sheva/data/repositories/transaction_repository.dart';
 import 'package:dompet_sheva/data/repositories/wallet_repository.dart';
 import 'package:dompet_sheva/data/store/cloud_finance_store.dart';
+import 'package:dompet_sheva/data/store/finance_store.dart';
 import 'package:dompet_sheva/core/enums/transaction_type.dart';
 
 const options = FirebaseOptions(
@@ -30,6 +40,12 @@ void main() {
   late FirebaseAuth auth;
   late CloudFinanceStore store;
   var sequence = 0;
+  setUpAll(() {
+    final registrar = Registrar();
+    FirebaseCoreWeb.registerWith(registrar);
+    FirebaseAuthWeb.registerWith(registrar);
+    FirebaseFirestoreWeb.registerWith(registrar);
+  });
 
   setUp(() async {
     app = await Firebase.initializeApp(
@@ -199,4 +215,113 @@ void main() {
         .get(const GetOptions(source: Source.server));
     expect(profile.data()?['activeDataset'], previous);
   });
+  test(
+    'bills and goals sync offline writes and survive staged restore',
+    () async {
+      final repo = PlanningRepository(store);
+      final wallet = (await store.walletsDao.getAll()).first;
+      final category = (await store.categoriesDao.getByType('expense')).first;
+      final due = DateTime(2026, 1, 31);
+      await firestore.disableNetwork();
+      await repo.saveBill(
+        title: 'Internet',
+        amount: 250000,
+        categoryId: category.id,
+        walletId: wallet.id,
+        nextDueDate: due,
+        frequency: 'monthly',
+      );
+      await repo.saveGoal(
+        name: 'Dana darurat',
+        targetAmount: 10000000,
+        savedAmount: 500000,
+        targetDate: DateTime(2027, 12, 31),
+      );
+      expect(await store.recurringBillsDao.getAll(), hasLength(1));
+      expect(await store.savingsGoalsDao.getAll(), hasLength(1));
+      expect(await store.transactionsDao.getAll(), isEmpty);
+      final bill = (await store.recurringBillsDao.getAll()).single;
+      await firestore.enableNetwork();
+      await store.waitForSync();
+      await repo.payBill(bill, paidAt: DateTime(2026, 1, 30));
+      expect((await store.transactionsDao.getAll()).single.amount, 250000);
+      await store.recurringBillsDao.watchAll().firstWhere(
+        (rows) => rows.single.nextDueDate == DateTime(2026, 2, 28),
+      );
+      expect(
+        (await store.recurringBillsDao.getAll()).single.nextDueDate,
+        DateTime(2026, 2, 28),
+      );
+      await firestore.enableNetwork();
+      await store.waitForSync();
+      final second = CloudFinanceStore(firestore, auth.currentUser!.uid);
+      await second.initialize();
+      try {
+        expect(
+          (await second.savingsGoalsDao.getAll()).single.savedAmount,
+          500000,
+        );
+        expect(
+          (await second.recurringBillsDao.getAll()).single.nextDueDate,
+          DateTime(2026, 2, 28),
+        );
+        expect(await second.transactionsDao.getAll(), hasLength(1));
+      } finally {
+        await second.close();
+      }
+      final backup = BackupRepository(store);
+      final payload = await backup.exportPayload();
+      await backup.restoreImport(backup.previewFromJson(jsonEncode(payload)));
+      expect(
+        (await store.savingsGoalsDao.getAll()).single.name,
+        'Dana darurat',
+      );
+      expect(await store.recurringBillsDao.getAll(), hasLength(1));
+      await backup.resetData();
+      expect(await store.recurringBillsDao.getAll(), isEmpty);
+      expect(await store.savingsGoalsDao.getAll(), isEmpty);
+    },
+  );
+
+  test(
+    'stale cloud confirmation cannot roll back a newer paid schedule',
+    () async {
+      final repo = PlanningRepository(store);
+      final wallet = (await store.walletsDao.getAll()).first;
+      final category = (await store.categoriesDao.getByType('expense')).first;
+      await repo.saveBill(
+        title: 'Internet',
+        amount: 250000,
+        categoryId: category.id,
+        walletId: wallet.id,
+        nextDueDate: DateTime(2026, 11, 30),
+        frequency: 'monthly',
+      );
+      await store.waitForSync();
+      final stale = (await store.recurringBillsDao.getAll()).single;
+      await repo.payBill(stale);
+      await repo.payBill((await store.recurringBillsDao.getAll()).single);
+      final expected = (await store.recurringBillsDao.getAll()).single;
+      final payment = (await store.transactionsDao.getAll()).first;
+      final advancedStale = stale.copyWith(
+        nextDueDate: DateTime(2026, 12, 30),
+        updatedAt: DateTime.now(),
+      );
+      final atomic = store.recurringBillsDao as AtomicBillPayments;
+      await expectLater(
+        atomic.payAndAdvance(stale, payment.toCompanion(true), advancedStale),
+        throwsStateError,
+      );
+      await expectLater(
+        atomic.advanceBill(stale, advancedStale),
+        throwsStateError,
+      );
+      expect(
+        (await store.recurringBillsDao.getAll()).single.nextDueDate,
+        expected.nextDueDate,
+      );
+      expect(expected.nextDueDate, DateTime(2027, 1, 30));
+      expect(await store.transactionsDao.getAll(), hasLength(2));
+    },
+  );
 }

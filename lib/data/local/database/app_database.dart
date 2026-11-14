@@ -70,6 +70,38 @@ class BudgetEntries extends Table {
   DateTimeColumn get updatedAt => dateTime()();
 }
 
+@DataClassName('RecurringBillEntry')
+class RecurringBillEntries extends Table {
+  @override
+  String get tableName => 'recurring_bills';
+
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get title => text().withLength(min: 1, max: 80)();
+  IntColumn get amount => integer()();
+  IntColumn get categoryId => integer().references(CategoryEntries, #id)();
+  IntColumn get walletId => integer().references(WalletEntries, #id)();
+  DateTimeColumn get nextDueDate => dateTime()();
+  TextColumn get frequency => text().withLength(min: 1, max: 16)();
+  IntColumn get anchorDay => integer()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+}
+
+@DataClassName('SavingsGoalEntry')
+class SavingsGoalEntries extends Table {
+  @override
+  String get tableName => 'savings_goals';
+
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text().withLength(min: 1, max: 80)();
+  IntColumn get targetAmount => integer()();
+  IntColumn get savedAmount => integer().withDefault(const Constant(0))();
+  DateTimeColumn get targetDate => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+}
+
 @DataClassName('QuickTemplateEntry')
 class QuickTemplateEntries extends Table {
   @override
@@ -405,6 +437,71 @@ class BudgetsDao extends DatabaseAccessor<AppDatabase>
   }
 }
 
+@DriftAccessor(tables: [RecurringBillEntries])
+class RecurringBillsDao extends DatabaseAccessor<AppDatabase>
+    with _$RecurringBillsDaoMixin
+    implements BillsStore {
+  RecurringBillsDao(super.db);
+
+  SimpleSelectStatement<$RecurringBillEntriesTable, RecurringBillEntry>
+  _all() => select(recurringBillEntries)
+    ..orderBy([
+      (table) => OrderingTerm(expression: table.nextDueDate),
+      (table) => OrderingTerm(expression: table.id),
+    ]);
+
+  @override
+  Stream<List<RecurringBillEntry>> watchAll() => _all().watch();
+  @override
+  Future<List<RecurringBillEntry>> getAll() => _all().get();
+  @override
+  Future<RecurringBillEntry?> getById(int id) => (select(
+    recurringBillEntries,
+  )..where((table) => table.id.equals(id))).getSingleOrNull();
+  @override
+  Future<int> add(RecurringBillEntriesCompanion entry) =>
+      into(recurringBillEntries).insert(entry);
+  @override
+  Future<void> updateEntry(RecurringBillEntriesCompanion entry) =>
+      update(recurringBillEntries).replace(entry);
+  @override
+  Future<int> deleteById(int id) => (delete(
+    recurringBillEntries,
+  )..where((table) => table.id.equals(id))).go();
+}
+
+@DriftAccessor(tables: [SavingsGoalEntries])
+class SavingsGoalsDao extends DatabaseAccessor<AppDatabase>
+    with _$SavingsGoalsDaoMixin
+    implements GoalsStore {
+  SavingsGoalsDao(super.db);
+
+  SimpleSelectStatement<$SavingsGoalEntriesTable, SavingsGoalEntry> _all() =>
+      select(savingsGoalEntries)..orderBy([
+        (table) =>
+            OrderingTerm(expression: table.createdAt, mode: OrderingMode.desc),
+        (table) => OrderingTerm(expression: table.id),
+      ]);
+
+  @override
+  Stream<List<SavingsGoalEntry>> watchAll() => _all().watch();
+  @override
+  Future<List<SavingsGoalEntry>> getAll() => _all().get();
+  @override
+  Future<SavingsGoalEntry?> getById(int id) => (select(
+    savingsGoalEntries,
+  )..where((table) => table.id.equals(id))).getSingleOrNull();
+  @override
+  Future<int> add(SavingsGoalEntriesCompanion entry) =>
+      into(savingsGoalEntries).insert(entry);
+  @override
+  Future<void> updateEntry(SavingsGoalEntriesCompanion entry) =>
+      update(savingsGoalEntries).replace(entry);
+  @override
+  Future<int> deleteById(int id) =>
+      (delete(savingsGoalEntries)..where((table) => table.id.equals(id))).go();
+}
+
 @DriftAccessor(tables: [AppSettingEntries])
 class AppSettingsDao extends DatabaseAccessor<AppDatabase>
     with _$AppSettingsDaoMixin
@@ -445,6 +542,8 @@ class BackupDao extends DatabaseAccessor<AppDatabase>
   @override
   Future<void> clearUserData() async {
     await transaction(() async {
+      await delete(db.recurringBillEntries).go();
+      await delete(db.savingsGoalEntries).go();
       await delete(transactionEntries).go();
       await delete(budgetEntries).go();
       await delete(quickTemplateEntries).go();
@@ -463,6 +562,8 @@ class BackupDao extends DatabaseAccessor<AppDatabase>
     BudgetEntries,
     QuickTemplateEntries,
     AppSettingEntries,
+    RecurringBillEntries,
+    SavingsGoalEntries,
   ],
   daos: [
     SeedDao,
@@ -472,6 +573,8 @@ class BackupDao extends DatabaseAccessor<AppDatabase>
     BudgetsDao,
     AppSettingsDao,
     BackupDao,
+    RecurringBillsDao,
+    SavingsGoalsDao,
   ],
 )
 class AppDatabase extends _$AppDatabase implements FinanceStore {
@@ -496,7 +599,7 @@ class AppDatabase extends _$AppDatabase implements FinanceStore {
       select(quickTemplateEntries).get();
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -511,6 +614,10 @@ class AppDatabase extends _$AppDatabase implements FinanceStore {
             appSettingEntries,
             appSettingEntries.monthlyResetDay,
           );
+        }
+        if (from < 4) {
+          await m.createTable(recurringBillEntries);
+          await m.createTable(savingsGoalEntries);
         }
       },
       beforeOpen: (details) async {

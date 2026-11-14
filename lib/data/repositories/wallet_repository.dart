@@ -140,6 +140,10 @@ class WalletRepository {
   }
 
   Future<String?> deleteWallet(int walletId) async {
+    final bills = await _database.recurringBillsDao.getAll();
+    if (bills.any((bill) => bill.walletId == walletId)) {
+      return 'Dompet masih dipakai jadwal tagihan. Ubah atau hapus jadwal terlebih dahulu.';
+    }
     final count = await _database.transactionsDao.countByWallet(walletId);
     if (count > 0) {
       return 'Dompet ini masih memiliki transaksi.';

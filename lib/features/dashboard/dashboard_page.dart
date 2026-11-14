@@ -18,6 +18,7 @@ import '../../shared/components/section_header.dart';
 import '../../shared/helpers/category_icon_mapper.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../transactions/widgets/transaction_tile.dart';
+import '../planning/planning_page.dart';
 
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
@@ -83,6 +84,8 @@ class DashboardPage extends ConsumerWidget {
                       title: _insightTitle(data),
                       message: _insightMessage(data),
                     ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    const PlanningShortcuts(),
                     const SizedBox(height: AppSpacing.xxl),
                     const SectionHeader(
                       title: 'Riwayat terbaru',

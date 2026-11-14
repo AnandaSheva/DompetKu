@@ -84,6 +84,8 @@ users/{uid}/datasets/{activeDataset}/wallets/{id}
 users/{uid}/datasets/{activeDataset}/categories/{id}
 users/{uid}/datasets/{activeDataset}/transactions/{id}
 users/{uid}/datasets/{activeDataset}/budgets/{id}
+users/{uid}/datasets/{activeDataset}/recurring_bills/{id}
+users/{uid}/datasets/{activeDataset}/savings_goals/{id}
 users/{uid}/datasets/{activeDataset}/quick_templates/{id}
 users/{uid}/datasets/{activeDataset}/settings/1
 ```
@@ -172,3 +174,26 @@ Referensi: [Flutter setup](https://firebase.google.com/docs/flutter/setup),
 [Firestore offline](https://firebase.google.com/docs/firestore/manage-data/enable-offline),
 [quotas](https://firebase.google.com/docs/firestore/quotas),
 [Drift web storage](https://drift.simonbinder.eu/platforms/web/).
+
+
+## Jadwal tagihan dan target tabungan
+
+Deploy `firestore.rules` yang menyertakan koleksi `recurring_bills` dan
+`savings_goals` sebelum merilis web dengan kedua fitur ini. Rules versi lama
+menolak akses koleksi baru. Gunakan pengujian emulator di atas terlebih dahulu.
+
+Kedua koleksi tetap berada di dataset UID pemilik dengan satu listener bersama
+per koleksi. Tanggal jatuh tempo dan tenggat disimpan sebagai hari kalender UTC
+agar tidak bergeser ketika akun dibuka dari zona waktu lain. Pembayaran tagihan
+memerlukan internet dan memakai transaksi server dengan pemeriksaan versi untuk
+membuat pengeluaran dan memajukan jadwal secara atomik. ID transaksi
+stabil per tagihan dan tanggal jatuh tempo mencegah dua dokumen pembayaran untuk
+periode yang sama. Perangkat dengan jadwal lama ditolak tanpa menimpa pembayaran
+atau memundurkan jadwal. Jadwal baru dan target tetap dapat dibuat offline dengan
+antrean sinkronisasi yang ada. Edit tagihan, jeda/aktifkan, dan lewati periode juga memakai pemeriksaan
+versi server dan memerlukan internet. Perubahan bersamaan pada target dan
+transaksi biasa tetap mengikuti kebijakan last-write-wins yang sudah digunakan
+aplikasi.
+
+Target tabungan mencatat progres manual dan tidak mengubah saldo dompet. Backup,
+pemulihan melalui staging, dan reset menyertakan kedua koleksi.

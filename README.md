@@ -34,12 +34,30 @@ The GitHub repository and update endpoint still use the existing repository URL.
 - Wallet management
 - Transfer between wallets
 - Monthly budgets
+- Recurring bill schedules with confirmed expense recording
+- Savings goals with manual progress and optional deadlines
 - Analytics and summaries
 - Local app lock with PIN and optional biometric unlock
 - Backup and restore for moving data between phones
 - CSV transaction export
 - In-app update checker with direct APK download
 - Offline-first local storage
+
+## Tagihan dan Target Tabungan
+
+Buka **Tagihan** atau **Target tabungan** dari Beranda, atau
+**Tagihan & Target Tabungan** dari Pengaturan. Jadwal tagihan mendukung
+pengulangan mingguan, bulanan, dan tahunan. Pilih **Catat pembayaran** setelah
+membayar untuk membuat satu transaksi pengeluaran dan memajukan satu periode.
+**Lewati periode** hanya memajukan jadwal; tagihan juga dapat dijeda atau diedit.
+Transaksi pengeluaran yang sudah ada dapat dijadikan jadwal untuk periode berikutnya.
+Tanggal 29?31 mengikuti hari terakhir bulan pendek dan kembali ke tanggal asal
+pada bulan yang mendukungnya.
+
+Target tabungan menyimpan nominal tujuan, tenggat opsional, dan jumlah terkumpul
+yang diperbarui manual. Progres tidak memindahkan uang atau mengubah saldo dompet.
+Kedua fitur disertakan dalam backup JSON; backup lama tetap bisa dipulihkan.
+Jadwal ditampilkan di aplikasi, tanpa notifikasi sistem atau pembayaran otomatis.
 
 ## Privacy Model
 

@@ -47,6 +47,20 @@ service cloud.firestore {
         && d.month.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
         && money(d.limitAmount) && d.limitAmount > 0;
     }
+    function validBill(d) {
+      return d.keys().hasOnly(['id','title','amount','categoryId','walletId','nextDueDate','frequency','anchorDay','isActive','createdAt','updatedAt'])
+        && text(d.title,80) && money(d.amount) && d.amount > 0
+        && identifier(d.categoryId) && identifier(d.walletId) && identifier(d.nextDueDate)
+        && d.frequency in ['weekly','monthly','yearly']
+        && d.anchorDay is int && d.anchorDay >= 1 && d.anchorDay <= 31
+        && d.isActive is bool;
+    }
+    function validGoal(d) {
+      return d.keys().hasOnly(['id','name','targetAmount','savedAmount','targetDate','createdAt','updatedAt'])
+        && text(d.name,80) && money(d.targetAmount) && d.targetAmount > 0
+        && money(d.savedAmount) && d.savedAmount >= 0
+        && (d.targetDate == null || identifier(d.targetDate));
+    }
     function validSettings(d) {
       return d.keys().hasOnly(['id','userName','currency','themeMode','hideBalance','onboardingCompleted','monthlyResetDay','createdAt','updatedAt'])
         && d.id == 1 && optionalText(d.userName,80) && d.currency == 'IDR'
@@ -62,13 +76,15 @@ service cloud.firestore {
         && d.colorValue is int && d.colorValue >= 0 && d.colorValue <= 4294967295;
     }
     function knownCollection(collection) {
-      return collection in ['wallets','categories','transactions','budgets','settings','quick_templates'];
+      return collection in ['wallets','categories','transactions','budgets','settings','quick_templates','recurring_bills','savings_goals'];
     }
     function validRow(collection, data) {
       return (collection == 'wallets' && validWallet(data))
         || (collection == 'categories' && validCategory(data))
         || (collection == 'transactions' && validTransaction(data))
         || (collection == 'budgets' && validBudget(data))
+        || (collection == 'recurring_bills' && validBill(data))
+        || (collection == 'savings_goals' && validGoal(data))
         || (collection == 'settings' && validSettings(data))
         || (collection == 'quick_templates' && validTemplate(data));
     }

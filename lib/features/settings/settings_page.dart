@@ -21,6 +21,7 @@ import '../../shared/widgets/app_icon_action_button.dart';
 import '../../shared/widgets/pressable_surface.dart';
 import '../../shared/widgets/top_toast.dart';
 import '../analytics/analytics_page.dart';
+import '../planning/planning_page.dart';
 import 'widgets/app_update_sheet.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -99,6 +100,16 @@ class SettingsPage extends ConsumerWidget {
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (context) => const Scaffold(body: AnalyticsPage()),
+              ),
+            ),
+          ),
+          _SettingsTile(
+            icon: Icons.event_note_rounded,
+            title: 'Tagihan & Target Tabungan',
+            subtitle: 'Atur tagihan rutin dan tujuan menabung',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const PlanningPage(),
               ),
             ),
           ),
@@ -551,7 +562,7 @@ class SettingsPage extends ConsumerWidget {
         context: context,
         title: 'Pulihkan cadangan?',
         message:
-            'Memulihkan cadangan akan mengganti data yang ada ${kIsWeb ? 'di akun Google ini dan semua perangkat yang terhubung' : 'di perangkat ini'}. Pastikan kamu sudah mencadangkan data terbaru.\n\nIsi cadangan: ${preview.transactions} transaksi, ${preview.wallets} dompet, ${preview.categories} kategori, dan ${preview.budgets} budget.',
+            'Memulihkan cadangan akan mengganti data yang ada ${kIsWeb ? 'di akun Google ini dan semua perangkat yang terhubung' : 'di perangkat ini'}. Pastikan kamu sudah mencadangkan data terbaru.\n\nIsi cadangan: ${preview.transactions} transaksi, ${preview.wallets} dompet, ${preview.categories} kategori, ${preview.budgets} budget, ${preview.recurringBills} jadwal tagihan, dan ${preview.savingsGoals} target tabungan.',
         confirmLabel: 'Pulihkan',
         danger: true,
       );
