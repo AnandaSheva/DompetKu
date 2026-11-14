@@ -35,6 +35,8 @@ class AppColors {
   static const Color expenseBlue = Color(0xFF1D4ED8);
   static const Color warningOrange = Color(0xFFC2410C);
   static const Color dangerRed = Color(0xFFDC2626);
+  static const Color cashflowIncome = Color(0xFF15803D);
+  static const Color cashflowExpense = dangerRed;
 
   static const expenseChartPalette = [
     Color(0xFF16A34A),

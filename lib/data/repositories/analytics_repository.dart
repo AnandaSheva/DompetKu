@@ -10,9 +10,19 @@ import '../store/finance_store.dart';
 import 'app_models.dart';
 
 class AnalyticsRepository {
-  const AnalyticsRepository(this._database);
+  const AnalyticsRepository(this._database, {this.clock});
 
   final FinanceStore _database;
+  final DateTime Function()? clock;
+
+  Future<AnalyticsSummary> getSummary(AnalyticsPeriod period) async {
+    return _summary(
+      await _database.transactionsDao.getAll(),
+      await _database.categoriesDao.getAll(),
+      period,
+      (await _database.appSettingsDao.getSettings())?.monthlyResetDay ?? 1,
+    );
+  }
 
   Stream<AnalyticsSummary> watchSummary(AnalyticsPeriod period) {
     final controller = StreamController<AnalyticsSummary>();
@@ -65,19 +75,19 @@ class AnalyticsRepository {
     AnalyticsPeriod period,
     int resetDay,
   ) {
-    final now = DateTime.now();
+    final now = clock?.call() ?? DateTime.now();
     final start = period.startDate(now, resetDay);
-    final end = period == AnalyticsPeriod.currentMonth
-        ? MonthlyPeriod.containing(now, resetDay).end
-        : null;
+    final end = DateTime(now.year, now.month, now.day + 1);
     final categoriesById = {
       for (final category in categories) category.id: category,
     };
     final filtered = transactions
         .where(
           (item) =>
+              TransactionType.fromValue(item.type) !=
+                  TransactionType.transfer &&
               (start == null || !item.date.isBefore(start)) &&
-              (end == null || item.date.isBefore(end)),
+              item.date.isBefore(end),
         )
         .toList();
 
@@ -139,12 +149,15 @@ class AnalyticsRepository {
       case AnalyticsPeriod.currentMonth:
         final start = MonthlyPeriod.containing(now, resetDay).start;
         final today = DateFormatter.startOfDay(now);
-        final days = today.difference(start).inDays + 1;
         return [
-          for (var index = 0; index < days; index++)
+          for (
+            var day = start;
+            !day.isAfter(today);
+            day = DateTime(day.year, day.month, day.day + 1)
+          )
             _cashflowForRange(
-              start.add(Duration(days: index)),
-              start.add(Duration(days: index + 1)),
+              day,
+              DateTime(day.year, day.month, day.day + 1),
               transactions,
             ),
         ];
@@ -171,7 +184,7 @@ class AnalyticsRepository {
         if (transactions.isEmpty) return const [];
         return _monthlyCashflow(
           transactions,
-          _allTimeChartStart(transactions, now),
+          _allTimeChartStart(transactions),
           now,
           resetDay,
         );
@@ -185,6 +198,7 @@ class AnalyticsRepository {
     int resetDay, {
     bool customCycles = false,
   }) {
+    final throughToday = DateTime(now.year, now.month, now.day + 1);
     return [
       for (final monthStart in _monthStarts(
         start,
@@ -194,12 +208,22 @@ class AnalyticsRepository {
       ))
         _cashflowForRange(
           monthStart,
-          customCycles
-              ? MonthlyPeriod.shiftStart(monthStart, 1, resetDay)
-              : _nextMonth(monthStart),
+          _bucketEnd(monthStart, throughToday, resetDay, customCycles),
           transactions,
         ),
     ];
+  }
+
+  DateTime _bucketEnd(
+    DateTime start,
+    DateTime throughToday,
+    int resetDay,
+    bool customCycles,
+  ) {
+    final end = customCycles
+        ? MonthlyPeriod.shiftStart(start, 1, resetDay)
+        : _nextMonth(start);
+    return end.isAfter(throughToday) ? throughToday : end;
   }
 
   DailyCashflow _cashflowForRange(
@@ -223,7 +247,12 @@ class AnalyticsRepository {
       }
     }
 
-    return DailyCashflow(date: start, income: income, expense: expense);
+    return DailyCashflow(
+      date: start,
+      endDate: end,
+      income: income,
+      expense: expense,
+    );
   }
 
   List<CategoryAmount> _expenseBuckets(
@@ -253,7 +282,7 @@ class AnalyticsRepository {
         if (transactions.isEmpty) return const [];
         return _monthlyExpense(
           transactions,
-          _allTimeChartStart(transactions, now),
+          _allTimeChartStart(transactions),
           now,
           resetDay,
         );
@@ -358,15 +387,10 @@ class AnalyticsRepository {
     return DateTime(value.year, value.month + 1);
   }
 
-  DateTime _allTimeChartStart(
-    List<TransactionEntry> transactions,
-    DateTime now,
-  ) {
-    final earliest = transactions
+  DateTime _allTimeChartStart(List<TransactionEntry> transactions) {
+    return transactions
         .map((transaction) => DateFormatter.startOfMonth(transaction.date))
         .reduce((a, b) => a.isBefore(b) ? a : b);
-    final latestWindowStart = DateTime(now.year, now.month - 11);
-    return earliest.isAfter(latestWindowStart) ? earliest : latestWindowStart;
   }
 
   String _shortMonthLabel(DateTime date) {

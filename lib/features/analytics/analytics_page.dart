@@ -21,6 +21,7 @@ import '../../shared/widgets/app_icon_action_button.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/pressable_surface.dart';
 import '../../shared/widgets/top_toast.dart';
+import 'widgets/cashflow_chart_card.dart';
 
 class AnalyticsPage extends ConsumerWidget {
   const AnalyticsPage({super.key});
@@ -104,15 +105,7 @@ class AnalyticsPage extends ConsumerWidget {
                 child: _DonutChart(items: summary.expenseByCategory),
               ),
               const SizedBox(height: AppSpacing.lg),
-              _ChartCard(
-                title: 'Arus kas',
-                subtitle:
-                    'Selisih pemasukan dan pengeluaran dari waktu ke waktu.',
-                child: _LineChart(
-                  items: summary.dailyCashflow,
-                  period: selectedPeriod,
-                ),
-              ),
+              CashflowChartCard(summary: summary, period: selectedPeriod),
               const SizedBox(height: AppSpacing.lg),
               _ChartCard(
                 title: selectedPeriod == AnalyticsPeriod.currentMonth
@@ -514,152 +507,6 @@ class _DonutSlice {
   final String label;
   final int amount;
   final Color color;
-}
-
-class _LineChart extends StatelessWidget {
-  const _LineChart({required this.items, required this.period});
-
-  final List<DailyCashflow> items;
-  final AnalyticsPeriod period;
-
-  @override
-  Widget build(BuildContext context) {
-    if (items.every((item) => item.income == 0 && item.expense == 0)) {
-      return const _ChartEmptyState('Belum ada arus kas pada periode ini.');
-    }
-
-    final theme = Theme.of(context);
-    final isDark = theme.colorScheme.brightness == Brightness.dark;
-    final spots = [
-      for (var index = 0; index < items.length; index++)
-        FlSpot(
-          index.toDouble(),
-          (items[index].income - items[index].expense).toDouble(),
-        ),
-    ];
-
-    return LineChart(
-      LineChartData(
-        gridData: const FlGridData(show: false),
-        titlesData: FlTitlesData(
-          leftTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 32,
-              getTitlesWidget: (value, meta) {
-                final index = value.toInt();
-                if (!_shouldShowLineLabel(index, items.length)) {
-                  return const SizedBox.shrink();
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.sm),
-                  child: Text(
-                    _lineLabel(items[index].date, period),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall,
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        borderData: FlBorderData(show: false),
-        minY: _lineMinY(spots),
-        maxY: _lineMaxY(spots),
-        lineTouchData: LineTouchData(
-          touchTooltipData: LineTouchTooltipData(
-            tooltipBorderRadius: BorderRadius.circular(AppRadius.md),
-            tooltipPadding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            getTooltipColor: (_) =>
-                isDark ? AppColors.darkSurfaceElevated : AppColors.textPrimary,
-            getTooltipItems: (spots) {
-              return [
-                for (final spot in spots)
-                  LineTooltipItem(
-                    CurrencyFormatter.rupiah(spot.y.round()),
-                    theme.textTheme.labelLarge!.copyWith(
-                      color: AppColors.onDark,
-                    ),
-                  ),
-              ];
-            },
-          ),
-        ),
-        clipData: const FlClipData.none(),
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            dotData: const FlDotData(show: false),
-            color: AppColors.primary,
-            barWidth: 4,
-          ),
-        ],
-      ),
-    );
-  }
-
-  double _lineMinY(List<FlSpot> spots) {
-    final value = spots.fold<double>(0, (minY, spot) {
-      return spot.y < minY ? spot.y : minY;
-    });
-    return value == 0 ? -1 : value * 1.18;
-  }
-
-  double _lineMaxY(List<FlSpot> spots) {
-    final value = spots.fold<double>(0, (maxY, spot) {
-      return spot.y > maxY ? spot.y : maxY;
-    });
-    return value == 0 ? 1 : value * 1.18;
-  }
-}
-
-bool _shouldShowLineLabel(int index, int length) {
-  if (index < 0 || index >= length) return false;
-  if (length <= 4) return true;
-  return index == 0 || index == length ~/ 2 || index == length - 1;
-}
-
-String _lineLabel(DateTime date, AnalyticsPeriod period) {
-  switch (period) {
-    case AnalyticsPeriod.currentMonth:
-      return '${date.day}';
-    case AnalyticsPeriod.last3Months:
-    case AnalyticsPeriod.yearToDate:
-    case AnalyticsPeriod.allTime:
-      return _shortMonthLabel(date);
-  }
-}
-
-String _shortMonthLabel(DateTime date) {
-  const labels = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'Mei',
-    'Jun',
-    'Jul',
-    'Agu',
-    'Sep',
-    'Okt',
-    'Nov',
-    'Des',
-  ];
-  return labels[date.month - 1];
 }
 
 bool _shouldShowBarLabel(int index, int length) {

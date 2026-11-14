@@ -81,13 +81,19 @@ class CategoryAmount {
 class DailyCashflow {
   const DailyCashflow({
     required this.date,
+    this.endDate,
     required this.income,
     required this.expense,
   });
 
   final DateTime date;
+
+  /// Exclusive end of the actual daily or monthly reporting interval.
+  final DateTime? endDate;
   final int income;
   final int expense;
+
+  int get netCashflow => income - expense;
 }
 
 class BudgetProgress {
@@ -125,6 +131,14 @@ class AnalyticsSummary {
   final List<DailyCashflow> dailyCashflow;
   final List<CategoryAmount> weeklyExpense;
   final List<CategoryAmount> topExpenses;
+
+  int get totalIncome =>
+      dailyCashflow.fold<int>(0, (total, item) => total + item.income);
+
+  int get totalExpense =>
+      dailyCashflow.fold<int>(0, (total, item) => total + item.expense);
+
+  int get netCashflow => totalIncome - totalExpense;
 
   bool get isEmpty =>
       expenseByCategory.isEmpty &&
