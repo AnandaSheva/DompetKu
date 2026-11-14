@@ -2,6 +2,17 @@
 
 All notable changes to DompetKu are documented in this file.
 
+## [1.5.0] - 2026-11-14
+
+- Memperbaiki pesan dan validasi penghapusan kategori.
+- Menambahkan konfirmasi saat pengeluaran melebihi saldo dompet.
+- Menyelaraskan daftar budget dengan filter periode analitik.
+- Mempertahankan bulan budget lama saat diedit.
+- Mempermudah pemilihan cakupan budget melalui pencarian.
+- Memperbarui warna grafik pengeluaran dari hijau hingga merah berdasarkan nominal.
+- Mendesain ulang Arus kas dengan ringkasan pemasukan, pengeluaran, dan selisih bersih.
+- Memperbaiki perhitungan periode, detail nominal grafik, dan tampilan seluruh riwayat. 
+
 ## [Unreleased]
 
 - Apply a blue/bright-blue palette across light and dark themes, financial accents, categories, charts, app icons, and web metadata.
