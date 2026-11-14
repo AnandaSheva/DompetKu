@@ -1,7 +1,14 @@
+import 'dart:convert';
+
 import 'package:dompet_sheva/data/repositories/update_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test('parses app versions without prefix and build number', () {
     expect(AppVersion.parse('v1.2.0')?.normalized, '1.2.0');
     expect(AppVersion.parse('1.2.0+2004')?.normalized, '1.2.0');
@@ -76,5 +83,59 @@ void main() {
 
     expect(info.status, AppUpdateStatus.upToDate);
     expect(info.canDownload, isFalse);
+  });
+
+  group('Android installed version and v1.5.0 release', () {
+    final release = {
+      'tag_name': 'v1.5.0',
+      'name': 'DompetKu v1.5.0',
+      'assets': [
+        {
+          'name': 'DompetSheva-v1.5.0-arm64.apk',
+          'browser_download_url': 'https://example.com/v1.5.0/arm64.apk',
+          'size': 20,
+        },
+      ],
+    };
+
+    for (final installed in [
+      (
+        version: '1.0.0',
+        build: '8000',
+        status: AppUpdateStatus.updateAvailable,
+      ),
+      (version: '1.5.0', build: '8001', status: AppUpdateStatus.upToDate),
+      (version: '1.6.0', build: '8002', status: AppUpdateStatus.upToDate),
+    ]) {
+      test(
+        'checks installed ${installed.version}, not the APK filename',
+        () async {
+          PackageInfo.setMockInitialValues(
+            appName: 'DompetKu',
+            packageName: 'com.sheva.dompetku',
+            version: installed.version,
+            buildNumber: installed.build,
+            buildSignature: '',
+          );
+          final repository = UpdateRepository(
+            client: MockClient((request) async {
+              expect(request.url, UpdateRepository.latestReleaseUri);
+              return http.Response(jsonEncode(release), 200);
+            }),
+          );
+          addTearDown(repository.close);
+
+          final info = await repository.checkForUpdate();
+
+          expect(info.currentVersion, installed.version);
+          expect(info.latestVersion, '1.5.0');
+          expect(info.status, installed.status);
+          expect(
+            info.canDownload,
+            installed.status == AppUpdateStatus.updateAvailable,
+          );
+        },
+      );
+    }
   });
 }

@@ -15,6 +15,18 @@ Use this checklist before publishing a DompetKu GitHub Release. Replace `{VERSIO
 
 ## Build
 
+On Windows, use the release script after running the checks above. Set `JAVA_HOME` to your JDK (Android Studio's `jbr` also works), or make sure `java` is on `PATH`, so the script can run `apksigner`.
+
+```powershell
+.\scripts\build-apk.ps1
+```
+
+The script reads the version and build number from `pubspec.yaml`, rebuilds all ABI APKs, and checks each APK's actual `versionName`, `versionCode`, application ID, and release signature before copying it. It rejects debug signatures and writes named APKs plus `SHA256SUMS.txt` to `build/releases/{VERSION}+{BUILD}/`. Upload files from this folder.
+
+An APK filename and GitHub tag do not change the installed Android version. Never rename or upload an older APK as a newer release. If the installed `versionName` is older than the tag, the app will keep offering the same update after installation.
+
+For a manual build on other platforms:
+
 ```bash
 flutter build apk --release --split-per-abi
 ```
@@ -26,6 +38,8 @@ Expected APK outputs:
 - `build/app/outputs/flutter-apk/app-x86_64-release.apk`
 
 ## Rename APKs
+
+Skip this step when using `scripts/build-apk.ps1`. For manual builds, first inspect the generated APK manifest with Android SDK `aapt dump badging` or `apkanalyzer manifest version-name` and confirm it matches `pubspec.yaml` and the intended GitHub tag. Check the build number and release signature too.
 
 Use release-friendly names:
 
@@ -55,6 +69,7 @@ Add checksums to the GitHub Release notes.
 
 ## Publish
 
+- Confirm the APK's internal version, `pubspec.yaml`, and release tag are identical, and its build number is higher than the previous release for the same ABI.
 - Upload APK files to GitHub Releases.
 - Push tag `v{VERSION}`.
 - Create GitHub Release `DompetKu v{VERSION}`.
@@ -63,3 +78,4 @@ Add checksums to the GitHub Release notes.
 - Include SHA256 in release notes.
 - Mark the release as latest when appropriate.
 - Download the `arm64` APK from the release and smoke test install on Android.
+- Open Settings and confirm the installed version matches the release. Check for updates again; the app must report that it is already up to date.
