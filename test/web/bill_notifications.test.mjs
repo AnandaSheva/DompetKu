@@ -31,7 +31,7 @@ function harness(options = {}) {
   const events = [];
   const notifications = options.notifications ?? [];
   const local = options.local ?? new Storage();
-  const session = new Storage();
+  const session = options.session ?? new Storage();
   const listeners = new Map();
   const registration = options.registration ?? {
     active: {},
@@ -99,6 +99,46 @@ test('requestPermission reaches the browser before any worker setup', async () =
   const permission = h.api.requestPermission();
   assert.deepEqual(h.events, ['permission']);
   assert.equal(await permission, 'granted');
+});
+
+test('recommendation is once per account and never enables notifications', () => {
+  const h = harness();
+  assert.equal(h.api.takeRecommendation(), false);
+  h.api.activate(alice, true);
+  assert.equal(h.api.takeRecommendation(), true);
+  assert.equal(h.api.takeRecommendation(), false);
+  assert.equal(h.api.activate(alice, true), false);
+  const reloaded = harness({ local: h.local });
+  reloaded.api.activate(alice, true);
+  assert.equal(reloaded.api.takeRecommendation(), false);
+  reloaded.api.activate(bob, true);
+  assert.equal(reloaded.api.takeRecommendation(), true);
+  assert.deepEqual(h.events, []);
+  assert.deepEqual(reloaded.events, []);
+});
+
+test('recommendation on shared devices stays in the current browser session', () => {
+  const h = harness();
+  h.api.activate(alice, false);
+  assert.equal(h.api.takeRecommendation(), true);
+  assert.equal(h.local.values.size, 0);
+  const reloaded = harness({ session: h.session });
+  reloaded.api.activate(alice, false);
+  assert.equal(reloaded.api.takeRecommendation(), false);
+  const newSession = harness({ local: h.local });
+  newSession.api.activate(alice, false);
+  assert.equal(newSession.api.takeRecommendation(), true);
+});
+
+test('recommendation does not repeat in memory if browser storage is unavailable', () => {
+  const h = harness();
+  h.local.failWrite = true;
+  h.api.activate(alice, true);
+  assert.equal(h.api.takeRecommendation(), true);
+  assert.equal(h.api.takeRecommendation(), false);
+  h.api.deactivate(alice);
+  assert.equal(h.api.takeRecommendation(), false);
+  assert.deepEqual(h.events, []);
 });
 
 for (const [name, options, permission] of [

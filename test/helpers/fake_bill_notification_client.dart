@@ -23,6 +23,7 @@ class FakeBillNotificationClient implements BillNotificationClient {
   final attempted = <BillReminderBatch>[];
   final delivered = <BillReminderBatch>[];
   final deactivated = <String>[];
+  final recommendedAccounts = <String>{};
   final opens = StreamController<String>.broadcast();
 
   @override
@@ -45,7 +46,13 @@ class FakeBillNotificationClient implements BillNotificationClient {
   @override
   void setEnabled(bool value) => enabled = value;
   @override
+  bool takeRecommendation() =>
+      activeAccount != null && recommendedAccounts.add(activeAccount!);
+  @override
   Future<BillNotificationPermission> requestPermission() {
+    if (currentPermission != BillNotificationPermission.prompt) {
+      return Future.value(currentPermission);
+    }
     permissionRequests++;
     currentPermission = requestedPermission;
     return Future.value(currentPermission);

@@ -17,6 +17,30 @@ import 'helpers/financial_calendar_fixture.dart';
 
 void main() {
   test(
+    'startup recommendation is shown once without enabling reminders',
+    () async {
+      final fixture = await _Fixture.open();
+      expect(fixture.controller.takeRecommendation(), isTrue);
+      expect(fixture.controller.takeRecommendation(), isFalse);
+      expect(fixture.state.enabled, isFalse);
+      expect(fixture.client.permissionRequests, 0);
+      expect(fixture.client.preparations, 0);
+      expect(fixture.client.delivered, isEmpty);
+    },
+  );
+
+  test(
+    'a manual on then off choice suppresses future recommendations',
+    () async {
+      final fixture = await _Fixture.open();
+      await fixture.controller.setEnabled(true);
+      await fixture.controller.setEnabled(false);
+      expect(fixture.controller.takeRecommendation(), isFalse);
+      expect(fixture.state.enabled, isFalse);
+    },
+  );
+
+  test(
     'permission is requested only on explicit enable, before worker setup',
     () async {
       final fixture = await _Fixture.open();

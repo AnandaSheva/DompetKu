@@ -24,6 +24,7 @@ abstract interface class BillNotificationClient {
   void deactivate(String accountKey);
   void revise(int revision);
   void setEnabled(bool enabled);
+  bool takeRecommendation();
   Future<BillNotificationPermission> requestPermission();
   Future<void> prepare();
   Future<bool> showReminder(

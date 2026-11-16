@@ -120,6 +120,22 @@ class BillReminderController extends Notifier<BillReminderState> {
 
   bool _current(int generation) => ref.mounted && _generation == generation;
 
+  bool takeRecommendation() {
+    if (_accountKey == null ||
+        state.enabled ||
+        state.busy ||
+        state.openRequest != 0 ||
+        ref.read(sessionClosingProvider)) {
+      return false;
+    }
+    return switch (state.permission) {
+      BillNotificationPermission.prompt ||
+      BillNotificationPermission.granted ||
+      BillNotificationPermission.install => _client.takeRecommendation(),
+      _ => false,
+    };
+  }
+
   void _openBills(String key) {
     if (ref.mounted &&
         key == _accountKey &&
@@ -149,6 +165,8 @@ class BillReminderController extends Notifier<BillReminderState> {
   Future<void> setEnabled(bool enabled) async {
     if (_accountKey == null || state.busy) return;
     final generation = _generation;
+    // A manual choice also dismisses any future startup recommendation.
+    _client.takeRecommendation();
     _invalidate();
     if (!enabled) {
       _timer?.cancel();

@@ -200,12 +200,19 @@ pemulihan melalui staging, dan reset menyertakan kedua koleksi.
 
 ## Notifikasi tagihan web/PWA
 
-Buka **Pengaturan > Notifikasi tagihan**, atau halaman **Tagihan**, lalu tekan
-**Aktifkan notifikasi** dan pilih **Izinkan** pada permintaan browser. Izin hanya
-diminta setelah tombol ditekan. Gunakan HTTPS (localhost dapat dipakai untuk
+Pada akses awal setelah akun siap, rekomendasi menyediakan pilihan **Aktifkan**
+atau **Nanti saja**. Pengingat opsional; melewati atau menutup popup tidak meminta
+izin browser. Rekomendasi ditandai per akun di browser agar tidak muncul berulang.
+Penanda memakai penyimpanan lokal hanya pada perangkat pribadi; perangkat bersama
+memakai sesi browser. Menghapus penyimpanan browser dapat memunculkan rekomendasi lagi.
+
+Buka **Pengaturan > Notifikasi tagihan**, atau halaman **Tagihan**, lalu gunakan
+sakelar yang sama untuk mengaktifkan atau menonaktifkan pengingat. Pilih **Izinkan**
+pada permintaan browser. Izin hanya diminta setelah pengguna memilih aktif.
+Gunakan HTTPS (localhost dapat dipakai untuk
 pengujian). Pada iPhone/iPad yang mendukung notifikasi web, tambahkan aplikasi ke
 Layar Utama dan buka melalui ikon tersebut. Jika izin ditolak, ubah pengaturan
-notifikasi situs/perangkat lalu tekan **Periksa izin**.
+notifikasi situs/perangkat, lalu tekan sakelar dan **Periksa izin** pada popup bantuan.
 
 Pengingat memeriksa jadwal aktif yang belum dibayar pada H-1 dan hari H menurut
 tanggal perangkat. Pemeriksaan dilakukan saat data berubah, aplikasi kembali

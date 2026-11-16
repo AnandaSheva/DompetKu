@@ -16,6 +16,8 @@ class _UnavailableClient implements BillNotificationClient {
   @override
   void setEnabled(bool enabled) {}
   @override
+  bool takeRecommendation() => false;
+  @override
   Future<BillNotificationPermission> requestPermission() async => permission;
   @override
   Future<void> prepare() async {}

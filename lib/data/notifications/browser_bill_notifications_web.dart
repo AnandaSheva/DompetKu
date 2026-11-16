@@ -13,6 +13,7 @@ extension type _NotificationBridge(JSObject _) implements JSObject {
   external void deactivate(String account);
   external void revise(int revision);
   external void setEnabled(bool enabled);
+  external bool takeRecommendation();
   external JSPromise<JSString> requestPermission();
   external JSPromise<JSAny?> prepare();
   external JSPromise<JSBoolean> showReminder(String batch);
@@ -52,6 +53,8 @@ class _BrowserClient implements BillNotificationClient {
   void revise(int revision) => _bridge.revise(revision);
   @override
   void setEnabled(bool enabled) => _bridge.setEnabled(enabled);
+  @override
+  bool takeRecommendation() => _bridge.takeRecommendation();
   @override
   Future<BillNotificationPermission> requestPermission() {
     // Do not await anything before entering the browser permission prompt.

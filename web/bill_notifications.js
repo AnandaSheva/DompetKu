@@ -179,6 +179,13 @@
       write(active, `${prefix}enabled.${active.account}`, String(value));
       if (!value) void closeAccount(active.account).catch(() => {});
     },
+    takeRecommendation() {
+      if (!active) return false;
+      const key = `${prefix}recommended.${active.account}`;
+      if (read(active, key) === 'true') return false;
+      write(active, key, 'true');
+      return true;
+    },
     requestPermission() {
       // Invoke synchronously from the user's tap, before any awaited setup.
       const current = permission();

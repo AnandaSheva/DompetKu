@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers/auth_providers.dart';
 import '../../app/providers/bill_reminder_providers.dart';
 import 'planning_page.dart';
+import 'widgets/bill_notification_dialogs.dart';
 
 /// Starts only inside the initialized, authenticated web account's app tree.
 class WebBillReminderHost extends ConsumerStatefulWidget {
@@ -25,6 +26,12 @@ class _WebBillReminderHostState extends ConsumerState<WebBillReminderHost>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !ref.read(webPlatformProvider) || _openingBills) return;
+      if (ref.read(billReminderProvider.notifier).takeRecommendation()) {
+        unawaited(showBillNotificationRecommendation(context, ref));
+      }
+    });
   }
 
   @override
