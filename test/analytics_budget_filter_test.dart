@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:dompet_sheva/app/providers/app_providers.dart';
+import 'package:dompet_sheva/app/providers/planning_providers.dart';
 import 'package:dompet_sheva/app/theme/app_theme.dart';
 import 'package:dompet_sheva/core/enums/analytics_period.dart';
 import 'package:dompet_sheva/core/enums/budget_status.dart';
@@ -241,6 +242,8 @@ Future<void> _openPage(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        transactionDetailsProvider.overrideWith((ref) => Stream.value([])),
+        recurringBillsProvider.overrideWith((ref) => Stream.value([])),
         budgetRepositoryProvider.overrideWithValue(repository),
         analyticsSummaryProvider.overrideWith(
           (ref) => Stream.value(
@@ -299,9 +302,14 @@ Future<void> _openPage(
 }
 
 Future<void> _selectPeriod(WidgetTester tester, String label) async {
+  tester
+      .state<ScrollableState>(find.byType(Scrollable).first)
+      .position
+      .jumpTo(0);
+  await tester.pumpAndSettle();
   await tester.scrollUntilVisible(
     find.text(label),
-    -250,
+    250,
     scrollable: find.byType(Scrollable).first,
   );
   await tester.pumpAndSettle();

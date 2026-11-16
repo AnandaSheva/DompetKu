@@ -22,6 +22,7 @@ import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/pressable_surface.dart';
 import '../../shared/widgets/top_toast.dart';
 import 'widgets/cashflow_chart_card.dart';
+import 'widgets/financial_calendar_card.dart';
 
 class AnalyticsPage extends ConsumerWidget {
   const AnalyticsPage({super.key});
@@ -76,6 +77,13 @@ class AnalyticsPage extends ConsumerWidget {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: AppSpacing.lg),
+            const FinancialCalendarCard(),
+            const SizedBox(height: AppSpacing.xxl),
+            Text(
+              'Ringkasan & Budget',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: AppSpacing.md),
             _AnalyticsPeriodFilter(
               selected: selectedPeriod,
               onSelected: (period) {
