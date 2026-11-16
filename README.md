@@ -57,7 +57,10 @@ pada bulan yang mendukungnya.
 Target tabungan menyimpan nominal tujuan, tenggat opsional, dan jumlah terkumpul
 yang diperbarui manual. Progres tidak memindahkan uang atau mengubah saldo dompet.
 Kedua fitur disertakan dalam backup JSON; backup lama tetap bisa dipulihkan.
-Jadwal ditampilkan di aplikasi, tanpa notifikasi sistem atau pembayaran otomatis.
+Android menampilkan jadwal di aplikasi. Di web/PWA, aktifkan **Notifikasi tagihan**
+di Pengaturan atau halaman Tagihan untuk meminta izin browser. Pengingat H-1 dan
+hari H diperiksa saat DompetKu dibuka/aktif dan data akun selesai tersinkron;
+pengingat tidak berjalan saat aplikasi ditutup. Tidak ada pembayaran otomatis.
 
 ## Privacy Model
 

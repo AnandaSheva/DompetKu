@@ -22,6 +22,7 @@ import '../../shared/widgets/pressable_surface.dart';
 import '../../shared/widgets/top_toast.dart';
 import '../analytics/analytics_page.dart';
 import '../planning/planning_page.dart';
+import '../planning/widgets/bill_notification_settings_card.dart';
 import 'widgets/app_update_sheet.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -63,6 +64,7 @@ class SettingsPage extends ConsumerWidget {
           Text('Pengaturan', style: theme.textTheme.displayMedium),
           const SizedBox(height: AppSpacing.xxl),
           if (kIsWeb) const CloudAccountPanel(),
+          if (kIsWeb) const BillNotificationSettingsCard(),
           _SettingsTile(
             icon: Icons.dark_mode_rounded,
             title: 'Tampilan',

@@ -197,3 +197,35 @@ aplikasi.
 
 Target tabungan mencatat progres manual dan tidak mengubah saldo dompet. Backup,
 pemulihan melalui staging, dan reset menyertakan kedua koleksi.
+
+## Notifikasi tagihan web/PWA
+
+Buka **Pengaturan > Notifikasi tagihan**, atau halaman **Tagihan**, lalu tekan
+**Aktifkan notifikasi** dan pilih **Izinkan** pada permintaan browser. Izin hanya
+diminta setelah tombol ditekan. Gunakan HTTPS (localhost dapat dipakai untuk
+pengujian). Pada iPhone/iPad yang mendukung notifikasi web, tambahkan aplikasi ke
+Layar Utama dan buka melalui ikon tersebut. Jika izin ditolak, ubah pengaturan
+notifikasi situs/perangkat lalu tekan **Periksa izin**. Tombol **Kirim notifikasi
+uji** membantu memeriksa izin dan pengaturan notifikasi perangkat.
+
+Pengingat memeriksa jadwal aktif yang belum dibayar pada H-1 dan hari H menurut
+tanggal perangkat. Pemeriksaan dilakukan saat data berubah, aplikasi kembali
+aktif, dan setiap menit selama halaman berjalan. Pengingat menunggu snapshot akun
+yang selesai tersinkron; data cache, antrean penulisan, atau kesalahan sinkronisasi
+tidak dipakai untuk mengirim pengingat. Jadwal kalender yang hanya berupa proyeksi,
+tagihan dijeda, dan jadwal yang sudah dimajukan setelah bayar/lewati tidak dikirim.
+
+Fitur ini tidak memakai backend, Web Push, Cloud Functions, atau langganan push.
+Service worker khusus notifikasi memakai cakupan `notification-reminders/` agar
+tidak mengganti worker aplikasi Flutter. Browser dapat menunda eksekusi tab latar;
+tidak ada jaminan pengingat saat tab/PWA ditutup. Izin browser saja tidak membuat
+penjadwal latar belakang.
+
+Isi notifikasi hanya menyebut jumlah tagihan dan hari jatuh tempo, tanpa nama,
+nominal, atau kredensial Google. Preferensi dan penanda pengiriman per akun memakai
+hash, tanpa menyalin data tagihan. Perangkat pribadi menyimpan penanda di penyimpanan
+lokal browser; pilihan perangkat bersama memakai sesi browser. Penanda mencegah
+pengingat tagihan/periode/hari yang sama dikirim berulang; menghapus penyimpanan
+browser dapat menghapus penanda ini. Notifikasi ditutup saat pengingat dinonaktifkan
+atau sesi akun berakhir. Ketukan notifikasi membuka halaman Tagihan hanya untuk
+akun yang sesuai. Tidak ada perubahan izin atau alur offline Android.

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/constants/app_constants.dart';
 import '../features/onboarding/onboarding_page.dart';
+import '../features/planning/web_bill_reminder_host.dart';
 import '../features/auth/web_auth_gate.dart';
 import '../features/auth/cloud_account_panel.dart';
 import '../features/auth/cloud_sync_banner.dart';
@@ -115,7 +116,9 @@ class _AppGate extends ConsumerWidget {
         return settings.when(
           data: (value) {
             if (value?.onboardingCompleted ?? false) {
-              return const LegacyMigrationGate(child: MainShell());
+              return const LegacyMigrationGate(
+                child: WebBillReminderHost(child: MainShell()),
+              );
             }
             return const LegacyMigrationGate(child: OnboardingPage());
           },

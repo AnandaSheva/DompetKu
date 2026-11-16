@@ -16,6 +16,7 @@ import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/pressable_surface.dart';
 import '../../shared/widgets/top_toast.dart';
 import 'planning_forms.dart';
+import 'widgets/bill_notification_settings_card.dart';
 
 class PlanningPage extends ConsumerStatefulWidget {
   const PlanningPage({super.key, this.initialTab = 0});
@@ -76,6 +77,8 @@ class _PlanningPageState extends ConsumerState<PlanningPage> {
               const Text(
                 'Di web, mengedit tagihan, mencatat pembayaran, dan mengubah status jadwal memerlukan internet.',
               ),
+              const SizedBox(height: AppSpacing.lg),
+              const BillNotificationSettingsCard(),
             ],
             const SizedBox(height: AppSpacing.lg),
             FilledButton.icon(
