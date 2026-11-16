@@ -37,6 +37,11 @@ class TransactionTile extends StatelessWidget {
       _accentColor(type),
       theme.brightness,
     );
+    final amountColor = AppColors.readableAccent(switch (type) {
+      TransactionPreviewType.income => AppColors.cashflowIncome,
+      TransactionPreviewType.expense => AppColors.cashflowExpense,
+      TransactionPreviewType.transfer => AppColors.infoBlue,
+    }, theme.brightness);
 
     return PressableSurface(
       onTap: onTap,
@@ -98,7 +103,7 @@ class TransactionTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.end,
                     style: theme.textTheme.titleMedium?.copyWith(
-                      color: accentColor,
+                      color: amountColor,
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
