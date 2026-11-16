@@ -94,8 +94,8 @@ class BillNotificationSettingsCard extends ConsumerWidget {
               ),
             ),
           ],
-          const SizedBox(height: AppSpacing.md),
-          if (!state.enabled && canRequest)
+          if (!state.enabled && canRequest) ...[
+            const SizedBox(height: AppSpacing.md),
             FilledButton.icon(
               onPressed: state.busy ? null : () => controller.setEnabled(true),
               icon: const Icon(Icons.notifications_outlined, size: 20),
@@ -103,19 +103,16 @@ class BillNotificationSettingsCard extends ConsumerWidget {
                 state.busy ? 'Mengaktifkan...' : 'Aktifkan notifikasi',
               ),
             ),
-          if (active)
-            OutlinedButton.icon(
-              onPressed: state.busy ? null : controller.testNotification,
-              icon: const Icon(Icons.send_outlined, size: 18),
-              label: Text(state.busy ? 'Memproses...' : 'Kirim notifikasi uji'),
-            ),
+          ],
           if (state.permission == BillNotificationPermission.denied ||
-              state.error != null)
+              state.error != null) ...[
+            const SizedBox(height: AppSpacing.md),
             TextButton.icon(
               onPressed: state.busy ? null : controller.refresh,
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('Periksa izin'),
             ),
+          ],
           const SizedBox(height: AppSpacing.sm),
           Text(
             'Isi notifikasi tidak menampilkan nama tagihan atau nominal. Pengingat menunggu data akun selesai tersinkron.',

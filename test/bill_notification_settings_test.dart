@@ -22,28 +22,26 @@ import 'helpers/financial_calendar_fixture.dart';
 void main() {
   setUpAll(() => initializeDateFormatting('id_ID'));
 
-  testWidgets(
-    'permission is opt-in and reminders can be tested and switched off',
-    (tester) async {
-      final client = await _open(tester);
-      expect(client.permissionRequests, 0);
-      expect(
-        find.textContaining('Tidak berjalan saat aplikasi ditutup'),
-        findsOneWidget,
-      );
-      await tester.tap(find.text('Aktifkan notifikasi'));
-      await tester.pumpAndSettle();
-      expect(client.permissionRequests, 1);
-      expect(find.text('Aktif untuk akun ini di browser ini.'), findsOneWidget);
-      await tester.tap(find.text('Kirim notifikasi uji'));
-      await tester.pumpAndSettle();
-      expect(client.testNotifications, 1);
-      await tester.tap(find.byType(Switch));
-      await tester.pumpAndSettle();
-      expect(client.enabled, isFalse);
-      expect(find.text('Aktifkan notifikasi'), findsOneWidget);
-    },
-  );
+  testWidgets('permission is opt-in and reminders work without a test button', (
+    tester,
+  ) async {
+    final client = await _open(tester);
+    expect(client.permissionRequests, 0);
+    expect(
+      find.textContaining('Tidak berjalan saat aplikasi ditutup'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Aktifkan notifikasi'));
+    await tester.pumpAndSettle();
+    expect(client.permissionRequests, 1);
+    expect(find.text('Aktif untuk akun ini di browser ini.'), findsOneWidget);
+    expect(find.text('Kirim notifikasi uji'), findsNothing);
+    expect(client.delivered.single.phase, 'today');
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+    expect(client.enabled, isFalse);
+    expect(find.text('Aktifkan notifikasi'), findsOneWidget);
+  });
 
   testWidgets('denied permission provides recovery instructions and refresh', (
     tester,

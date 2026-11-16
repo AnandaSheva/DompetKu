@@ -205,8 +205,7 @@ Buka **Pengaturan > Notifikasi tagihan**, atau halaman **Tagihan**, lalu tekan
 diminta setelah tombol ditekan. Gunakan HTTPS (localhost dapat dipakai untuk
 pengujian). Pada iPhone/iPad yang mendukung notifikasi web, tambahkan aplikasi ke
 Layar Utama dan buka melalui ikon tersebut. Jika izin ditolak, ubah pengaturan
-notifikasi situs/perangkat lalu tekan **Periksa izin**. Tombol **Kirim notifikasi
-uji** membantu memeriksa izin dan pengaturan notifikasi perangkat.
+notifikasi situs/perangkat lalu tekan **Periksa izin**.
 
 Pengingat memeriksa jadwal aktif yang belum dibayar pada H-1 dan hari H menurut
 tanggal perangkat. Pemeriksaan dilakukan saat data berubah, aplikasi kembali
