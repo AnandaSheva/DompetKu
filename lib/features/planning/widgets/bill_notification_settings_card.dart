@@ -96,11 +96,18 @@ class BillNotificationSettingsCard extends ConsumerWidget {
           ],
           if (!state.enabled && canRequest) ...[
             const SizedBox(height: AppSpacing.md),
-            FilledButton.icon(
+            OutlinedButton(
               onPressed: state.busy ? null : () => controller.setEnabled(true),
-              icon: const Icon(Icons.notifications_outlined, size: 20),
-              label: Text(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, AppSpacing.iconTileSmall),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.sm,
+                ),
+              ),
+              child: Text(
                 state.busy ? 'Mengaktifkan...' : 'Aktifkan notifikasi',
+                textAlign: TextAlign.center,
               ),
             ),
           ],
