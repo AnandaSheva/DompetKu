@@ -97,8 +97,8 @@ class CategoryChoiceChip extends StatelessWidget {
               ),
               if (selected)
                 Positioned(
-                  top: AppSpacing.xs,
-                  right: AppSpacing.xs,
+                  top: AppSpacing.md,
+                  right: AppSpacing.md,
                   child: Icon(
                     Icons.check_rounded,
                     size: AppSpacing.lg,
