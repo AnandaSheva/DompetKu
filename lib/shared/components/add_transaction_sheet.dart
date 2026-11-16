@@ -450,9 +450,10 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                             )
                           else
                             _CategoryPicker(
+                              key: ValueKey(_type),
+                              type: _type,
                               categories: visibleCategories,
                               selectedCategoryId: _selectedCategoryId,
-                              fallbackAccent: _accentColor,
                               onSelected: (category) {
                                 setState(() {
                                   _selectedCategoryId = category.id;
@@ -628,78 +629,97 @@ class _SheetHeader extends StatelessWidget {
   }
 }
 
-class _CategoryPicker extends StatelessWidget {
+class _CategoryPicker extends StatefulWidget {
   const _CategoryPicker({
+    super.key,
+    required this.type,
     required this.categories,
     required this.selectedCategoryId,
-    required this.fallbackAccent,
     required this.onSelected,
   });
 
+  final TransactionType type;
   final List<CategoryEntry> categories;
   final int? selectedCategoryId;
-  final Color fallbackAccent;
   final ValueChanged<CategoryEntry> onSelected;
 
   @override
-  Widget build(BuildContext context) {
-    final frequent = [
-      for (final name in _frequentLabels(
-        categories.isNotEmpty &&
-                categories.first.type == TransactionType.income.value
-            ? TransactionType.income
-            : TransactionType.expense,
-      ))
-        if (categories.any((category) => category.name == name))
-          categories.firstWhere((category) => category.name == name),
-    ];
-    final grouped = <String, List<CategoryEntry>>{};
-    for (final category in categories) {
-      grouped.putIfAbsent(category.groupName, () => []).add(category);
-    }
+  State<_CategoryPicker> createState() => _CategoryPickerState();
+}
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SheetSectionTitle(
-          title: 'Pilih kategori',
-          subtitle: 'Mulai dari yang sering dipakai.',
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        if (frequent.isNotEmpty)
-          CategoryGroupSection(
-            title: 'Sering dipakai',
-            children: [
-              for (final item in frequent)
-                CategoryChoiceChip(
-                  label: item.name,
-                  icon: categoryIconForEntry(item),
-                  selected: selectedCategoryId == item.id,
-                  accentColor: fallbackAccent,
-                  onSelected: () => onSelected(item),
-                ),
-            ],
-          ),
-        for (final entry in grouped.entries) ...[
-          const SizedBox(height: AppSpacing.xl),
-          CategoryGroupSection(
-            title: entry.key,
-            children: [
-              for (final item in entry.value)
-                CategoryChoiceChip(
-                  label: item.name,
-                  icon: categoryIconForEntry(item),
-                  selected: selectedCategoryId == item.id,
-                  accentColor: AppColors.categoryColor(
-                    item.colorValue,
-                    Theme.of(context).brightness,
+class _CategoryPickerState extends State<_CategoryPicker> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final frequent = _frequentLabels(widget.type);
+    final ordered = [
+      for (final name in frequent)
+        ...widget.categories.where((category) => category.name == name),
+      ...widget.categories.where(
+        (category) => !frequent.contains(category.name),
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 560 ? 5 : 3;
+        final limit = columns * columns;
+        final visible = _expanded ? ordered : ordered.take(limit).toList();
+        final selected = ordered
+            .where((category) => category.id == widget.selectedCategoryId)
+            .firstOrNull;
+        // Keep an edited or newly selected category visible when collapsed.
+        if (!_expanded && selected != null && !visible.contains(selected)) {
+          visible[visible.length - 1] = selected;
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CategoryGroupSection(
+              title: 'Kategori',
+              crossAxisCount: columns,
+              children: [
+                for (final item in visible)
+                  CategoryChoiceChip(
+                    key: ValueKey('transaction-category-${item.id}'),
+                    label: item.name,
+                    tooltip: '${item.name} · ${item.groupName}',
+                    icon: categoryIconForEntry(item),
+                    selected: widget.selectedCategoryId == item.id,
+                    accentColor: AppColors.categoryColor(
+                      item.colorValue,
+                      Theme.of(context).brightness,
+                    ),
+                    onSelected: () => widget.onSelected(item),
                   ),
-                  onSelected: () => onSelected(item),
+              ],
+            ),
+            if (ordered.isEmpty)
+              Text(
+                'Belum ada kategori aktif.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            if (ordered.length > limit) ...[
+              const SizedBox(height: AppSpacing.sm),
+              TextButton.icon(
+                onPressed: () => setState(() => _expanded = !_expanded),
+                icon: Icon(
+                  _expanded
+                      ? Icons.expand_less_rounded
+                      : Icons.expand_more_rounded,
+                  size: AppSpacing.xl,
                 ),
+                label: Text(
+                  _expanded
+                      ? 'Tampilkan lebih sedikit'
+                      : 'Lihat semua (${ordered.length})',
+                ),
+              ),
             ],
-          ),
-        ],
-      ],
+          ],
+        );
+      },
     );
   }
 }

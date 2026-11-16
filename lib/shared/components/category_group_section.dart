@@ -7,32 +7,40 @@ class CategoryGroupSection extends StatelessWidget {
     super.key,
     required this.title,
     required this.children,
+    this.crossAxisCount = 3,
   });
 
   final String title;
   final List<Widget> children;
+  final int crossAxisCount;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final labelStyle = theme.textTheme.labelMedium!;
+    final labelHeight =
+        MediaQuery.textScalerOf(context).scale(labelStyle.fontSize!) *
+        labelStyle.height!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: theme.textTheme.titleMedium),
         const SizedBox(height: AppSpacing.md),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          clipBehavior: Clip.hardEdge,
-          child: Row(
-            children: [
-              for (var index = 0; index < children.length; index++) ...[
-                children[index],
-                if (index != children.length - 1)
-                  const SizedBox(width: AppSpacing.sm),
-              ],
-            ],
-          ),
+        GridView.count(
+          shrinkWrap: true,
+          primary: false,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: AppSpacing.sm,
+          mainAxisSpacing: AppSpacing.sm,
+          mainAxisExtent:
+              AppSpacing.md * 2 +
+              AppSpacing.xxxl +
+              AppSpacing.sm +
+              labelHeight * 2,
+          children: children,
         ),
       ],
     );

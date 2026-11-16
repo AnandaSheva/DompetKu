@@ -12,11 +12,169 @@ import 'package:dompet_sheva/data/repositories/app_models.dart';
 import 'package:dompet_sheva/data/store/finance_store.dart';
 import 'package:dompet_sheva/shared/components/add_transaction_sheet.dart';
 import 'package:dompet_sheva/shared/components/amount_keypad.dart';
+import 'package:dompet_sheva/shared/components/category_choice_chip.dart';
+import 'package:dompet_sheva/shared/components/category_group_section.dart';
 import 'package:dompet_sheva/shared/components/transaction_type_segmented_control.dart';
+import 'package:dompet_sheva/shared/helpers/category_icon_mapper.dart';
 import 'package:dompet_sheva/shared/widgets/top_toast.dart';
 
 void main() {
   setUpAll(() => initializeDateFormatting('id_ID'));
+
+  testWidgets(
+    'expanded grid selects a category once and saves its original ID',
+    (tester) async {
+      final store = _TestStore(
+        initialBalance: 10000,
+        categories: _gridCategories(),
+      );
+      await _openSheet(tester, store, amount: 5000);
+      expect(find.byType(CategoryChoiceChip), findsNWidgets(9));
+      expect(
+        find.byKey(const ValueKey('transaction-category-12')),
+        findsNothing,
+      );
+      final scrollable = find
+          .descendant(
+            of: find.byType(AddTransactionSheet),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      await tester.scrollUntilVisible(
+        find.text('Lihat semua (12)'),
+        200,
+        scrollable: scrollable,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Lihat semua (12)'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CategoryChoiceChip), findsNWidgets(12));
+      final target = find.byKey(const ValueKey('transaction-category-12'));
+      await tester.ensureVisible(target);
+      await tester.pumpAndSettle();
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+      expect(tester.widget<CategoryChoiceChip>(target).selected, isTrue);
+      expect(
+        tester.widget<CategoryChoiceChip>(target).icon,
+        categoryIconForEntry(store.categoriesDao.entries[11]),
+      );
+      await tester.ensureVisible(find.text('Tampilkan lebih sedikit'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tampilkan lebih sedikit'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CategoryChoiceChip), findsNWidgets(9));
+      expect(tester.widget<CategoryChoiceChip>(target).selected, isTrue);
+      await tester.tap(find.text('Simpan Transaksi'));
+      await tester.pumpAndSettle();
+      expect(store.transactionsDao.writes.single.categoryId.value, 12);
+      TopToast.dismiss();
+    },
+  );
+
+  testWidgets('editing retains a category outside the initial nine tiles', (
+    tester,
+  ) async {
+    final store = _TestStore(
+      initialBalance: 10000,
+      categories: _gridCategories(),
+    );
+    final existing = _transaction(
+      type: TransactionType.expense,
+      amount: 5000,
+      categoryId: 12,
+    );
+    store.transactionsDao.entries.add(existing);
+    await _openSheet(tester, store, amount: 5000, existing: existing);
+    final target = find.byKey(const ValueKey('transaction-category-12'));
+    expect(tester.widget<CategoryChoiceChip>(target).selected, isTrue);
+    await tester.tap(find.text('Simpan Transaksi'));
+    await tester.pumpAndSettle();
+    expect(store.transactionsDao.writes.single.categoryId.value, 12);
+    TopToast.dismiss();
+  });
+
+  testWidgets('income and transfer keep their own category rules', (
+    tester,
+  ) async {
+    final store = _TestStore(
+      initialBalance: 10000,
+      categories: _gridCategories(),
+    );
+    await _openSheet(tester, store, amount: 5000);
+    expect(find.byKey(const ValueKey('transaction-category-20')), findsNothing);
+    expect(find.byKey(const ValueKey('transaction-category-21')), findsNothing);
+    final control = tester.widget<TransactionTypeSegmentedControl>(
+      find.byType(TransactionTypeSegmentedControl),
+    );
+    control.onChanged(TransactionType.income.index);
+    await tester.pumpAndSettle();
+    expect(find.byType(CategoryChoiceChip), findsNWidgets(2));
+    expect(
+      find.byKey(const ValueKey('transaction-category-20')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('transaction-category-21')), findsNothing);
+    control.onChanged(TransactionType.transfer.index);
+    await tester.pumpAndSettle();
+    expect(find.byType(CategoryChoiceChip), findsNothing);
+  });
+
+  for (final theme in [AppTheme.light, AppTheme.dark]) {
+    for (final width in [320.0, 800.0]) {
+      testWidgets('category grid fits ${theme.brightness.name} at $width', (
+        tester,
+      ) async {
+        final store = _TestStore(
+          initialBalance: 10000,
+          categories: [
+            ..._gridCategories(),
+            if (width >= 600)
+              for (var id = 30; id < 50; id++)
+                _gridCategories()[1].copyWith(id: id, name: 'Tambahan $id'),
+          ],
+        );
+        await _openSheet(
+          tester,
+          store,
+          amount: 5000,
+          theme: theme,
+          width: width,
+          scale: 1.3,
+        );
+        final scrollable = find
+            .descendant(
+              of: find.byType(AddTransactionSheet),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        await tester.scrollUntilVisible(
+          find.byType(CategoryGroupSection),
+          200,
+          scrollable: scrollable,
+        );
+        await tester.pumpAndSettle();
+        final section = tester.widget<CategoryGroupSection>(
+          find.byType(CategoryGroupSection),
+        );
+        expect(section.crossAxisCount, width < 600 ? 3 : 5);
+        expect(
+          find.byType(CategoryChoiceChip),
+          findsNWidgets(width < 600 ? 9 : 25),
+        );
+        final target = find.byType(CategoryGroupSection);
+        await tester.ensureVisible(target);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final expand = find.textContaining('Lihat semua');
+        await tester.ensureVisible(expand);
+        await tester.pumpAndSettle();
+        await tester.tap(expand);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
 
   testWidgets('warns using the latest wallet balance and allows correction', (
     tester,
@@ -135,7 +293,14 @@ Future<void> _openSheet(
   _TestStore store, {
   required int amount,
   TransactionEntry? existing,
+  ThemeData? theme,
+  double width = 420,
+  double scale = 1,
 }) async {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = Size(width, 1100);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetPhysicalSize);
   final wallets = await store.walletsDao.getAll();
   await tester.pumpWidget(
     ProviderScope(
@@ -150,7 +315,13 @@ Future<void> _openSheet(
         ),
       ],
       child: MaterialApp(
-        theme: AppTheme.light,
+        theme: theme ?? AppTheme.light,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(scale)),
+          child: child!,
+        ),
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
@@ -192,11 +363,12 @@ final _now = DateTime(2026, 11, 13);
 TransactionEntry _transaction({
   required TransactionType type,
   required int amount,
+  int categoryId = 1,
 }) => TransactionEntry(
   id: 7,
   type: type.value,
   amount: amount,
-  categoryId: 1,
+  categoryId: categoryId,
   walletId: 1,
   date: _now,
   createdAt: _now,
@@ -204,15 +376,16 @@ TransactionEntry _transaction({
 );
 
 class _TestStore implements FinanceStore {
-  _TestStore({required int initialBalance})
-    : walletsDao = _Wallets(initialBalance);
+  _TestStore({required int initialBalance, List<CategoryEntry>? categories})
+    : walletsDao = _Wallets(initialBalance),
+      categoriesDao = _Categories(categories);
 
   @override
   final _Wallets walletsDao;
   @override
   final _Transactions transactionsDao = _Transactions();
   @override
-  final _Categories categoriesDao = _Categories();
+  final _Categories categoriesDao;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -265,22 +438,62 @@ class _Transactions implements TransactionsStore {
 }
 
 class _Categories implements CategoriesStore {
+  _Categories([List<CategoryEntry>? categories])
+    : entries =
+          categories ??
+          [
+            CategoryEntry(
+              id: 1,
+              name: 'Lainnya',
+              type: 'both',
+              groupName: 'Umum',
+              iconKey: 'category',
+              colorValue: 0xff2563eb,
+              isDefault: false,
+              isArchived: false,
+              createdAt: _now,
+              updatedAt: _now,
+            ),
+          ];
+
+  final List<CategoryEntry> entries;
+
   @override
-  Stream<List<CategoryEntry>> watchAll() => Stream.value([
+  Stream<List<CategoryEntry>> watchAll() => Stream.value(entries);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+List<CategoryEntry> _gridCategories() => [
+  for (var id = 1; id <= 12; id++)
     CategoryEntry(
-      id: 1,
-      name: 'Lainnya',
-      type: 'both',
-      groupName: 'Umum',
-      iconKey: 'category',
+      id: id,
+      name: id == 1
+          ? 'Makanan & Minuman'
+          : id == 12
+          ? 'Kategori khusus dengan nama panjang'
+          : 'Kategori $id',
+      type: id == 1 ? 'both' : 'expense',
+      groupName: 'Kebutuhan Harian',
+      iconKey: id == 12 ? 'transport' : 'food',
       colorValue: 0xff2563eb,
       isDefault: false,
       isArchived: false,
       createdAt: _now,
       updatedAt: _now,
     ),
-  ]);
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
+  for (final id in [20, 21])
+    CategoryEntry(
+      id: id,
+      name: id == 20 ? 'Gaji' : 'Nonaktif',
+      type: id == 20 ? 'income' : 'both',
+      groupName: 'Penghasilan',
+      iconKey: 'salary',
+      colorValue: 0xff0369a1,
+      isDefault: false,
+      isArchived: id == 21,
+      createdAt: _now,
+      updatedAt: _now,
+    ),
+];

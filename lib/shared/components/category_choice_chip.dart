@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme/app_colors.dart';
-import '../../app/theme/app_durations.dart';
 import '../../app/theme/app_radius.dart';
 import '../../app/theme/app_spacing.dart';
-import '../widgets/pressable_surface.dart';
 
 class CategoryChoiceChip extends StatelessWidget {
   const CategoryChoiceChip({
@@ -14,12 +12,14 @@ class CategoryChoiceChip extends StatelessWidget {
     required this.accentColor,
     required this.onSelected,
     this.icon,
+    this.tooltip,
   });
 
   final String label;
   final bool selected;
   final Color accentColor;
   final IconData? icon;
+  final String? tooltip;
   final VoidCallback onSelected;
 
   @override
@@ -27,64 +27,84 @@ class CategoryChoiceChip extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.colorScheme.brightness == Brightness.dark;
 
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      child: PressableSurface(
-        onTap: onSelected,
-        child: AnimatedContainer(
-          duration: AppDurations.normal,
-          curve: AppDurations.easeOut,
-          constraints: const BoxConstraints(minHeight: AppSpacing.iconTile),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
-          ),
-          decoration: BoxDecoration(
-            color: selected
-                ? accentColor.withValues(alpha: isDark ? 0.18 : 0.11)
-                : (isDark ? AppColors.darkSurfaceSoft : AppColors.surfaceSoft),
-            borderRadius: BorderRadius.circular(AppRadius.full),
-            border: Border.all(
+    return Tooltip(
+      message: tooltip ?? label,
+      excludeFromSemantics: true,
+      child: Semantics(
+        selected: selected,
+        child: TextButton(
+          onPressed: onSelected,
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            minimumSize: Size.zero,
+            foregroundColor: accentColor,
+            backgroundColor: selected
+                ? accentColor.withValues(alpha: isDark ? 0.14 : 0.06)
+                : theme.colorScheme.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            side: BorderSide(
+              width: 1.4,
               color: selected
-                  ? accentColor.withValues(alpha: isDark ? 0.38 : 0.24)
+                  ? accentColor
                   : (isDark
                         ? AppColors.darkBorderSubtle
                         : AppColors.borderSubtle),
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              if (icon != null) ...[
-                Icon(
-                  icon,
-                  size: AppSpacing.lg,
-                  color: selected ? accentColor : theme.colorScheme.onSurface,
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                  vertical: AppSpacing.md,
                 ),
-                const SizedBox(width: AppSpacing.sm),
-              ] else ...[
-                Container(
-                  width: AppSpacing.sm,
-                  height: AppSpacing.sm,
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: selected ? 1 : 0.58),
-                    borderRadius: BorderRadius.circular(AppRadius.full),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-              ],
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: selected
-                      ? accentColor
-                      : theme.colorScheme.onSurfaceVariant,
+                child: Column(
+                  children: [
+                    Container(
+                      width: AppSpacing.xxxl,
+                      height: AppSpacing.xxxl,
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(
+                          alpha: isDark ? 0.18 : 0.10,
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        icon ?? Icons.category_rounded,
+                        size: AppSpacing.xl,
+                        color: accentColor,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          label,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              if (selected)
+                Positioned(
+                  top: AppSpacing.xs,
+                  right: AppSpacing.xs,
+                  child: Icon(
+                    Icons.check_rounded,
+                    size: AppSpacing.lg,
+                    color: accentColor,
+                  ),
+                ),
             ],
           ),
         ),
