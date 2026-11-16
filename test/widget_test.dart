@@ -11,6 +11,9 @@ import 'package:dompet_sheva/data/local/database/app_database.dart';
 import 'package:dompet_sheva/data/repositories/app_models.dart';
 import 'package:dompet_sheva/data/repositories/security_repository.dart';
 import 'package:dompet_sheva/features/dashboard/dashboard_page.dart';
+import 'package:dompet_sheva/features/analytics/analytics_page.dart';
+import 'package:dompet_sheva/features/settings/settings_page.dart';
+import 'package:dompet_sheva/features/wallets/wallets_page.dart';
 import 'package:dompet_sheva/shared/widgets/premium_bottom_nav.dart';
 
 void main() {
@@ -18,7 +21,9 @@ void main() {
     await initializeDateFormatting('id_ID');
   });
 
-  testWidgets('DompetKu app shell renders', (WidgetTester tester) async {
+  testWidgets('bottom navigation opens analytics and settings opens wallets', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(_withOverrides(const DompetShevaApp()));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -29,6 +34,38 @@ void main() {
       tester.widget<MaterialApp>(find.byType(MaterialApp)).title,
       'DompetKu',
     );
+    final nav = find.byType(PremiumBottomNav);
+    expect(
+      find.descendant(of: nav, matching: find.text('Dompet')),
+      findsNothing,
+    );
+    await tester.tap(find.descendant(of: nav, matching: find.text('Analitik')));
+    await tester.pumpAndSettle();
+    expect(find.byType(AnalyticsPage), findsOneWidget);
+    expect(tester.widget<PremiumBottomNav>(nav).currentIndex, 2);
+    await tester.scrollUntilVisible(find.text('Ringkasan & Budget'), 200);
+    await tester.pumpAndSettle();
+    expect(find.text('Ringkasan & Budget'), findsOneWidget);
+
+    await tester.tap(
+      find.descendant(of: nav, matching: find.text('Pengaturan')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsPage), findsOneWidget);
+    expect(find.text('Analitik & Budget'), findsNothing);
+    await tester.ensureVisible(find.text('Dompet'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dompet'));
+    await tester.pumpAndSettle();
+    expect(find.byType(WalletsPage), findsOneWidget);
+    expect(find.byTooltip('Tambah dompet'), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsPage), findsOneWidget);
+    expect(tester.widget<PremiumBottomNav>(nav).currentIndex, 3);
+    await tester.tap(find.descendant(of: nav, matching: find.text('Analitik')));
+    await tester.pumpAndSettle();
+    expect(find.byType(AnalyticsPage), findsOneWidget);
   });
 
   testWidgets('Dashboard hierarchy renders', (WidgetTester tester) async {
@@ -87,11 +124,11 @@ Widget _withOverrides(Widget child) {
       appBootstrapProvider.overrideWith((ref) async {}),
       appSettingsProvider.overrideWith((ref) => Stream.value(settings)),
       dashboardSummaryProvider.overrideWith((ref) => Stream.value(summary)),
-      transactionDetailsProvider.overrideWith((ref) => const Stream.empty()),
-      walletBalancesProvider.overrideWith((ref) => const Stream.empty()),
+      transactionDetailsProvider.overrideWith((ref) => Stream.value([])),
+      walletBalancesProvider.overrideWith((ref) => Stream.value([])),
       analyticsSummaryProvider.overrideWith((ref) => Stream.value(analytics)),
-      budgetProgressProvider.overrideWith((ref) => const Stream.empty()),
-      categoriesProvider.overrideWith((ref) => const Stream.empty()),
+      budgetProgressProvider.overrideWith((ref) => Stream.value([])),
+      categoriesProvider.overrideWith((ref) => Stream.value([])),
       recurringBillsProvider.overrideWith((ref) => Stream.value([])),
       savingsGoalsProvider.overrideWith((ref) => Stream.value([])),
       securitySettingsProvider.overrideWith(

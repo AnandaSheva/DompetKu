@@ -451,7 +451,6 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                           else
                             _CategoryPicker(
                               key: ValueKey(_type),
-                              type: _type,
                               categories: visibleCategories,
                               selectedCategoryId: _selectedCategoryId,
                               onSelected: (category) {
@@ -632,13 +631,11 @@ class _SheetHeader extends StatelessWidget {
 class _CategoryPicker extends StatefulWidget {
   const _CategoryPicker({
     super.key,
-    required this.type,
     required this.categories,
     required this.selectedCategoryId,
     required this.onSelected,
   });
 
-  final TransactionType type;
   final List<CategoryEntry> categories;
   final int? selectedCategoryId;
   final ValueChanged<CategoryEntry> onSelected;
@@ -649,74 +646,115 @@ class _CategoryPicker extends StatefulWidget {
 
 class _CategoryPickerState extends State<_CategoryPicker> {
   bool _expanded = false;
+  String? _openGroup;
+
+  @override
+  void initState() {
+    super.initState();
+    _openGroup =
+        widget.categories
+            .where((category) => category.id == widget.selectedCategoryId)
+            .firstOrNull
+            ?.groupName ??
+        widget.categories.firstOrNull?.groupName;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final frequent = _frequentLabels(widget.type);
-    final ordered = [
-      for (final name in frequent)
-        ...widget.categories.where((category) => category.name == name),
-      ...widget.categories.where(
-        (category) => !frequent.contains(category.name),
-      ),
-    ];
+    final grouped = <String, List<CategoryEntry>>{};
+    for (final category in widget.categories) {
+      grouped.putIfAbsent(category.groupName, () => []).add(category);
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= 560 ? 5 : 3;
         final limit = columns * columns;
-        final visible = _expanded ? ordered : ordered.take(limit).toList();
-        final selected = ordered
-            .where((category) => category.id == widget.selectedCategoryId)
-            .firstOrNull;
-        // Keep an edited or newly selected category visible when collapsed.
-        if (!_expanded && selected != null && !visible.contains(selected)) {
-          visible[visible.length - 1] = selected;
-        }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            CategoryGroupSection(
-              title: 'Kategori',
-              crossAxisCount: columns,
-              children: [
-                for (final item in visible)
-                  CategoryChoiceChip(
-                    key: ValueKey('transaction-category-${item.id}'),
-                    label: item.name,
-                    tooltip: '${item.name} · ${item.groupName}',
-                    icon: categoryIconForEntry(item),
-                    selected: widget.selectedCategoryId == item.id,
-                    accentColor: AppColors.categoryColor(
-                      item.colorValue,
-                      Theme.of(context).brightness,
-                    ),
-                    onSelected: () => widget.onSelected(item),
-                  ),
-              ],
-            ),
-            if (ordered.isEmpty)
+            Text('Kategori', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: AppSpacing.md),
+            for (final entry in grouped.entries) ...[
+              Builder(
+                builder: (context) {
+                  final open = _openGroup == entry.key;
+                  final visible = !open
+                      ? <CategoryEntry>[]
+                      : _expanded
+                      ? entry.value
+                      : entry.value.take(limit).toList();
+                  final selected = entry.value
+                      .where(
+                        (category) => category.id == widget.selectedCategoryId,
+                      )
+                      .firstOrNull;
+                  // Keep an edited or selected category visible within its group.
+                  if (open &&
+                      !_expanded &&
+                      selected != null &&
+                      !visible.contains(selected)) {
+                    visible[visible.length - 1] = selected;
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      CategoryGroupSection(
+                        key: ValueKey(
+                          'transaction-category-group-${entry.key}',
+                        ),
+                        title: entry.key,
+                        crossAxisCount: columns,
+                        expanded: open,
+                        onToggle: () => setState(() {
+                          _openGroup = open ? null : entry.key;
+                          _expanded = false;
+                        }),
+                        children: [
+                          for (final item in visible)
+                            CategoryChoiceChip(
+                              key: ValueKey('transaction-category-${item.id}'),
+                              label: item.name,
+                              tooltip: '${item.name} · ${item.groupName}',
+                              icon: categoryIconForEntry(item),
+                              selected: widget.selectedCategoryId == item.id,
+                              accentColor: AppColors.categoryColor(
+                                item.colorValue,
+                                Theme.of(context).brightness,
+                              ),
+                              onSelected: () => widget.onSelected(item),
+                            ),
+                        ],
+                      ),
+                      if (open && entry.value.length > limit) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        TextButton.icon(
+                          onPressed: () =>
+                              setState(() => _expanded = !_expanded),
+                          icon: Icon(
+                            _expanded
+                                ? Icons.expand_less_rounded
+                                : Icons.expand_more_rounded,
+                            size: AppSpacing.xl,
+                          ),
+                          label: Text(
+                            _expanded
+                                ? 'Tampilkan lebih sedikit'
+                                : 'Lihat semua (${entry.value.length})',
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+            if (grouped.isEmpty)
               Text(
                 'Belum ada kategori aktif.',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
-            if (ordered.length > limit) ...[
-              const SizedBox(height: AppSpacing.sm),
-              TextButton.icon(
-                onPressed: () => setState(() => _expanded = !_expanded),
-                icon: Icon(
-                  _expanded
-                      ? Icons.expand_less_rounded
-                      : Icons.expand_more_rounded,
-                  size: AppSpacing.xl,
-                ),
-                label: Text(
-                  _expanded
-                      ? 'Tampilkan lebih sedikit'
-                      : 'Lihat semua (${ordered.length})',
-                ),
-              ),
-            ],
           ],
         );
       },

@@ -5,10 +5,10 @@ import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_radius.dart';
 import '../../app/theme/app_shadows.dart';
 import '../../app/theme/app_spacing.dart';
+import '../../features/analytics/analytics_page.dart';
 import '../../features/dashboard/dashboard_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/transactions/transactions_page.dart';
-import '../../features/wallets/wallets_page.dart';
 import '../components/add_transaction_sheet.dart';
 import '../widgets/premium_bottom_nav.dart';
 
@@ -25,7 +25,7 @@ class _MainShellState extends State<MainShell> {
   final List<Widget> _pages = const [
     DashboardPage(),
     TransactionsPage(),
-    WalletsPage(),
+    AnalyticsPage(),
     SettingsPage(),
   ];
 
@@ -57,9 +57,9 @@ class _MainShellState extends State<MainShell> {
         label: 'Transaksi',
       ),
       PremiumBottomNavItem(
-        icon: Icons.account_balance_wallet_outlined,
-        selectedIcon: Icons.account_balance_wallet_rounded,
-        label: 'Dompet',
+        icon: Icons.bar_chart_outlined,
+        selectedIcon: Icons.bar_chart_rounded,
+        label: 'Analitik',
       ),
       PremiumBottomNavItem(
         icon: Icons.settings_outlined,

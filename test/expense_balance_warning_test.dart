@@ -72,12 +72,15 @@ void main() {
     },
   );
 
-  testWidgets('editing retains a category outside the initial nine tiles', (
-    tester,
-  ) async {
+  testWidgets('editing opens the saved category group', (tester) async {
     final store = _TestStore(
       initialBalance: 10000,
-      categories: _gridCategories(),
+      categories: [
+        for (final category in _gridCategories())
+          category.id == 12
+              ? category.copyWith(groupName: 'Kesehatan')
+              : category,
+      ],
     );
     final existing = _transaction(
       type: TransactionType.expense,
@@ -88,11 +91,79 @@ void main() {
     await _openSheet(tester, store, amount: 5000, existing: existing);
     final target = find.byKey(const ValueKey('transaction-category-12'));
     expect(tester.widget<CategoryChoiceChip>(target).selected, isTrue);
+    expect(
+      tester
+          .widget<CategoryGroupSection>(
+            find.byKey(const ValueKey('transaction-category-group-Kesehatan')),
+          )
+          .expanded,
+      isTrue,
+    );
+    expect(
+      tester
+          .widget<CategoryGroupSection>(
+            find.byKey(
+              const ValueKey('transaction-category-group-Kebutuhan Harian'),
+            ),
+          )
+          .expanded,
+      isFalse,
+    );
     await tester.tap(find.text('Simpan Transaksi'));
     await tester.pumpAndSettle();
     expect(store.transactionsDao.writes.single.categoryId.value, 12);
     TopToast.dismiss();
   });
+
+  testWidgets(
+    'only the opened group shows icons and selecting it saves the category',
+    (tester) async {
+      final store = _TestStore(
+        initialBalance: 10000,
+        categories: [
+          for (final category in _gridCategories())
+            category.id == 12
+                ? category.copyWith(groupName: 'Kesehatan')
+                : category,
+        ],
+      );
+      await _openSheet(tester, store, amount: 5000);
+      expect(find.byType(CategoryChoiceChip), findsNWidgets(9));
+      expect(
+        find.byKey(const ValueKey('transaction-category-12')),
+        findsNothing,
+      );
+      final scrollable = find
+          .descendant(
+            of: find.byType(AddTransactionSheet),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      await tester.scrollUntilVisible(
+        find.text('Kesehatan'),
+        200,
+        scrollable: scrollable,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Kesehatan'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CategoryChoiceChip), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('transaction-category-1')),
+        findsNothing,
+      );
+      final target = find.byKey(const ValueKey('transaction-category-12'));
+      await tester.ensureVisible(target);
+      await tester.pumpAndSettle();
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+      expect(tester.widget<CategoryChoiceChip>(target).selected, isTrue);
+      await tester.tap(find.text('Simpan Transaksi'));
+      await tester.pumpAndSettle();
+      expect(store.transactionsDao.writes.single.categoryId.value, 12);
+      TopToast.dismiss();
+    },
+  );
 
   testWidgets('income and transfer keep their own category rules', (
     tester,
@@ -109,12 +180,32 @@ void main() {
     );
     control.onChanged(TransactionType.income.index);
     await tester.pumpAndSettle();
-    expect(find.byType(CategoryChoiceChip), findsNWidgets(2));
+    expect(find.byType(CategoryChoiceChip), findsOneWidget);
     expect(
       find.byKey(const ValueKey('transaction-category-20')),
       findsOneWidget,
     );
     expect(find.byKey(const ValueKey('transaction-category-21')), findsNothing);
+    expect(find.byKey(const ValueKey('transaction-category-1')), findsNothing);
+    final scrollable = find
+        .descendant(
+          of: find.byType(AddTransactionSheet),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    await tester.scrollUntilVisible(
+      find.text('Kebutuhan Harian'),
+      200,
+      scrollable: scrollable,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Kebutuhan Harian'));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('transaction-category-1')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('transaction-category-20')), findsNothing);
     control.onChanged(TransactionType.transfer.index);
     await tester.pumpAndSettle();
     expect(find.byType(CategoryChoiceChip), findsNothing);

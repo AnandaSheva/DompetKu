@@ -20,7 +20,7 @@ import '../../shared/widgets/app_form_actions.dart';
 import '../../shared/widgets/app_icon_action_button.dart';
 import '../../shared/widgets/pressable_surface.dart';
 import '../../shared/widgets/top_toast.dart';
-import '../analytics/analytics_page.dart';
+import '../wallets/wallets_page.dart';
 import '../planning/planning_page.dart';
 import '../planning/widgets/bill_notification_settings_card.dart';
 import 'widgets/app_update_sheet.dart';
@@ -96,12 +96,13 @@ class SettingsPage extends ConsumerWidget {
             ),
           ),
           _SettingsTile(
-            icon: Icons.insights_rounded,
-            title: 'Analitik & Budget',
-            subtitle: 'Lihat grafik dan atur budget bulanan',
+            icon: Icons.account_balance_wallet_rounded,
+            title: 'Dompet',
+            subtitle: 'Kelola tunai, rekening, e-wallet, dan tabungan',
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (context) => const Scaffold(body: AnalyticsPage()),
+                builder: (context) =>
+                    Scaffold(appBar: AppBar(), body: const WalletsPage()),
               ),
             ),
           ),
