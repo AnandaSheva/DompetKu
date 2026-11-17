@@ -359,8 +359,14 @@ class BackupRepository {
       final id = _requiredId(item, 'id');
       if (!ids.add(id)) throw FormatException('File cadangan tidak valid.');
       _requiredString(item, 'name');
-      _requiredString(item, 'type', allowed: validTypes);
+      final type = _requiredString(item, 'type', allowed: validTypes);
       _optionalInt(item, 'initial_balance');
+      final reserve = _optionalInt(item, 'reserved_balance') ?? 0;
+      if (reserve < 0 ||
+          reserve > 9007199254740991 ||
+          (type != 'bank' && reserve != 0)) {
+        throw FormatException('Saldo endapan pada file cadangan tidak valid.');
+      }
       _optionalBool(item, 'is_archived');
     }
     return ids;
@@ -594,6 +600,7 @@ class BackupRepository {
     'name': entry.name,
     'type': entry.type,
     'initial_balance': entry.initialBalance,
+    'reserved_balance': entry.reservedBalance,
     'is_archived': entry.isArchived,
   };
 
@@ -658,6 +665,7 @@ class BackupRepository {
       name: _requiredString(item, 'name'),
       type: _requiredString(item, 'type'),
       initialBalance: Value(_optionalInt(item, 'initial_balance') ?? 0),
+      reservedBalance: Value(_optionalInt(item, 'reserved_balance') ?? 0),
       isArchived: Value(_optionalBool(item, 'is_archived') ?? false),
       createdAt: now,
       updatedAt: now,

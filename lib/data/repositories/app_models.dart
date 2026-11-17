@@ -1,5 +1,6 @@
 import '../../core/enums/budget_status.dart';
 import '../../core/enums/transaction_type.dart';
+import '../../core/enums/wallet_type.dart';
 import '../local/database/app_database.dart';
 
 class TransactionDetail {
@@ -23,6 +24,17 @@ class WalletBalance {
 
   final WalletEntry wallet;
   final int balance;
+
+  int get reservedBalance =>
+      wallet.type == WalletType.bank.value ? wallet.reservedBalance : 0;
+
+  int get availableBalance {
+    final available = balance - reservedBalance;
+    return available > 0 ? available : 0;
+  }
+
+  bool usesReservedBalance(int amount) =>
+      reservedBalance > 0 && balance - amount < reservedBalance;
 }
 
 class DashboardSummary {

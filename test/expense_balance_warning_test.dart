@@ -357,6 +357,74 @@ void main() {
     expect(store.transactionsDao.writes, isEmpty);
   });
 
+  for (final type in [TransactionType.expense, TransactionType.transfer]) {
+    testWidgets('${type.value} warns before using the bank reserve', (
+      tester,
+    ) async {
+      final store = _TestStore(initialBalance: 100000, reservedBalance: 50000);
+      await _openSheet(tester, store, amount: 60000);
+      tester
+          .widget<TransactionTypeSegmentedControl>(
+            find.byType(TransactionTypeSegmentedControl),
+          )
+          .onChanged(type.index);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Simpan Transaksi'));
+      await tester.pumpAndSettle();
+      expect(find.text('Saldo akan di bawah endapan'), findsOneWidget);
+      expect(
+        find.textContaining('Saldo setelah transaksi: Rp40.000'),
+        findsOneWidget,
+      );
+      expect(store.transactionsDao.writes, isEmpty);
+      await tester.tap(find.text('Ubah transaksi'));
+      await tester.pumpAndSettle();
+      expect(store.transactionsDao.writes, isEmpty);
+      await tester.tap(find.text('Simpan Transaksi'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tetap simpan'));
+      await tester.pumpAndSettle();
+      expect(store.transactionsDao.writes.single.type.value, type.value);
+      TopToast.dismiss();
+    });
+  }
+
+  testWidgets(
+    'editing excludes the old expense at the exact reserve boundary',
+    (tester) async {
+      final store = _TestStore(initialBalance: 100000, reservedBalance: 50000);
+      final existing = _transaction(
+        type: TransactionType.expense,
+        amount: 30000,
+      );
+      store.transactionsDao.entries.add(existing);
+      await _openSheet(tester, store, amount: 50000, existing: existing);
+      await tester.tap(find.text('Simpan Transaksi'));
+      await tester.pumpAndSettle();
+      expect(find.text('Saldo akan di bawah endapan'), findsNothing);
+      expect(store.transactionsDao.writes.single.amount.value, 50000);
+      TopToast.dismiss();
+    },
+  );
+
+  testWidgets('income does not warn when the bank is below its reserve', (
+    tester,
+  ) async {
+    final store = _TestStore(initialBalance: 0, reservedBalance: 50000);
+    await _openSheet(tester, store, amount: 1000);
+    tester
+        .widget<TransactionTypeSegmentedControl>(
+          find.byType(TransactionTypeSegmentedControl),
+        )
+        .onChanged(TransactionType.income.index);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Simpan Transaksi'));
+    await tester.pumpAndSettle();
+    expect(find.text('Saldo akan di bawah endapan'), findsNothing);
+    expect(store.transactionsDao.writes.single.type.value, 'income');
+    TopToast.dismiss();
+  });
+
   for (final type in [TransactionType.income, TransactionType.transfer]) {
     testWidgets('does not apply the expense warning to ${type.value}', (
       tester,
@@ -467,9 +535,12 @@ TransactionEntry _transaction({
 );
 
 class _TestStore implements FinanceStore {
-  _TestStore({required int initialBalance, List<CategoryEntry>? categories})
-    : walletsDao = _Wallets(initialBalance),
-      categoriesDao = _Categories(categories);
+  _TestStore({
+    required int initialBalance,
+    int reservedBalance = 0,
+    List<CategoryEntry>? categories,
+  }) : walletsDao = _Wallets(initialBalance, reservedBalance),
+       categoriesDao = _Categories(categories);
 
   @override
   final _Wallets walletsDao;
@@ -483,8 +554,9 @@ class _TestStore implements FinanceStore {
 }
 
 class _Wallets implements WalletsStore {
-  _Wallets(this.initialBalance);
+  _Wallets(this.initialBalance, this.reservedBalance);
   final int initialBalance;
+  final int reservedBalance;
 
   @override
   Future<List<WalletEntry>> getAll() async => [
@@ -492,8 +564,9 @@ class _Wallets implements WalletsStore {
       WalletEntry(
         id: id,
         name: id == 1 ? 'Tunai' : 'Bank',
-        type: 'cash',
+        type: reservedBalance > 0 && id == 1 ? 'bank' : 'cash',
         initialBalance: initialBalance,
+        reservedBalance: id == 1 ? reservedBalance : 0,
         isArchived: false,
         createdAt: _now,
         updatedAt: _now,

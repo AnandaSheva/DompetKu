@@ -16,6 +16,66 @@ void main() {
   });
   tearDown(() => db.close());
 
+  test(
+    'wallet reserves survive backup and old backups default to zero',
+    () async {
+      final bank = (await db.walletsDao.getAll()).singleWhere(
+        (w) => w.type == 'bank',
+      );
+      await db.walletsDao.updateEntry(
+        bank.copyWith(reservedBalance: 50000).toCompanion(true),
+      );
+      final payload = await repo.exportPayload();
+      await repo.restoreImport(repo.previewFromJson(jsonEncode(payload)));
+      expect(
+        (await db.walletsDao.getAll())
+            .singleWhere((w) => w.id == bank.id)
+            .reservedBalance,
+        50000,
+      );
+      for (final wallet in payload['wallets'] as List) {
+        (wallet as Map).remove('reserved_balance');
+      }
+      await repo.restoreImport(repo.previewFromJson(jsonEncode(payload)));
+      expect(
+        (await db.walletsDao.getAll()).every((w) => w.reservedBalance == 0),
+        true,
+      );
+    },
+  );
+
+  test('invalid wallet reserves are rejected before deleting data', () async {
+    final before = await db.walletsDao.getAll();
+    for (final reserve in [-1, 1.5, '50000', 9007199254740992]) {
+      final payload = await repo.exportPayload();
+      (payload['wallets'] as List).firstWhere(
+        (w) => w['type'] == 'bank',
+      )['reserved_balance'] = reserve;
+      await expectLater(
+        repo.restoreImport(
+          BackupImportPreview(
+            payload: payload,
+            transactions: 0,
+            wallets: 0,
+            categories: 0,
+            budgets: 0,
+          ),
+        ),
+        throwsFormatException,
+      );
+      expect(await db.walletsDao.getAll(), before);
+    }
+    final payload = await repo.exportPayload();
+    (payload['wallets'] as List).firstWhere(
+      (w) => w['type'] == 'cash',
+    )['reserved_balance'] = 100;
+    expect(
+      () => repo.previewFromJson(jsonEncode(payload)),
+      throwsFormatException,
+    );
+    expect(await db.walletsDao.getAll(), before);
+  });
+
   test('invalid import does not delete existing data', () async {
     final payload = await repo.exportPayload();
     payload['transactions'] = [

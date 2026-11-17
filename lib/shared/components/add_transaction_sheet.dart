@@ -234,7 +234,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     setState(() => _saving = true);
 
     try {
-      if (type == TransactionType.expense) {
+      if (type != TransactionType.income) {
         final wallet = await ref
             .read(walletRepositoryProvider)
             .getWalletBalance(
@@ -248,15 +248,25 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
         }
 
         final remainingBalance = wallet.balance - amount;
-        if (remainingBalance < 0) {
+        final usesReserve = wallet.usesReservedBalance(amount);
+        if (usesReserve ||
+            (type == TransactionType.expense && remainingBalance < 0)) {
           final confirmed = await showAppConfirmDialog(
             context: context,
-            title: 'Arus kas dompet akan minus',
-            message:
-                'Pengeluaran ini melebihi saldo dompet "${wallet.wallet.name}".\n\n'
-                'Saldo sebelum transaksi: ${CurrencyFormatter.rupiah(wallet.balance)}\n'
-                'Pengeluaran: ${CurrencyFormatter.rupiah(amount)}\n'
-                'Saldo setelah transaksi: ${CurrencyFormatter.rupiah(remainingBalance)}',
+            title: usesReserve
+                ? 'Saldo akan di bawah endapan'
+                : 'Arus kas dompet akan minus',
+            message: usesReserve
+                ? 'Transaksi ini membuat saldo rekening "${wallet.wallet.name}" '
+                      'di bawah saldo endapan.\n\n'
+                      'Bisa dipakai: ${CurrencyFormatter.rupiah(wallet.availableBalance)}\n'
+                      'Saldo endapan: ${CurrencyFormatter.rupiah(wallet.reservedBalance)}\n'
+                      'Nominal transaksi: ${CurrencyFormatter.rupiah(amount)}\n'
+                      'Saldo setelah transaksi: ${CurrencyFormatter.rupiah(remainingBalance)}'
+                : 'Pengeluaran ini melebihi saldo dompet "${wallet.wallet.name}".\n\n'
+                      'Saldo sebelum transaksi: ${CurrencyFormatter.rupiah(wallet.balance)}\n'
+                      'Pengeluaran: ${CurrencyFormatter.rupiah(amount)}\n'
+                      'Saldo setelah transaksi: ${CurrencyFormatter.rupiah(remainingBalance)}',
             confirmLabel: 'Tetap simpan',
             cancelLabel: 'Ubah transaksi',
           );

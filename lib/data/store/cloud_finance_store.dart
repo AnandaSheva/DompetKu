@@ -71,8 +71,12 @@ class CloudFinanceStore implements FinanceStore {
     _wallets = _CloudTable(
       this,
       'wallets',
-      WalletEntry.fromJson,
-      defaults: {'initialBalance': 0, 'isArchived': false},
+      (json) => WalletEntry.fromJson({'reservedBalance': 0, ...json}),
+      defaults: {
+        'initialBalance': 0,
+        'reservedBalance': 0,
+        'isArchived': false,
+      },
       compare: (a, b) => a.id.compareTo(b.id),
     );
     _categories = _CloudTable(

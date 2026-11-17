@@ -13,11 +13,16 @@ void main() {
         updatedAt: now,
       ),
       id: 42,
-      defaults: {'initialBalance': 0, 'isArchived': false},
+      defaults: {
+        'initialBalance': 0,
+        'reservedBalance': 0,
+        'isArchived': false,
+      },
     );
     final row = WalletEntry.fromJson(map);
     expect(row.id, 42);
     expect(row.initialBalance, 0);
+    expect(row.reservedBalance, 0);
     expect(row.isArchived, false);
     expect(row.createdAt, now);
     expect(map['initialBalance'], isA<int>());

@@ -25,6 +25,7 @@ final _wallet = WalletEntry(
   name: 'Tunai',
   type: 'cash',
   initialBalance: 100,
+  reservedBalance: 0,
   isArchived: false,
   createdAt: _now,
   updatedAt: _now,
@@ -75,6 +76,27 @@ void main() {
       expect(find.text('Jatuh tempo hari ini'), findsOneWidget);
     },
   );
+
+  testWidgets('bill payment warns before using the bank reserve', (
+    tester,
+  ) async {
+    final repository = _PlanningRepository();
+    await _pump(
+      tester,
+      repository,
+      balance: WalletBalance(
+        wallet: _wallet.copyWith(type: 'bank', reservedBalance: 500),
+        balance: 1200,
+      ),
+    );
+    await tester.tap(find.text('Catat pembayaran'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('di bawah saldo endapan Rp500'), findsOneWidget);
+    expect(find.textContaining('saldo menjadi negatif'), findsNothing);
+    await tester.tap(find.text('Batal'));
+    await tester.pumpAndSettle();
+    expect(repository.payments, 0);
+  });
 
   testWidgets('confirms payment once and disables mutations while saving', (
     tester,
@@ -190,6 +212,7 @@ Future<void> _pump(
   WidgetTester tester,
   _PlanningRepository repository, {
   Widget page = const PlanningPage(),
+  WalletBalance? balance,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(420, 1000);
@@ -199,7 +222,7 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         planningRepositoryProvider.overrideWithValue(repository),
-        walletRepositoryProvider.overrideWithValue(_WalletRepository()),
+        walletRepositoryProvider.overrideWithValue(_WalletRepository(balance)),
         walletBalancesProvider.overrideWith(
           (ref) => Stream.value([WalletBalance(wallet: _wallet, balance: 100)]),
         ),
@@ -263,12 +286,13 @@ class _PlanningRepository extends PlanningRepository {
 }
 
 class _WalletRepository extends WalletRepository {
-  _WalletRepository() : super(_UnusedStore());
+  _WalletRepository(this.balance) : super(_UnusedStore());
+  final WalletBalance? balance;
   @override
   Future<WalletBalance?> getWalletBalance({
     required int walletId,
     int? excludingTransactionId,
-  }) async => WalletBalance(wallet: _wallet, balance: 100);
+  }) async => balance ?? WalletBalance(wallet: _wallet, balance: 100);
 }
 
 class _UnusedStore implements FinanceStore {

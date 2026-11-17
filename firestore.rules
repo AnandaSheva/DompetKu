@@ -22,9 +22,11 @@ service cloud.firestore {
         && identifier(data.createdAt) && identifier(data.updatedAt);
     }
     function validWallet(d) {
-      return d.keys().hasOnly(['id','name','type','initialBalance','isArchived','createdAt','updatedAt'])
+      return d.keys().hasOnly(['id','name','type','initialBalance','reservedBalance','isArchived','createdAt','updatedAt'])
         && text(d.name, 80) && d.type in ['cash','ewallet','bank','savings']
-        && money(d.initialBalance) && d.isArchived is bool;
+        && money(d.initialBalance) && d.isArchived is bool
+        && money(d.get('reservedBalance', 0)) && d.get('reservedBalance', 0) >= 0
+        && (d.type == 'bank' || d.get('reservedBalance', 0) == 0);
     }
     function validCategory(d) {
       return d.keys().hasOnly(['id','name','type','groupName','iconKey','colorValue','isDefault','isArchived','createdAt','updatedAt'])

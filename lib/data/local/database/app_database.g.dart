@@ -887,6 +887,18 @@ class $WalletEntriesTable extends WalletEntries
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _reservedBalanceMeta = const VerificationMeta(
+    'reservedBalance',
+  );
+  @override
+  late final GeneratedColumn<int> reservedBalance = GeneratedColumn<int>(
+    'reserved_balance',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _isArchivedMeta = const VerificationMeta(
     'isArchived',
   );
@@ -930,6 +942,7 @@ class $WalletEntriesTable extends WalletEntries
     name,
     type,
     initialBalance,
+    reservedBalance,
     isArchived,
     createdAt,
     updatedAt,
@@ -971,6 +984,15 @@ class $WalletEntriesTable extends WalletEntries
         initialBalance.isAcceptableOrUnknown(
           data['initial_balance']!,
           _initialBalanceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reserved_balance')) {
+      context.handle(
+        _reservedBalanceMeta,
+        reservedBalance.isAcceptableOrUnknown(
+          data['reserved_balance']!,
+          _reservedBalanceMeta,
         ),
       );
     }
@@ -1021,6 +1043,10 @@ class $WalletEntriesTable extends WalletEntries
         DriftSqlType.int,
         data['${effectivePrefix}initial_balance'],
       )!,
+      reservedBalance: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reserved_balance'],
+      )!,
       isArchived: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_archived'],
@@ -1047,6 +1073,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
   final String name;
   final String type;
   final int initialBalance;
+  final int reservedBalance;
   final bool isArchived;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -1055,6 +1082,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
     required this.name,
     required this.type,
     required this.initialBalance,
+    required this.reservedBalance,
     required this.isArchived,
     required this.createdAt,
     required this.updatedAt,
@@ -1066,6 +1094,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
     map['name'] = Variable<String>(name);
     map['type'] = Variable<String>(type);
     map['initial_balance'] = Variable<int>(initialBalance);
+    map['reserved_balance'] = Variable<int>(reservedBalance);
     map['is_archived'] = Variable<bool>(isArchived);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -1078,6 +1107,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
       name: Value(name),
       type: Value(type),
       initialBalance: Value(initialBalance),
+      reservedBalance: Value(reservedBalance),
       isArchived: Value(isArchived),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -1094,6 +1124,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
       name: serializer.fromJson<String>(json['name']),
       type: serializer.fromJson<String>(json['type']),
       initialBalance: serializer.fromJson<int>(json['initialBalance']),
+      reservedBalance: serializer.fromJson<int>(json['reservedBalance']),
       isArchived: serializer.fromJson<bool>(json['isArchived']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -1107,6 +1138,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
       'name': serializer.toJson<String>(name),
       'type': serializer.toJson<String>(type),
       'initialBalance': serializer.toJson<int>(initialBalance),
+      'reservedBalance': serializer.toJson<int>(reservedBalance),
       'isArchived': serializer.toJson<bool>(isArchived),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -1118,6 +1150,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
     String? name,
     String? type,
     int? initialBalance,
+    int? reservedBalance,
     bool? isArchived,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -1126,6 +1159,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
     name: name ?? this.name,
     type: type ?? this.type,
     initialBalance: initialBalance ?? this.initialBalance,
+    reservedBalance: reservedBalance ?? this.reservedBalance,
     isArchived: isArchived ?? this.isArchived,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -1138,6 +1172,9 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
       initialBalance: data.initialBalance.present
           ? data.initialBalance.value
           : this.initialBalance,
+      reservedBalance: data.reservedBalance.present
+          ? data.reservedBalance.value
+          : this.reservedBalance,
       isArchived: data.isArchived.present
           ? data.isArchived.value
           : this.isArchived,
@@ -1153,6 +1190,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
           ..write('name: $name, ')
           ..write('type: $type, ')
           ..write('initialBalance: $initialBalance, ')
+          ..write('reservedBalance: $reservedBalance, ')
           ..write('isArchived: $isArchived, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -1166,6 +1204,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
     name,
     type,
     initialBalance,
+    reservedBalance,
     isArchived,
     createdAt,
     updatedAt,
@@ -1178,6 +1217,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
           other.name == this.name &&
           other.type == this.type &&
           other.initialBalance == this.initialBalance &&
+          other.reservedBalance == this.reservedBalance &&
           other.isArchived == this.isArchived &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -1188,6 +1228,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
   final Value<String> name;
   final Value<String> type;
   final Value<int> initialBalance;
+  final Value<int> reservedBalance;
   final Value<bool> isArchived;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -1196,6 +1237,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
     this.name = const Value.absent(),
     this.type = const Value.absent(),
     this.initialBalance = const Value.absent(),
+    this.reservedBalance = const Value.absent(),
     this.isArchived = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1205,6 +1247,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
     required String name,
     required String type,
     this.initialBalance = const Value.absent(),
+    this.reservedBalance = const Value.absent(),
     this.isArchived = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -1217,6 +1260,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
     Expression<String>? name,
     Expression<String>? type,
     Expression<int>? initialBalance,
+    Expression<int>? reservedBalance,
     Expression<bool>? isArchived,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -1226,6 +1270,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
       if (name != null) 'name': name,
       if (type != null) 'type': type,
       if (initialBalance != null) 'initial_balance': initialBalance,
+      if (reservedBalance != null) 'reserved_balance': reservedBalance,
       if (isArchived != null) 'is_archived': isArchived,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -1237,6 +1282,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
     Value<String>? name,
     Value<String>? type,
     Value<int>? initialBalance,
+    Value<int>? reservedBalance,
     Value<bool>? isArchived,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
@@ -1246,6 +1292,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
       name: name ?? this.name,
       type: type ?? this.type,
       initialBalance: initialBalance ?? this.initialBalance,
+      reservedBalance: reservedBalance ?? this.reservedBalance,
       isArchived: isArchived ?? this.isArchived,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -1267,6 +1314,9 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
     if (initialBalance.present) {
       map['initial_balance'] = Variable<int>(initialBalance.value);
     }
+    if (reservedBalance.present) {
+      map['reserved_balance'] = Variable<int>(reservedBalance.value);
+    }
     if (isArchived.present) {
       map['is_archived'] = Variable<bool>(isArchived.value);
     }
@@ -1286,6 +1336,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
           ..write('name: $name, ')
           ..write('type: $type, ')
           ..write('initialBalance: $initialBalance, ')
+          ..write('reservedBalance: $reservedBalance, ')
           ..write('isArchived: $isArchived, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -5418,6 +5469,7 @@ typedef $$WalletEntriesTableCreateCompanionBuilder =
       required String name,
       required String type,
       Value<int> initialBalance,
+      Value<int> reservedBalance,
       Value<bool> isArchived,
       required DateTime createdAt,
       required DateTime updatedAt,
@@ -5428,6 +5480,7 @@ typedef $$WalletEntriesTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> type,
       Value<int> initialBalance,
+      Value<int> reservedBalance,
       Value<bool> isArchived,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
@@ -5518,6 +5571,11 @@ class $$WalletEntriesTableFilterComposer
 
   ColumnFilters<int> get initialBalance => $composableBuilder(
     column: $table.initialBalance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reservedBalance => $composableBuilder(
+    column: $table.reservedBalance,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5616,6 +5674,11 @@ class $$WalletEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get reservedBalance => $composableBuilder(
+    column: $table.reservedBalance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isArchived => $composableBuilder(
     column: $table.isArchived,
     builder: (column) => ColumnOrderings(column),
@@ -5652,6 +5715,11 @@ class $$WalletEntriesTableAnnotationComposer
 
   GeneratedColumn<int> get initialBalance => $composableBuilder(
     column: $table.initialBalance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reservedBalance => $composableBuilder(
+    column: $table.reservedBalance,
     builder: (column) => column,
   );
 
@@ -5754,6 +5822,7 @@ class $$WalletEntriesTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> type = const Value.absent(),
                 Value<int> initialBalance = const Value.absent(),
+                Value<int> reservedBalance = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
@@ -5762,6 +5831,7 @@ class $$WalletEntriesTableTableManager
                 name: name,
                 type: type,
                 initialBalance: initialBalance,
+                reservedBalance: reservedBalance,
                 isArchived: isArchived,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -5772,6 +5842,7 @@ class $$WalletEntriesTableTableManager
                 required String name,
                 required String type,
                 Value<int> initialBalance = const Value.absent(),
+                Value<int> reservedBalance = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
@@ -5780,6 +5851,7 @@ class $$WalletEntriesTableTableManager
                 name: name,
                 type: type,
                 initialBalance: initialBalance,
+                reservedBalance: reservedBalance,
                 isArchived: isArchived,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

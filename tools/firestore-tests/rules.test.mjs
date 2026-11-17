@@ -59,6 +59,23 @@ test('valid transfer keeps source and destination distinct with integer amount',
   await assertFails(setDoc(ref,{...transfer,type:'expense',transferWalletId:null,categoryId:null}));
 });
 
+test('bank reserves accept legacy wallets and enforce nonnegative integer Rupiah', async () => {
+  const db = env.authenticatedContext('alice').firestore();
+  const ref = doc(db, path('alice'));
+  await assertSucceeds(setDoc(ref, {...wallet, type:'bank'}));
+  await assertSucceeds(setDoc(ref, {...wallet, type:'bank', reservedBalance:50000}));
+  await assertSucceeds(updateDoc(ref, {reservedBalance:0}));
+  for (const reservedBalance of [-1, 1.5, '50000', null, 9007199254740992]) {
+    await assertFails(setDoc(ref, {...wallet, type:'bank', reservedBalance}));
+  }
+  for (const type of ['cash','ewallet','savings']) {
+    await assertSucceeds(setDoc(ref, {...wallet, type, reservedBalance:0}));
+    await assertFails(setDoc(ref, {...wallet, type, reservedBalance:50000}));
+  }
+  const bob = env.authenticatedContext('bob').firestore();
+  await assertFails(updateDoc(doc(bob, path('alice')), {reservedBalance:50000}));
+});
+
 test('validates budget and settings independently of client UI', async () => {
   const db=env.authenticatedContext('alice').firestore();
   const budget={id:1,categoryId:null,month:'2026-11',limitAmount:1000,createdAt:now,updatedAt:now};

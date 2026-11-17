@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart';
 
+import '../../core/enums/wallet_type.dart';
 import '../../core/helpers/calculation_helper.dart';
 import '../local/database/app_database.dart';
 import '../store/finance_store.dart';
@@ -87,7 +88,9 @@ class WalletRepository {
     required String name,
     required String type,
     int initialBalance = 0,
+    int reservedBalance = 0,
   }) async {
+    final reserve = _reservedBalance(type, reservedBalance);
     final trimmedName = name.trim();
     if (trimmedName.isEmpty) {
       throw ArgumentError('Nama dompet belum diisi.');
@@ -104,6 +107,7 @@ class WalletRepository {
         name: trimmedName,
         type: type,
         initialBalance: Value(initialBalance),
+        reservedBalance: Value(reserve),
         createdAt: now,
         updatedAt: now,
       ),
@@ -115,7 +119,12 @@ class WalletRepository {
     required String name,
     required String type,
     required int initialBalance,
+    int? reservedBalance,
   }) async {
+    final reserve = _reservedBalance(
+      type,
+      reservedBalance ?? wallet.reservedBalance,
+    );
     final trimmedName = name.trim();
     if (trimmedName.isEmpty) {
       throw ArgumentError('Nama dompet belum diisi.');
@@ -133,10 +142,20 @@ class WalletRepository {
             name: trimmedName,
             type: type,
             initialBalance: initialBalance,
+            reservedBalance: reserve,
             updatedAt: DateTime.now(),
           )
           .toCompanion(true),
     );
+  }
+
+  int _reservedBalance(String type, int amount) {
+    if (amount < 0 || amount > 9007199254740991) {
+      throw ArgumentError(
+        'Saldo endapan harus berupa nominal Rupiah yang valid.',
+      );
+    }
+    return type == WalletType.bank.value ? amount : 0;
   }
 
   Future<String?> deleteWallet(int walletId) async {

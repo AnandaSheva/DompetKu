@@ -52,6 +52,7 @@ class WalletEntries extends Table {
   TextColumn get name => text().withLength(min: 1, max: 80)();
   TextColumn get type => text().withLength(min: 1, max: 24)();
   IntColumn get initialBalance => integer().withDefault(const Constant(0))();
+  IntColumn get reservedBalance => integer().withDefault(const Constant(0))();
   BoolColumn get isArchived => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
@@ -651,7 +652,7 @@ class AppDatabase extends _$AppDatabase implements FinanceStore {
       select(quickTemplateEntries).get();
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -670,6 +671,9 @@ class AppDatabase extends _$AppDatabase implements FinanceStore {
         if (from < 4) {
           await m.createTable(recurringBillEntries);
           await m.createTable(savingsGoalEntries);
+        }
+        if (from < 5) {
+          await m.addColumn(walletEntries, walletEntries.reservedBalance);
         }
       },
       beforeOpen: (details) async {

@@ -242,8 +242,9 @@ void main() {
           .add(
             WalletEntriesCompanion.insert(
               name: 'Offline',
-              type: 'cash',
+              type: 'bank',
               initialBalance: const Value(12000),
+              reservedBalance: const Value(2000),
               createdAt: now,
               updatedAt: now,
             ),
@@ -262,8 +263,61 @@ void main() {
           )
           .get(const GetOptions(source: Source.server));
       expect(remote.data()?['initialBalance'], 12000);
+      expect(remote.data()?['reservedBalance'], 2000);
+      expect(
+        (await WalletRepository(
+          store,
+        ).getWalletBalance(walletId: id))!.availableBalance,
+        10000,
+      );
+      final second = CloudFinanceStore(firestore, auth.currentUser!.uid);
+      try {
+        await second.initialize();
+        final wallet = (await second.walletsDao.getAll()).singleWhere(
+          (row) => row.id == id,
+        );
+        expect(wallet.reservedBalance, 2000);
+        await WalletRepository(second).updateWallet(
+          wallet: wallet,
+          name: wallet.name,
+          type: wallet.type,
+          initialBalance: wallet.initialBalance,
+          reservedBalance: 4000,
+        );
+        await second.waitForSync();
+        final synced = await store.walletsDao
+            .watchAll()
+            .firstWhere(
+              (rows) => rows.any(
+                (row) => row.id == id && row.reservedBalance == 4000,
+              ),
+            )
+            .timeout(const Duration(seconds: 10));
+        expect(synced.singleWhere((row) => row.id == id).initialBalance, 12000);
+      } finally {
+        await second.close();
+      }
     },
   );
+
+  test('legacy bank documents without reserves still load with zero', () async {
+    final bank = (await store.walletsDao.getAll()).singleWhere(
+      (row) => row.type == 'bank',
+    );
+    await store.collection('wallets').doc('${bank.id}').update({
+      'reservedBalance': FieldValue.delete(),
+    });
+    final second = CloudFinanceStore(firestore, auth.currentUser!.uid);
+    try {
+      await second.initialize();
+      final restored = (await second.walletsDao.getAll()).singleWhere(
+        (row) => row.id == bank.id,
+      );
+      expect(restored.reservedBalance, 0);
+    } finally {
+      await second.close();
+    }
+  });
 
   test('another account cannot read or overwrite this account', () async {
     final other = await Firebase.initializeApp(

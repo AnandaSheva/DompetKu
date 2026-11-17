@@ -7,6 +7,7 @@ final calendarWallet = WalletEntry(
   name: 'Tunai',
   type: 'cash',
   initialBalance: 0,
+  reservedBalance: 0,
   isArchived: false,
   createdAt: calendarNow,
   updatedAt: calendarNow,

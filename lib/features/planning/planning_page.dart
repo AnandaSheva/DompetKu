@@ -397,6 +397,9 @@ class _PlanningPageState extends ConsumerState<PlanningPage> {
         bill: bill,
         walletName: balance.wallet.name,
         lowBalance: balance.balance < bill.amount,
+        reservedBalance: balance.usesReservedBalance(bill.amount)
+            ? balance.reservedBalance
+            : null,
       ),
     );
     if (date == null) return false;
@@ -563,10 +566,12 @@ class _PaymentDialog extends StatefulWidget {
     required this.bill,
     required this.walletName,
     required this.lowBalance,
+    this.reservedBalance,
   });
   final RecurringBillEntry bill;
   final String walletName;
   final bool lowBalance;
+  final int? reservedBalance;
   @override
   State<_PaymentDialog> createState() => _PaymentDialogState();
 }
@@ -592,6 +597,14 @@ class _PaymentDialogState extends State<_PaymentDialog> {
             const SizedBox(height: AppSpacing.md),
             Text(
               'Saldo dompet tidak cukup. Jika dilanjutkan, saldo menjadi negatif.',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
+          if (widget.reservedBalance != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Saldo rekening akan di bawah saldo endapan '
+              '${CurrencyFormatter.rupiah(widget.reservedBalance!)}.',
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ],

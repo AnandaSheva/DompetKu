@@ -425,10 +425,13 @@ void main() {
       final file = File('${directory.path}/migration.sqlite');
       final original = AppDatabase(NativeDatabase(file));
       await BootstrapRepository(original).ensureSeeded();
+      final walletsBefore = await original.walletsDao.getAll();
       await original.customStatement('DROP TABLE recurring_bills');
       await original.customStatement('DROP TABLE savings_goals');
+      await original.customStatement(
+        'ALTER TABLE wallets DROP COLUMN reserved_balance',
+      );
       await original.customStatement('PRAGMA user_version = 3');
-      final walletsBefore = await original.walletsDao.getAll();
       await original.close();
       final upgraded = AppDatabase(NativeDatabase(file));
       try {
@@ -441,7 +444,7 @@ void main() {
         expect(
           (await upgraded.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          4,
+          5,
         );
       } finally {
         await upgraded.close();

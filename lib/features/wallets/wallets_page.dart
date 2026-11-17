@@ -96,6 +96,7 @@ class WalletsPage extends ConsumerWidget {
           name: result.name,
           type: result.type.value,
           initialBalance: result.initialBalance,
+          reservedBalance: result.reservedBalance,
         );
       } else {
         await repository.updateWallet(
@@ -103,6 +104,7 @@ class WalletsPage extends ConsumerWidget {
           name: result.name,
           type: result.type.value,
           initialBalance: result.initialBalance,
+          reservedBalance: result.reservedBalance,
         );
       }
       if (!context.mounted) return;
@@ -132,11 +134,12 @@ class WalletsPage extends ConsumerWidget {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (sheetContext) {
         final theme = Theme.of(sheetContext);
         final type = WalletType.fromValue(wallet.wallet.type);
         return SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.screen,
               AppSpacing.sm,
@@ -147,7 +150,7 @@ class WalletsPage extends ConsumerWidget {
               future: ref
                   .read(walletRepositoryProvider)
                   .transactionCount(wallet.wallet.id),
-              builder: (context, snapshot) {
+              builder: (_, snapshot) {
                 final count = snapshot.data ?? 0;
                 return Column(
                   mainAxisSize: MainAxisSize.min,
@@ -181,8 +184,25 @@ class WalletsPage extends ConsumerWidget {
                       label: 'Saldo awal',
                       value: CurrencyFormatter.rupiah(
                         wallet.wallet.initialBalance,
+                        hidden: hideBalance,
                       ),
                     ),
+                    if (type == WalletType.bank) ...[
+                      _WalletInfoRow(
+                        label: 'Saldo endapan',
+                        value: CurrencyFormatter.rupiah(
+                          wallet.reservedBalance,
+                          hidden: hideBalance,
+                        ),
+                      ),
+                      _WalletInfoRow(
+                        label: 'Bisa dipakai',
+                        value: CurrencyFormatter.rupiah(
+                          wallet.availableBalance,
+                          hidden: hideBalance,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: AppSpacing.xl),
                     AppFormActions(
                       secondaryLabel: 'Edit',
@@ -295,50 +315,72 @@ class _WalletCard extends StatelessWidget {
           ),
           boxShadow: AppShadows.subtle(brightness),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: AppSpacing.iconTile + AppSpacing.xxs,
-              height: AppSpacing.iconTile + AppSpacing.xxs,
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: isDark ? 0.18 : 0.11),
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-              ),
-              child: Icon(_icon(type), color: accentColor),
-            ),
-            const SizedBox(width: AppSpacing.lg),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            Row(
+              children: [
+                Container(
+                  width: AppSpacing.iconTile + AppSpacing.xxs,
+                  height: AppSpacing.iconTile + AppSpacing.xxs,
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: isDark ? 0.18 : 0.11),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
+                  child: Icon(_icon(type), color: accentColor),
+                ),
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          wallet.wallet.name,
-                          style: theme.textTheme.titleMedium,
-                        ),
-                      ),
-                      if (wallet.wallet.isArchived)
-                        Text(
-                          'Nonaktif',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: AppColors.warningOrange,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              wallet.wallet.name,
+                              style: theme.textTheme.titleMedium,
+                            ),
                           ),
-                        ),
+                          if (wallet.wallet.isArchived)
+                            Text(
+                              'Nonaktif',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: AppColors.warningOrange,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(type.label, style: theme.textTheme.labelSmall),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(type.label, style: theme.textTheme.labelSmall),
-                ],
-              ),
+                ),
+                Text(
+                  CurrencyFormatter.rupiah(wallet.balance, hidden: hideBalance),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              CurrencyFormatter.rupiah(wallet.balance, hidden: hideBalance),
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w900,
+            if (type == WalletType.bank) ...[
+              const SizedBox(height: AppSpacing.lg),
+              _WalletInfoRow(
+                label: 'Saldo endapan',
+                value: CurrencyFormatter.rupiah(
+                  wallet.reservedBalance,
+                  hidden: hideBalance,
+                ),
               ),
-            ),
+              _WalletInfoRow(
+                label: 'Bisa dipakai',
+                value: CurrencyFormatter.rupiah(
+                  wallet.availableBalance,
+                  hidden: hideBalance,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -361,7 +403,7 @@ class _WalletInfoRow extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(
-            width: 92,
+            width: 120,
             child: Text(label, style: theme.textTheme.labelLarge),
           ),
           Expanded(child: Text(value, style: theme.textTheme.bodyLarge)),
@@ -383,6 +425,7 @@ class _WalletFormDialog extends StatefulWidget {
 class _WalletFormDialogState extends State<_WalletFormDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _balanceController;
+  late final TextEditingController _reservedBalanceController;
   late WalletType _type;
 
   @override
@@ -396,18 +439,24 @@ class _WalletFormDialogState extends State<_WalletFormDialog> {
           : CurrencyFormatter.rupiah(wallet.initialBalance),
     );
     _type = WalletType.fromValue(wallet?.type ?? WalletType.cash.value);
+    final reserve = wallet?.reservedBalance ?? 0;
+    _reservedBalanceController = TextEditingController(
+      text: reserve == 0 ? '' : CurrencyFormatter.rupiah(reserve),
+    );
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _balanceController.dispose();
+    _reservedBalanceController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      scrollable: true,
       title: Text(widget.wallet == null ? 'Tambah dompet' : 'Edit dompet'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -446,6 +495,21 @@ class _WalletFormDialogState extends State<_WalletFormDialog> {
                   : 'Mengubah saldo awal akan memengaruhi saldo dompet.',
             ),
           ),
+          if (_type == WalletType.bank) ...[
+            const SizedBox(height: AppSpacing.lg),
+            TextField(
+              controller: _reservedBalanceController,
+              keyboardType: TextInputType.number,
+              inputFormatters: const [RupiahInputFormatter()],
+              decoration: const InputDecoration(
+                labelText: 'Saldo endapan',
+                hintText: 'Rp0',
+                helperText:
+                    'Saldo minimum yang ingin disisakan di rekening. Kosongkan jika tidak ada.',
+                helperMaxLines: 3,
+              ),
+            ),
+          ],
         ],
       ),
       actions: [
@@ -464,6 +528,11 @@ class _WalletFormDialogState extends State<_WalletFormDialog> {
                 initialBalance: CurrencyFormatter.parseRupiah(
                   _balanceController.text,
                 ),
+                reservedBalance: _type == WalletType.bank
+                    ? CurrencyFormatter.parseRupiah(
+                        _reservedBalanceController.text,
+                      )
+                    : 0,
               ),
             );
           },
@@ -478,11 +547,13 @@ class _WalletFormResult {
     required this.name,
     required this.type,
     required this.initialBalance,
+    required this.reservedBalance,
   });
 
   final String name;
   final WalletType type;
   final int initialBalance;
+  final int reservedBalance;
 }
 
 Color _accent(WalletType type) {
