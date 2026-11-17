@@ -33,7 +33,7 @@ class CloudStatus {
           : pending
           ? 'Menunggu sinkronisasi'
           : fromCache
-          ? 'Data offline dari perangkat ini'
+          ? 'Data online dari perangkat ini'
           : 'Tersimpan di cloud');
 }
 
@@ -1170,7 +1170,7 @@ class _CloudBills implements BillsStore, AtomicBillPayments {
   }
 
   // A cached batch cannot safely advance an occurrence: another device may
-  // already have paid it or advanced further while this browser was offline.
+  // already have paid it or advanced further while this browser was online.
   Future<void> _commitBill(
     RecurringBillEntry expected,
     RecurringBillEntry advanced, {

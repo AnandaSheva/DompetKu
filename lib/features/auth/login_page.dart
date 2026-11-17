@@ -135,7 +135,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           },
                     title: const Text('Ini perangkat pribadi saya'),
                     subtitle: const Text(
-                      'Ingat sesi dan simpan cache offline di browser ini.',
+                      'Ingat sesi dan simpan cache online di browser ini.',
                     ),
                   ),
                   if (_message != null) ...[

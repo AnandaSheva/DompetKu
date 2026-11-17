@@ -45,7 +45,7 @@ class SettingsPage extends ConsumerWidget {
     final aboutSubtitle = packageInfo.when(
       data: (info) => kIsWeb
           ? 'Versi ${info.version}, terhubung ke akun Google'
-          : 'Versi ${info.version}, offline tanpa akun',
+          : 'Versi ${info.version}, online tanpa akun',
       loading: () => 'Memuat versi...',
       error: (_, _) => 'Versi aplikasi belum bisa dimuat',
     );
@@ -722,7 +722,7 @@ class SettingsPage extends ConsumerWidget {
                         Text(
                           kIsWeb
                               ? 'Catatan keuangan pribadi dengan akun Google.'
-                              : 'Aplikasi pencatat keuangan pribadi offline.',
+                              : 'Aplikasi pencatat keuangan pribadi online.',
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ],

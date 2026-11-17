@@ -195,7 +195,7 @@ void main() {
   );
 
   test(
-    'offline category migration preserves legacy data and pending writes',
+    'online category migration preserves legacy data and pending writes',
     () async {
       final legacy = await seedLegacyFoodFixture(store);
       await store.waitForSync();
@@ -234,14 +234,14 @@ void main() {
   );
 
   test(
-    'offline writes return promptly, appear locally, and sync on reconnect',
+    'online writes return promptly, appear locally, and sync on reconnect',
     () async {
       await firestore.disableNetwork();
       final now = DateTime.now();
       final id = await store.walletsDao
           .add(
             WalletEntriesCompanion.insert(
-              name: 'Offline',
+              name: 'online',
               type: 'bank',
               initialBalance: const Value(12000),
               reservedBalance: const Value(2000),
@@ -404,7 +404,7 @@ void main() {
     expect(profile.data()?['activeDataset'], previous);
   });
   test(
-    'bills and goals sync offline writes and survive staged restore',
+    'bills and goals sync online writes and survive staged restore',
     () async {
       final repo = PlanningRepository(store);
       final wallet = (await store.walletsDao.getAll()).first;

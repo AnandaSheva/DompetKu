@@ -51,8 +51,8 @@ class CloudAccountPanel extends ConsumerWidget {
           ),
           Text(
             trustedDevice
-                ? 'Cache offline aktif di perangkat pribadi ini.'
-                : 'Cache sementara. Unduh cadangan sebelum menutup tab saat offline.',
+                ? 'Cache online aktif di perangkat pribadi ini.'
+                : 'Cache sementara. Unduh cadangan sebelum menutup tab saat online.',
             style: theme.textTheme.bodySmall,
           ),
           if (status.error != null)

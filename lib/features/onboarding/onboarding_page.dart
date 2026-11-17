@@ -85,7 +85,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   Text(
                     kIsWeb
                         ? 'Catat pemasukan, pengeluaran, dan transfer. Data disimpan sesuai akun Google kamu.'
-                        : 'Mulai catat pemasukan, pengeluaran, dan transfer secara offline.',
+                        : 'Mulai catat pemasukan, pengeluaran, dan transfer secara online.',
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: AppSpacing.xxxl),

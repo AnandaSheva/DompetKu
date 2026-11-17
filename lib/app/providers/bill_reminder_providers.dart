@@ -228,7 +228,7 @@ class BillReminderController extends Notifier<BillReminderState> {
         final cloud = ref.read(cloudStatusProvider).asData?.value;
         final bills = ref.read(recurringBillsProvider);
         // Wait for an authoritative account snapshot, including after payment,
-        // dataset replacement, offline startup or a pending cloud write.
+        // dataset replacement, online startup or a pending cloud write.
         if (cloud == null ||
             cloud.loading ||
             cloud.fromCache ||

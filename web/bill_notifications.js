@@ -73,7 +73,7 @@
       preparing = (async () => {
         const result = await navigator.serviceWorker.register(
           new URL('bill_notification_worker.js', base).href,
-          // Keep Flutter's app/offline worker at its existing root scope.
+          // Keep Flutter's app/online worker at its existing root scope.
           { scope: new URL('notification-reminders/', base).href, updateViaCache: 'none' },
         );
         if (!result.active) {
