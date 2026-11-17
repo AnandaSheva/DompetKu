@@ -15,6 +15,7 @@ All notable changes to DompetKu are documented in this file.
 
 ## [Unreleased]
 
+- Align Markdown documentation and development rules around connected Android/web account data, Google sign-in, and Firestore synchronization. Android account integration remains planned; this documentation change does not implement it.
 - Apply a blue/bright-blue palette across light and dark themes, financial accents, categories, charts, app icons, and web metadata.
 - Display earlier/imported category colors in the blue palette without rewriting stored financial data.
 
@@ -46,10 +47,10 @@ All notable changes to DompetKu are documented in this file.
 - Added PIN failed-attempt cooldown.
 - Improved backup validation and restore safety.
 - Added release signing configuration for local keystore use.
-- Updated public documentation for APK verification and offline trust model.
+- Updated public documentation for APK verification and the release's data protection model.
 
 ## [1.1.0] - 2026-07-02
 
-- Added offline transactions, wallets, categories, budgets, analytics, backup, and settings.
+- Added transactions, wallets, categories, budgets, analytics, backup, and settings.
 - Added PIN lock, optional biometric unlock, and hide balance.
 - Added MIT License.

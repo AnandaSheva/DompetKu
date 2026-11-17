@@ -10,7 +10,9 @@ AI-generated changes must:
 
 - Stay within the requested scope
 - Avoid secrets and local credentials
-- Avoid tracking, ads, backend services, and unnecessary permissions
+- Keep Android and web aligned around Google sign-in, UID-scoped Firestore data, and shared financial rules
+- Use existing Firebase services; avoid tracking, ads, custom backend services, and unnecessary permissions
+- Preserve existing device data during explicit, backed-up account migration
 - Keep privacy and security claims accurate
 - Pass `flutter analyze`
 - Pass `flutter test`
@@ -33,6 +35,8 @@ AI assistance can help with:
 The following changes need careful human review:
 
 - Database migrations
+- Firebase configuration, authentication, account isolation, and synchronization
+- Pending writes, account changes, and cross-device restore behavior
 - Release signing configuration
 - App lock and PIN flows
 - Biometric behavior

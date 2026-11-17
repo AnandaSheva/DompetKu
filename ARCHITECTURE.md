@@ -19,17 +19,19 @@ Tujuan arsitektur ini adalah menjaga project tetap:
 - cocok untuk open-source
 - aman untuk dikerjakan bersama Codex/GPT
 
-DompetKu adalah aplikasi **first personal money management**, sehingga arsitektur harus memprioritaskan data lokal, performa, stabilitas, dan maintainability.
+DompetKu adalah aplikasi **pengelolaan keuangan pribadi dengan data terhubung** untuk Android dan web. Arsitektur harus memprioritaskan konsistensi data akun antarperangkat, privasi, performa, stabilitas, dan maintainability.
+
+Dokumen ini menetapkan arsitektur target. Web sudah memakai Firebase Authentication dan Firestore; konfigurasi Firebase, autentikasi, repository akun, dan migrasi Android masih perlu diimplementasikan dan diverifikasi.
 
 ---
 
 ## 2. Core Principles
 
-## 2.1 Offline-First
+## 2.1 Connected Account Data
 
-Pada Android, semua fitur inti harus bisa berjalan tanpa internet. Versi web memakai login Google dan Firestore per akun; login pertama membutuhkan internet, sedangkan data yang sudah dicache dapat dipakai offline.
+Android dan web harus memakai login Google, Firebase UID, dan dataset Firestore yang sama untuk akun yang sama. Firestore menjadi sumber data akun bersama; cache perangkat mendukung responsivitas dan pemulihan koneksi.
 
-Fitur yang wajib offline:
+Data fitur yang wajib terhubung ke akun:
 
 - onboarding
 - wallet
@@ -39,27 +41,27 @@ Fitur yang wajib offline:
 - dashboard
 - analytics
 - settings
-- backup lokal
+- tagihan dan target tabungan
+- backup dan pemulihan data akun
 
-Tidak boleh ada dependency wajib ke server untuk v1.0.
+Inisialisasi autentikasi harus selesai sebelum repository akun dibuat. Bedakan data cache, perubahan tertunda, data tersinkron, dan kegagalan server secara jelas; antrean perubahan harus dipertahankan hingga tersimpan atau dibuang melalui tindakan eksplisit yang didahului cadangan.
 
 ---
 
-## 2.2 Android-First
+## 2.2 Android and Web Parity
 
-Target utama DompetKu adalah Android.
+Android dan web adalah platform produk yang setara dengan fitur inti dan aturan keuangan yang sama.
 
-Web menggunakan Firebase Authentication dan Cloud Firestore. Android tetap menggunakan Drift lokal tanpa akun.
+Gunakan kontrak repository yang sama untuk perhitungan saldo, transfer, budget, tagihan, target tabungan, dan pemulihan data. Perbedaan platform hanya menangani kemampuan perangkat seperti biometrik, izin browser, atau instalasi APK.
 
-Prioritas platform:
+Platform produk:
 
 ```txt
 1. Android
-2. Flutter web preview
-3. Windows desktop optional later
-````
+2. Flutter Web/PWA
+```
 
-Setiap keputusan UI dan teknis harus mempertimbangkan Android sebagai target utama.
+Setiap keputusan UI dan teknis harus mempertimbangkan Android serta browser mobile dan desktop. Windows desktop tetap merupakan kemungkinan pengembangan lanjutan.
 
 ---
 
@@ -153,6 +155,12 @@ lib/
       result.dart
 
   data/
+    auth/
+      auth_repository.dart
+    store/
+      finance_store.dart
+      cloud_finance_store.dart
+      cloud_codec.dart
     local/
       database/
         app_database.dart
@@ -354,14 +362,15 @@ Folder `core` tidak boleh menjadi tempat pembuangan file acak.
 
 ## 4.5 `data/`
 
-Folder `data` berisi semua hal yang berhubungan dengan penyimpanan data, database, seed, dan repository.
+Folder `data` berisi autentikasi, penyimpanan akun, sinkronisasi, database perangkat, seed, dan repository.
 
 Tanggung jawab:
 
-* Drift database
-* SQLite tables
-* DAO
-* local seed data
+* Firebase Authentication dan identitas akun
+* Firestore melalui kontrak `FinanceStore`
+* listener bersama, status sinkronisasi, dan antrean perubahan per akun
+* Drift/SQLite dan DAO untuk kompatibilitas serta migrasi data perangkat lama
+* seed data akun
 * repository
 
 Tidak boleh berisi:
@@ -416,16 +425,19 @@ Urutan dependency:
 
 ```txt
 UI Feature
-  -> Repository
-    -> DAO
-      -> Database
+  -> Riverpod Provider (auth/account scope)
+    -> Repository
+      -> FinanceStore
+        -> Firestore account dataset
+        -> Drift/SQLite legacy migration source
 ```
 
 Aturan:
 
-* UI tidak boleh langsung query database jika sudah ada repository.
-* Repository boleh memanggil DAO.
-* DAO boleh memanggil database.
+* UI tidak boleh langsung mengakses Firebase atau database; gunakan provider dan repository.
+* Repository memakai kontrak penyimpanan bersama dan aturan keuangan yang sama pada kedua platform.
+* Implementasi penyimpanan menangani Firestore atau DAO database perangkat sesuai tanggung jawabnya.
+* Scope akun harus menunggu autentikasi dan dibuang saat UID berubah.
 * Core utilities boleh dipakai semua layer.
 * Shared UI tidak boleh tahu detail database.
 * Data layer tidak boleh import UI.
@@ -453,11 +465,12 @@ Static UI:
 
 ## Phase 2
 
-Saat mulai data lokal:
+Saat mulai data akun terhubung:
 
-* gunakan Riverpod untuk provider database
+* gunakan Riverpod untuk status autentikasi dan scope akun
 * gunakan repository provider
-* gunakan async provider untuk query data
+* gunakan async provider untuk data akun dan status sinkronisasi
+* gunakan provider database perangkat hanya untuk kompatibilitas dan migrasi
 
 ## Phase 3
 
@@ -477,19 +490,21 @@ Aturan:
 
 ## 7. Database Strategy
 
-Database lokal menggunakan:
+Penyimpanan utama data akun pada arsitektur target menggunakan:
 
 ```txt
-Drift + SQLite
+Firebase Authentication + Cloud Firestore
 ```
 
 Alasan:
 
-* cocok untuk offline-first
-* query transaksi lebih rapi
-* reactive stream didukung
-* cocok untuk data relasional
-* lebih aman daripada menyimpan semua data di JSON mentah
+* satu dataset per UID untuk Android dan web
+* Security Rules membatasi akses ke pemilik akun
+* satu listener bersama per koleksi untuk seluruh repository
+* status sinkronisasi dan percobaan ulang terlihat jelas
+* operasi sensitif memakai transaksi server atau staging sebelum aktivasi dataset
+
+Drift + SQLite tetap dipertahankan untuk kompatibilitas dan migrasi data perangkat yang sudah ada. Pertahankan nama database dan keamanan migrasi; jangan mengunggah, menghapus, atau mengganti data lama tanpa cadangan tersimpan, akun tujuan yang terlihat, dan tindakan eksplisit pengguna.
 
 ---
 
@@ -633,15 +648,15 @@ updated_at
 
 Rules:
 
-* settings boleh disimpan di SQLite atau shared_preferences sesuai kebutuhan.
-* jika setting sederhana, shared_preferences boleh digunakan.
-* jika setting perlu backup/import, simpan di database.
+* pengaturan akun yang perlu sinkronisasi atau backup berada dalam dataset Firestore akun.
+* preferensi khusus perangkat, seperti app lock dan izin notifikasi, boleh disimpan pada perangkat sesuai kebutuhan.
+* pisahkan preferensi perangkat dari data akun agar pergantian akun tidak membocorkan data.
 
 ---
 
 ## 9. Repository Rules
 
-Repository menjadi penghubung antara UI dan DAO.
+Repository menjadi penghubung antara UI dan kontrak penyimpanan akun `FinanceStore`.
 
 Contoh repository:
 
@@ -658,7 +673,7 @@ SettingsRepository
 Repository bertanggung jawab untuk:
 
 * menyediakan data ke UI
-* menggabungkan beberapa DAO jika diperlukan
+* menggabungkan data dari kontrak penyimpanan jika diperlukan
 * menyembunyikan detail database dari UI
 * menyediakan method yang semantic
 
@@ -933,6 +948,8 @@ Rules:
 * backup harus versioned
 * import harus validasi struktur data
 * import tidak boleh merusak database jika file invalid
+* pemulihan akun harus memakai staging dan mengaktifkan dataset pengganti secara atomik setelah seluruh upload berhasil
+* backup dan migrasi harus menampilkan akun tujuan serta membutuhkan konfirmasi pengguna
 
 ---
 
@@ -940,6 +957,8 @@ Rules:
 
 Security yang direncanakan:
 
+* Google sign-in pada Android dan web
+* isolasi data per Firebase UID dan Firestore Security Rules
 * hide balance
 * PIN lock
 * biometric lock
@@ -951,6 +970,8 @@ Rules:
 * hide balance hanya mengubah tampilan nominal
 * biometric harus opsional
 * app tetap bisa digunakan tanpa biometric
+* app lock melindungi akses perangkat dan tidak menggantikan autentikasi akun atau mengenkripsi seluruh database
+* perubahan tertunda harus disinkronkan sebelum logout, atau dicadangkan sebelum konfirmasi pembuangan
 
 ---
 
@@ -962,6 +983,9 @@ Recommended dependencies:
 
 ```txt
 flutter_riverpod
+firebase_core
+firebase_auth
+cloud_firestore
 drift
 drift_flutter
 sqlite3_flutter_libs
@@ -979,8 +1003,9 @@ Rules:
 
 * jangan menambah package hanya untuk hal kecil
 * jangan menambah package UI besar tanpa alasan
-* jangan menambah backend package untuk v1.0
-* Firebase Auth dan Firestore hanya digunakan oleh versi web; jangan tambahkan Firebase Analytics atau cloud sync Android
+* gunakan layanan Firebase yang sudah ada tanpa backend kustom tambahan
+* Firebase Auth dan Firestore merupakan fondasi akun serta sinkronisasi pada Android dan web
+* jangan mengaktifkan billing otomatis; gunakan paket Spark
 * jangan menambah analytics/tracking package
 * jangan menambah ads package
 
@@ -1041,6 +1066,9 @@ Testing minimal:
 * calculation helper test
 * repository test later
 * database DAO test later
+* Firebase emulator tests untuk kepemilikan UID dan isolasi antar-akun
+* sinkronisasi lintas klien, perubahan bersamaan, koneksi terputus, percobaan ulang, dan logout dengan perubahan tertunda
+* migrasi data perangkat, validasi impor, dan aktivasi dataset secara atomik
 
 Prioritas test awal:
 
@@ -1125,22 +1153,24 @@ Belum perlu:
 
 ---
 
-## Phase 2 - Local Data Foundation
+## Phase 2 - Connected Account Foundation
 
 Tujuan:
 
-* Drift setup
-* SQLite database
-* tables
-* DAOs
+* konfigurasi Firebase Android dan web
+* Google sign-in dan inisialisasi sesi
+* dataset Firestore per UID dan Security Rules
+* kontrak `FinanceStore` dan listener bersama
+* migrasi Drift/SQLite lama dengan cadangan serta konfirmasi
 * seed data
 * repositories
 
 Mulai gunakan Riverpod untuk:
 
-* database provider
+* auth/account provider
 * repository provider
 * data stream provider
+* synchronization status provider
 
 ---
 
@@ -1214,22 +1244,27 @@ Sebelum menerima pull request atau perubahan Codex, cek:
 [ ] Tidak ada data pribadi
 [ ] Tidak ada credential
 [ ] Perubahan sesuai phase
+[ ] Android dan web mengikuti kontrak akun dan aturan keuangan yang sama
+[ ] Isolasi akun dan sinkronisasi diuji dengan emulator untuk perubahan terkait
+[ ] Fitur terencana dibedakan dari integrasi yang sudah diverifikasi
 ```
 
 ---
 
 ## 28. Final Architecture Statement
 
-DompetKu uses a feature-first Flutter architecture with local-first data storage, reusable premium UI components, centralized design tokens, and clear separation between app, core, data, features, and shared layers.
+DompetKu uses a feature-first Flutter architecture with shared account-based Firestore storage, reusable premium UI components, centralized design tokens, and clear separation between app, core, data, features, and shared layers.
 
-The architecture must support a lightweight offline Android app that is elegant, stable, maintainable, and open-source ready.
+The architecture must support a connected Android and web app with consistent financial data and business rules across devices, while remaining lightweight, stable, maintainable, and open-source ready.
 
 
-## Web account storage
+## Shared account storage and implementation status
 
 `FinanceStore` is the storage contract used by the existing financial repositories.
-`AppDatabase` implements it with Drift for Android. `CloudFinanceStore` implements it
-with shared Firestore listeners for web. Existing immutable Drift row objects remain
+`CloudFinanceStore` is the shared account-storage implementation to use on Android
+and web. Today it is wired into web; Android still uses `AppDatabase` with Drift.
+Android account integration must replace that platform split while preserving a
+safe migration path for existing device data. Existing immutable Drift row objects remain
 value objects at this boundary so financial calculations and forms stay compatible.
 
 Each authenticated UID owns `users/{uid}` and versioned account datasets at
@@ -1239,8 +1274,10 @@ Amounts remain integer Rupiah. One subscription per collection is shared by all
 repositories; opening another screen does not create another backend listener.
 
 Auth loading, signed-out, and signed-in states have separate widget trees. The
-signed-in subtree and its Navigator are disposed when the UID changes. Native
-bootstrap never initializes Firebase. Persistent web cache is opt-in; pending
+signed-in subtree and its Navigator are disposed when the UID changes. Android
+bootstrap currently does not initialize Firebase; enabling native configuration,
+Google sign-in, and account-scoped providers remains implementation work.
+Persistent web cache is opt-in; pending
 writes remain visible and prevent logout from discarding them. Failed writes can
 be retried and included in a JSON export. On a trusted device a UID-scoped outbox
 also preserves rejected writes across refreshes.

@@ -1,15 +1,58 @@
-# DompetKu Web: Google sign-in dan Firestore
+# DompetKu: Integrasi Akun Android dan Web
 
-Android tetap offline dengan Drift. Web memakai Firebase Authentication dan
-Firestore pada paket Spark, tanpa Firebase Analytics, Cloud Functions, atau
-Cloud Storage. Hosting aplikasi tetap Vercel.
+Target pengembangan Android dan web adalah satu aplikasi keuangan dengan login
+Google, Firebase UID, dataset Firestore, dan aturan keuangan yang sama. Gunakan
+layanan Firebase pada paket Spark tanpa mengaktifkan billing otomatis, Firebase
+Analytics, Cloud Functions, atau Cloud Storage. Hosting web tetap Vercel.
 
-Karena dependency Flutter Firebase juga menyertakan SDK Android, manifest Android
-secara eksplisit menolak initializer Firebase serta izin transitive
-`ACCESS_NETWORK_STATE` dan `READ_GSERVICES`. Tidak ada izin Android baru yang
-dibutuhkan untuk fitur web ini.
+## Status implementasi
 
-## Setup Firebase
+Web sudah memakai Firebase Authentication dan Firestore. Android masih memakai
+jalur Drift yang ada: `lib/main.dart` menginisialisasi Firebase dalam `kIsWeb`,
+`lib/app/app.dart` memilih `WebAuthGate` melalui provider platform web, dan
+`lib/firebase_options.dart` belum menyediakan opsi Android. Manifest Android
+juga masih menghapus initializer Firebase serta izin transitive
+`ACCESS_NETWORK_STATE` dan `READ_GSERVICES`.
+
+Integrasi akun Android belum tersedia hanya dengan memperbarui dokumentasi.
+Petunjuk web di bawah menjelaskan implementasi yang ada; pekerjaan Android harus
+memenuhi kontrak akun bersama berikut sebelum dinyatakan siap.
+
+## Kontrak integrasi bersama
+
+- Login Google harus selesai sebelum repository akun dibuat pada kedua platform.
+- UID yang sama membuka dataset Firestore yang sama; UID berbeda tidak boleh
+  saling membaca data, cache, antrean perubahan, atau state layar.
+- Gunakan `FinanceStore`, repository, perhitungan saldo, dan aturan transfer yang
+  sama. Pertahankan satu listener bersama per koleksi akun.
+- Tampilkan data cache, perubahan tertunda, berhasil tersinkron, dan gagal dengan
+  jelas. Pemulihan koneksi dan percobaan ulang tidak boleh menggandakan transaksi.
+- Logout menunggu sinkronisasi; pembuangan perubahan memerlukan cadangan dan
+  konfirmasi eksplisit. Pergantian akun membuang state dan listener akun lama.
+- Migrasi data perangkat lama harus menampilkan akun tujuan, menyimpan cadangan,
+  dan menunggu tindakan eksplisit pengguna. Dataset aktif tidak diganti sebelum
+  staging berhasil sepenuhnya.
+- Uji dengan Firebase emulators dan akun uji, bukan data keuangan produksi.
+
+## Pekerjaan integrasi Android
+
+1. Daftarkan aplikasi Android pada proyek Firebase yang sama dengan application ID
+   yang sudah ada. Siapkan konfigurasi klien dan konfigurasi Google sign-in untuk
+   sertifikat debug/rilis yang digunakan; rahasia penandatanganan tetap di perangkat.
+2. Sediakan opsi Firebase Android dan inisialisasi sebelum mengakses layanan akun.
+   Tinjau penghapusan initializer pada manifest serta izin SDK yang benar-benar
+   diperlukan. Perubahan izin harus dijelaskan dan diperiksa pada merged manifest.
+3. Adaptasikan `AuthRepository` untuk login Google native; alur popup dan pengaturan
+   session storage browser yang ada tidak dapat langsung dianggap berlaku di Android.
+4. Terapkan gerbang autentikasi dan scope UID di Android, lalu hubungkan repository
+   ke `CloudFinanceStore` dengan lifecycle listener serta status sinkronisasi bersama.
+5. Sediakan migrasi Drift/SQLite dengan cadangan tersimpan, akun tujuan terlihat,
+   dan konfirmasi pengguna. Pertahankan database lama sampai hasil migrasi diverifikasi.
+6. Verifikasi akun yang sama pada Android dan web, isolasi akun berbeda, edit
+   bersamaan, koneksi terputus, retry, logout, restore/reset, dan migrasi yang dicoba ulang.
+   Pemeriksaan ini merupakan syarat rilis terintegrasi dan belum dianggap lulus.
+
+## Setup Firebase web yang tersedia
 
 1. Buat proyek Spark dan database Firestore Standard `(default)`. Proyek yang
    dikonfigurasi checkout ini adalah `dompetku-web-f8e4e`, lokasi Jakarta.
@@ -62,7 +105,7 @@ menghapusnya dari riwayat commit lama.
   ProviderScope dan Navigator berbeda; layar akun lama dibuang saat berganti akun.
 - Pilihan perangkat pribadi mengaktifkan sesi lokal dan cache Firestore persisten.
   Tanpa pilihan tersebut, sesi memakai session storage dan cache data berada di memori.
-- Menutup tab saat offline pada perangkat bersama dapat membuang perubahan yang
+- Menutup tab saat koneksi terputus pada perangkat bersama dapat membuang perubahan yang
   belum tersinkron. Status sinkronisasi dan peringatan sebelum meninggalkan halaman
   membantu pengguna mengunduh cadangan terlebih dahulu.
 - Pada perangkat pribadi, antrean perubahan tambahan disimpan berdasarkan UID
@@ -73,7 +116,7 @@ menghapusnya dari riwayat commit lama.
 - Jika sinkronisasi belum berhasil, pengguna dapat mengunduh cadangan, mengonfirmasi
   file sudah tersimpan, lalu memilih keluar dan membersihkan perubahan lokal.
 - Cache browser bukan enkripsi penuh. Login baru dan pengisian cache memerlukan
-  internet; cache data tidak menjamin seluruh aplikasi dapat dimuat saat cold start offline.
+  internet; cache data tidak menjamin seluruh aplikasi dapat dimuat saat dibuka ulang tanpa koneksi.
 
 ## Data, restore, dan migrasi
 
@@ -158,7 +201,7 @@ Uji hasil deployment di browser desktop dan mobile:
   memberi pesan yang jelas.
 - Akun A dan B tidak saling membaca data, termasuk setelah logout/berganti akun.
 - Perubahan muncul di perangkat lain setelah status tersimpan di cloud.
-- Transaksi offline tampil lokal, kemudian tersinkron saat internet kembali.
+- Transaksi dengan koneksi terputus berstatus tertunda, lalu tersinkron saat internet kembali tanpa duplikasi.
 - Transfer tidak mengubah total pemasukan/pengeluaran.
 - Impor invalid tidak menghapus data, impor besar selesai atomik, dan migrasi
   yang dicoba ulang tidak membuat duplikasi.
@@ -171,7 +214,7 @@ ketentuan layanan dapat berubah; periksa dokumentasi resmi sebelum rilis.
 
 Referensi: [Flutter setup](https://firebase.google.com/docs/flutter/setup),
 [Google login](https://firebase.google.com/docs/auth/flutter/federated-auth),
-[Firestore offline](https://firebase.google.com/docs/firestore/manage-data/enable-offline),
+[Firestore data](https://firebase.google.com/docs/firestore/manage-data),
 [quotas](https://firebase.google.com/docs/firestore/quotas),
 [Drift web storage](https://drift.simonbinder.eu/platforms/web/).
 
@@ -179,7 +222,7 @@ Referensi: [Flutter setup](https://firebase.google.com/docs/flutter/setup),
 ## Jadwal tagihan dan target tabungan
 
 Deploy `firestore.rules` yang menyertakan koleksi `recurring_bills` dan
-`savings_goals` sebelum merilis web dengan kedua fitur ini. Rules versi lama
+`savings_goals` sebelum merilis integrasi kedua platform dengan fitur ini. Rules versi lama
 menolak akses koleksi baru. Gunakan pengujian emulator di atas terlebih dahulu.
 
 Kedua koleksi tetap berada di dataset UID pemilik dengan satu listener bersama
@@ -189,8 +232,9 @@ memerlukan internet dan memakai transaksi server dengan pemeriksaan versi untuk
 membuat pengeluaran dan memajukan jadwal secara atomik. ID transaksi
 stabil per tagihan dan tanggal jatuh tempo mencegah dua dokumen pembayaran untuk
 periode yang sama. Perangkat dengan jadwal lama ditolak tanpa menimpa pembayaran
-atau memundurkan jadwal. Jadwal baru dan target tetap dapat dibuat offline dengan
-antrean sinkronisasi yang ada. Edit tagihan, jeda/aktifkan, dan lewati periode juga memakai pemeriksaan
+atau memundurkan jadwal. Saat koneksi terputus, jadwal baru dan target memakai
+antrean perubahan dan belum dianggap tersimpan di server hingga sinkronisasi berhasil.
+Edit tagihan, jeda/aktifkan, dan lewati periode juga memakai pemeriksaan
 versi server dan memerlukan internet. Perubahan bersamaan pada target dan
 transaksi biasa tetap mengikuti kebijakan last-write-wins yang sudah digunakan
 aplikasi.
@@ -234,4 +278,5 @@ lokal browser; pilihan perangkat bersama memakai sesi browser. Penanda mencegah
 pengingat tagihan/periode/hari yang sama dikirim berulang; menghapus penyimpanan
 browser dapat menghapus penanda ini. Notifikasi ditutup saat pengingat dinonaktifkan
 atau sesi akun berakhir. Ketukan notifikasi membuka halaman Tagihan hanya untuk
-akun yang sesuai. Tidak ada perubahan izin atau alur offline Android.
+akun yang sesuai. Bagian ini menjelaskan pengingat web/PWA yang sudah ada;
+pengingat native mengikuti kemampuan Android dan perlu diverifikasi tersendiri.

@@ -5,21 +5,27 @@
 <h1 align="center">DompetKu</h1>
 
 <p align="center">
-  Personal finance tracker: offline-first on Android, Google sign-in and Firebase sync on web.
+  Connected personal finance tracking for Android and web, with shared account data.
 </p>
 
 <p align="center">
-  DompetKu helps users track income, expenses, wallets, budgets, backups, and app updates locally on their device.
+  DompetKu brings income, expenses, wallets, budgets, and financial planning into one account across devices.
 </p>
 
 <p align="center">
   <a href="https://github.com/AnandaSheva/DompetKu/actions/workflows/flutter-ci.yml"><img alt="Flutter CI" src="https://img.shields.io/github/actions/workflow/status/AnandaSheva/DompetKu/flutter-ci.yml?branch=main&style=flat-square&label=Flutter%20CI"></a>
   <img alt="Flutter" src="https://img.shields.io/badge/Flutter-3.x-02569B?style=flat-square&logo=flutter&logoColor=white">
-  <img alt="Android" src="https://img.shields.io/badge/Android-primary-3DDC84?style=flat-square&logo=android&logoColor=white">
+  <img alt="Android and Web" src="https://img.shields.io/badge/Android-Web-3DDC84?style=flat-square&logo=android&logoColor=white">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-blue?style=flat-square"></a>
   <a href="https://github.com/AnandaSheva/DompetKu/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/AnandaSheva/DompetKu?style=flat-square"></a>
-  <img alt="Offline first" src="https://img.shields.io/badge/Offline-first-2563EB?style=flat-square">
+  <img alt="Connected finance" src="https://img.shields.io/badge/Finance-connected-2563EB?style=flat-square">
 </p>
+
+## Product Direction and Implementation Status
+
+Android and web are equal product platforms. Development must use Google sign-in, the same Firebase UID and Firestore dataset, consistent financial rules, and synchronization across devices. Device storage supports caching, device preferences, and safe migration of existing data.
+
+Web already implements Firebase Authentication and Firestore. Android still uses the existing Drift data path; its Firebase configuration, sign-in, account repositories, and data migration require implementation and testing. This documentation update defines the shared direction; it does not deliver Android synchronization. See [the integration guide](docs/firebase-web.md) and [ROADMAP.md](ROADMAP.md).
 
 ## Branding and Compatibility
 
@@ -41,7 +47,7 @@ The GitHub repository and update endpoint still use the existing repository URL.
 - Backup and restore for moving data between phones
 - CSV transaction export
 - In-app update checker with direct APK download
-- Offline-first local storage
+- Google sign-in and account data synchronization on web; Android integration is planned
 
 ## Tagihan dan Target Tabungan
 
@@ -66,14 +72,13 @@ pengingat tidak berjalan saat aplikasi ditutup. Tidak ada pembayaran otomatis.
 
 ## Privacy Model
 
-- Android: no account and no cloud sync
-- Web: Google sign-in and financial data stored under the Firebase UID
+- Shared target for Android and web: Google sign-in and financial data scoped to the authenticated Firebase UID
 - No ads
 - No analytics or tracking
-- Android data stays on the device; web data is stored in Google Firebase
+- Account financial data is stored in Google Firebase; device caches and existing data need careful handling during migration and logout
 - Backup files contain financial data and should be stored safely
 
-On Android, DompetKu uses the internet for user-triggered update checks, APK downloads, external links, and sharing. On web, Firebase Authentication handles Google sign-in and Firestore synchronizes account data. Persistent browser cache requires trusted-device consent. Browser caches and backup files are not full database encryption. See [web setup and verification](docs/firebase-web.md).
+The connected design uses the internet for Firebase Authentication and Firestore synchronization on both platforms, alongside supported user-triggered updates, downloads, external links, and sharing. Persistent browser cache requires trusted-device consent. Device caches and backup files are not full database encryption. Android account support remains pending as described above. See [setup and verification](docs/firebase-web.md).
 
 ## Download
 
@@ -128,26 +133,32 @@ For release publishing steps, see [docs/release-checklist.md](docs/release-check
 
 - Flutter
 - Dart
+- Firebase Authentication
+- Cloud Firestore
 - Drift
 - SQLite
 - Riverpod
 - fl_chart
-- Android
+- Android and web
 
 ## Project Structure
 
 ```txt
 lib/app       App bootstrap, theme, and providers
 lib/core      Constants, enums, formatters, and helpers
-lib/data      Drift database, repositories, backup, security, updates
+lib/data      Account storage, Drift database, repositories, backup, security, updates
 lib/features  Feature-first UI modules
 lib/shared    Shared layouts, widgets, and components
 test          Unit and widget tests
 android       Android host project
+web           Browser host project
 ```
 
 ## Roadmap
 
+- Android Google sign-in and Firebase account integration
+- Shared Android/web data synchronization and safe migration of existing device data
+- Cross-platform account isolation and synchronization tests
 - UI polish
 - Backup encryption
 - Better data export

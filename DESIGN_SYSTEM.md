@@ -2,7 +2,7 @@
 
 ## 1. Design Direction
 
-DompetKu menggunakan pendekatan visual **iOS-inspired premium mobile interface** yang diadaptasi untuk Android.
+DompetKu menggunakan pendekatan visual **iOS-inspired premium interface** yang diadaptasi untuk Android dan web dengan akun serta data keuangan yang sama.
 
 Arah desain ini mengambil inspirasi dari kualitas visual iOS modern seperti:
 
@@ -20,7 +20,7 @@ Namun DompetKu **bukan clone iOS**, bukan Apple Wallet clone, dan bukan aplikasi
 
 Targetnya adalah:
 
-> Aplikasi Android yang terasa premium, calm, minimal, cepat, dan iOS-like, tetapi tetap nyaman digunakan di Redmi 13 Android 16 HyperOS 3.0.3.
+> Aplikasi Android dan web yang terasa premium, calm, minimal, cepat, dan iOS-like, dengan data akun terhubung serta nyaman digunakan pada perangkat mobile maupun browser desktop.
 
 ---
 
@@ -72,7 +72,7 @@ Aplikasi harus terasa seperti **daily personal tool**, bukan dashboard presentas
 
 ## 4. Target Device
 
-Primary target:
+Perangkat referensi Android:
 
 - Redmi 13
 - Android 16
@@ -87,7 +87,7 @@ Design harus diuji dengan orientasi:
 - smooth scrolling
 - tidak berat karena efek visual berlebihan
 
-Web preview hanya digunakan untuk development. Keputusan UI final harus tetap mempertimbangkan Android mobile.
+Web adalah platform produk yang setara. Uji browser mobile dan desktop, interaksi sentuh dan pointer, serta navigasi keyboard. Pertahankan konsistensi login, data akun, status sinkronisasi, dan pesan kegagalan pada Android maupun web.
 
 ---
 
@@ -1025,27 +1025,28 @@ bottom: safe area + nav
 Content width:
 
 * mobile full width
-* web preview boleh centered max width agar tidak terlalu melebar
+* form web boleh centered max width agar tetap mudah dibaca
 
-Untuk web preview:
+Untuk form web yang ringkas:
 
 ```txt
 max content width: 480-540 px
 ```
 
-Agar preview tetap menyerupai mobile.
+Gunakan batas lebar sesuai konteks konten; halaman web tetap merupakan pengalaman produk penuh.
 
 ---
 
 ## 26.2 Responsive Rules
 
-Fokus utama Android mobile.
+Android dan web memakai design system serta fitur inti yang sama dengan layout responsif.
 
-Jika web preview lebar:
+Pada layar browser lebar:
 
 * jangan paksa layout desktop dashboard kompleks
-* gunakan mobile frame atau max width
-* pertahankan rasa mobile app
+* gunakan max width atau susunan konten responsif sesuai kebutuhan
+* pertahankan hierarchy dan pola interaksi yang konsisten
+* tampilkan status akun, sinkronisasi, dan tindakan coba lagi dengan jelas
 
 ---
 
@@ -1096,7 +1097,7 @@ Sebelum menerima perubahan UI, cek:
 6. Apakah bottom nav terasa premium?
 7. Apakah dashboard menjawab kebutuhan utama?
 8. Apakah UI terasa konsisten?
-9. Apakah tampilan cocok di Android?
+9. Apakah tampilan cocok di Android dan web?
 10. Apakah ada elemen yang hanya dekoratif tapi tidak berguna?
 
 Jika banyak jawaban negatif, UI harus direvisi.
@@ -1179,13 +1180,13 @@ Setiap screen harus memenuhi standar:
 * punya komponen reusable
 * tidak generik
 * nyaman dilihat lama
-* ringan untuk Android
+* ringan untuk Android dan browser
 * mudah dikembangkan
 
 ---
 
 ## 32. Final Design Statement
 
-DompetKu should feel like a calm, premium, iOS-inspired personal finance app adapted for Android. It must prioritize fast input, readable financial information, soft visual hierarchy, elegant surfaces, smooth motion, and offline-first practicality.
+DompetKu should feel like a calm, premium, iOS-inspired personal finance app adapted for Android and web. It must prioritize fast input, readable financial information, soft visual hierarchy, elegant surfaces, smooth motion, and clear account synchronization states across devices.
 
 The design must never look like a generic AI-generated dashboard or default Flutter Material app.

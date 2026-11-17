@@ -12,6 +12,19 @@ Use this checklist before publishing a DompetKu GitHub Release. Replace `{VERSIO
 - Confirm release build passed.
 - Confirm `android/key.properties` exists locally.
 - Confirm no keystore or signing secrets are staged.
+- State which account integrations the release actually supports. Documentation targets do not prove Android Firebase support is available.
+
+## Connected Android/Web Release Requirements
+
+These checks must pass before publishing a release as supporting shared Android/web account data. Android account integration is still planned; do not mark these checks complete based on web tests alone.
+
+- Verify Google sign-in, authentication initialization, and account-scoped repositories on Android and web.
+- Verify the same UID opens the same Firestore dataset and financial results on both platforms.
+- Use Firebase emulators and test accounts to check UID ownership rules, account switching, concurrent edits, interrupted connections, pending writes, retries, logout, and staged restore/reset.
+- Verify existing Android data migrates only after a saved backup, visible target account, and explicit confirmation; retries must not duplicate transactions or silently remove the source data.
+- Deploy required Firestore rules/indexes before releasing clients that depend on them.
+- Check the Android merged manifest for necessary permissions and Firebase initialization, and explain any permission changes.
+- Verify sign-in and cross-device synchronization on an Android device and mobile/desktop browsers with test data before claiming integrated support.
 
 ## Build
 

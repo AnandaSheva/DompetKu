@@ -2,7 +2,9 @@
 
 Thanks for your interest in improving DompetKu.
 
-DompetKu is an offline-first Android personal finance app. Contributions should keep the app simple, lightweight, private by default, and comfortable on lower-end Android devices.
+DompetKu is a connected personal finance app for Android and web. Contributions should keep shared account data and financial rules consistent across platforms while preserving a simple, lightweight experience and account privacy.
+
+Web already uses Firebase Authentication and Firestore. Android account integration is planned; see [the integration guide](docs/firebase-web.md) for current limitations and the remaining work.
 
 ## Local Setup
 
@@ -42,10 +44,12 @@ test: cover version comparison
 
 ## Development Principles
 
-- Keep the app offline-first.
+- Keep Android and web aligned around Google sign-in and the same UID-scoped Firestore datasets.
 - Avoid unnecessary dependencies.
-- Do not add accounts, backend sync, ads, analytics, or tracking.
-- Keep Android as the main target.
+- Use existing Firebase services for authentication and synchronization; do not add custom backend services, ads, analytics, or tracking.
+- Treat Android and web as equal product platforms.
+- Preserve existing device data and require a saved backup and explicit migration to the selected account.
+- Verify account isolation, interrupted connections, pending writes, and cross-client synchronization with Firebase emulators; never use production financial data for tests.
 - Keep Bahasa Indonesia for app UI.
 - Keep public documentation clear and direct.
 - Do not commit secrets, keystores, local config, backups, or exported financial data.

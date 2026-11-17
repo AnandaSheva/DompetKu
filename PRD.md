@@ -2,13 +2,15 @@
 
 ## 1. Product Overview
 
-**DompetKu** adalah aplikasi mobile personal money management untuk mencatat, memantau, dan menganalisis keuangan pribadi secara cepat, ringan, dan offline.
+**DompetKu** adalah aplikasi pengelolaan keuangan pribadi untuk Android dan web dengan data akun yang terhubung dan tersinkron antarperangkat.
 
-DompetKu dibuat untuk penggunaan keuangan pribadi sehari-hari, terutama bagi pengguna yang ingin mencatat pemasukan, pengeluaran, dompet, dan budget tanpa akun online atau proses yang rumit.
+DompetKu dibuat untuk mencatat pemasukan, pengeluaran, dompet, dan budget sehari-hari melalui akun Google yang sama di Android maupun web, dengan proses yang sederhana.
 
-DompetKu bukan aplikasi akuntansi kompleks, bukan aplikasi bank, dan bukan platform finansial online. Fokus utamanya adalah membantu pengguna memahami kondisi uang pribadi secara cepat: saldo tersisa, pemasukan bulan ini, pengeluaran bulan ini, kategori paling boros, budget, dan riwayat transaksi.
+Fokus DompetKu adalah membantu pengguna memahami kondisi uang pribadi secara cepat melalui data akun terhubung: saldo tersisa, pemasukan bulan ini, pengeluaran bulan ini, kategori paling boros, budget, dan riwayat transaksi.
 
-Aplikasi harus terasa **simple, elegant, premium, cepat, stabil, offline-first, dan iOS-like**, tetapi tetap nyaman digunakan di Android.
+Aplikasi harus terasa **simple, elegant, premium, cepat, stabil, terhubung, dan iOS-like**, serta nyaman digunakan di Android dan browser.
+
+Dokumen ini menetapkan target pengembangan bersama untuk kedua platform. Integrasi Firebase sudah tersedia pada web; konfigurasi Firebase, login, repository akun, dan migrasi data Android masih perlu diimplementasikan dan diuji sebelum dinyatakan tersedia.
 
 ---
 
@@ -33,22 +35,22 @@ DompetKu harus membantu pengguna menjawab pertanyaan utama dalam beberapa detik:
 
 Pengguna utama adalah:
 
-- Pengguna Android yang ingin mencatat keuangan pribadi
+- Pengguna Android dan web yang ingin mencatat keuangan pribadi
 - Pengguna yang mengelola pemasukan, pengeluaran, transfer, dan budget harian
-- Pengguna yang ingin aplikasi sederhana tanpa akun online
-- Ingin aplikasi offline dan privat
+- Pengguna yang ingin mengakses data keuangan yang sama melalui satu akun
+- Pengguna yang ingin data antarperangkat tetap konsisten dan terisolasi dari akun lain
 - Tidak ingin terlalu banyak mengetik
 - Butuh dashboard visual yang mudah dibaca
 
 ### Primary Device
 
-Target perangkat utama:
+Perangkat referensi Android:
 
 - Redmi 13
 - Android 16
 - HyperOS 3.0.3
 
-Aplikasi harus terasa ringan dan stabil pada perangkat tersebut. Web preview hanya digunakan untuk development, bukan target utama produk.
+Aplikasi harus terasa ringan dan stabil pada perangkat tersebut. Web merupakan platform produk yang setara dan harus diuji pada browser mobile maupun desktop.
 
 ---
 
@@ -57,8 +59,8 @@ Aplikasi harus terasa ringan dan stabil pada perangkat tersebut. Web preview han
 Pengguna membutuhkan aplikasi pencatat keuangan yang:
 
 1. Cepat digunakan untuk input transaksi harian.
-2. Bisa berjalan offline tanpa akun dan tanpa internet.
-3. Menyimpan data secara lokal.
+2. Mengakses keuangan melalui akun Google yang sama di Android dan web.
+3. Menyinkronkan data akun melalui Firestore agar perubahan terhubung antarperangkat.
 4. Memiliki dashboard dan analytics yang jelas.
 5. Tidak terasa seperti spreadsheet atau aplikasi akuntansi berat.
 6. Tidak memiliki UI generik seperti template dashboard biasa.
@@ -81,7 +83,8 @@ Masalah utama bukan hanya mencatat transaksi, tetapi membuat proses mencatat men
 - Pengguna bisa melihat dashboard bulanan.
 - Pengguna bisa melihat analytics visual.
 - Pengguna bisa membuat budget bulanan.
-- Pengguna bisa export dan import data lokal.
+- Pengguna bisa export dan import data akun dengan validasi serta konfirmasi penggantian data.
+- Pengguna bisa melanjutkan pengelolaan keuangan di Android maupun web menggunakan akun yang sama.
 
 ### Experience Goals
 
@@ -95,21 +98,21 @@ Masalah utama bukan hanya mencatat transaksi, tetapi membuat proses mencatat men
 
 ### Technical Goals
 
-- Offline-first.
-- Data lokal.
+- Data keuangan terhubung melalui Firebase Firestore per akun.
+- Login Google dan model data yang sama pada Android dan web.
 - Ringan.
 - Stabil.
 - Mudah dikembangkan.
 - Open-source ready.
-- Tidak bergantung pada server.
-- Tidak membutuhkan login.
+- Menggunakan Firebase yang sudah ada tanpa backend kustom tambahan.
+- Status sinkronisasi, perubahan tertunda, dan kegagalan koneksi terlihat jelas.
 - Tidak memakai dependency berlebihan.
 
 ---
 
 ## 6. Non-Goals
 
-DompetKu v1.0 tidak bertujuan menjadi:
+DompetKu tidak bertujuan menjadi:
 
 - Aplikasi bank.
 - Aplikasi investasi.
@@ -117,25 +120,22 @@ DompetKu v1.0 tidak bertujuan menjadi:
 - Aplikasi akuntansi profesional.
 - Aplikasi invoice lengkap.
 - Aplikasi pajak.
-- Aplikasi multi-user.
-- Aplikasi cloud finance.
-- Aplikasi dengan login/register.
+- Aplikasi kolaborasi keuangan dengan akses lintas akun tanpa izin pemilik.
 - Aplikasi dengan iklan.
 - Aplikasi tracking pengguna.
 
-Fokus v1.0 adalah pengelolaan keuangan pribadi secara lokal.
+Fokus pengembangan adalah pengelolaan keuangan pribadi melalui satu akun dengan data yang sama di Android dan web. Login Google dan sinkronisasi Firestore termasuk kebutuhan inti.
 
 ---
 
 ## 7. Platform Scope
 
-### Main Platform
+### Product Platforms
 
 - Android
+- Flutter Web/PWA pada browser mobile dan desktop
 
-### Development Preview
-
-- Flutter Web localhost preview
+Kedua platform memakai akun, dataset Firestore, aturan keuangan, dan fitur inti yang sama. Perbedaan teknis seperti biometrik, izin notifikasi, atau instalasi APK mengikuti kemampuan platform.
 
 ### Future Optional
 
@@ -153,6 +153,8 @@ Fokus v1.0 adalah pengelolaan keuangan pribadi secara lokal.
 
 Onboarding muncul saat pertama kali aplikasi dibuka.
 
+Login Google dan inisialisasi akun harus selesai sebelum data keuangan akun dimuat. Tampilkan akun tujuan dan tawarkan migrasi data perangkat lama secara eksplisit setelah cadangan tersimpan.
+
 Data yang dikumpulkan:
 
 - Nama pengguna
@@ -166,7 +168,8 @@ Onboarding harus singkat. Jangan membuat pengguna mengisi terlalu banyak hal di 
 ### Acceptance Criteria
 
 - Pengguna bisa menyelesaikan onboarding kurang dari 1 menit.
-- Pengguna bisa mulai memakai aplikasi setelah onboarding.
+- Pengguna bisa mulai memakai data akun setelah login dan onboarding selesai.
+- Android dan web dengan UID yang sama membuka dataset akun yang sama.
 - Wallet default bisa dibuat otomatis.
 - Onboarding tidak terasa seperti form panjang.
 
@@ -363,7 +366,7 @@ Analytics harus fokus pada insight, bukan sekadar grafik dekoratif.
 
 ### Acceptance Criteria
 
-- Grafik tetap rapi di layar Android.
+- Grafik tetap rapi di Android dan browser mobile maupun desktop.
 - Grafik mudah dibaca.
 - Analytics tetap punya empty state saat belum ada data.
 - Warna grafik konsisten dengan makna finansial.
@@ -397,7 +400,7 @@ Status budget:
 
 ## 8.9 Backup, Export, and Import
 
-Karena aplikasi offline-first, backup adalah fitur penting.
+Backup melengkapi sinkronisasi akun dengan salinan data yang dapat disimpan pengguna sebelum impor, migrasi, atau perubahan besar.
 
 Fitur wajib:
 
@@ -416,14 +419,17 @@ Fitur opsional lanjutan:
 - Pengguna bisa export semua data.
 - Pengguna bisa import ulang data dari file backup.
 - CSV bisa digunakan untuk analisis di spreadsheet.
-- Data backup tidak bergantung pada server.
+- File backup dapat disimpan pengguna secara mandiri; pemulihan data akun membutuhkan koneksi, validasi, staging, dan aktivasi dataset secara atomik.
+- Migrasi data perangkat lama menampilkan akun tujuan dan membutuhkan cadangan tersimpan serta tindakan eksplisit pengguna.
 
 ---
 
 ## 8.10 Security
 
-Security untuk v1.0 atau lanjutan:
+Kebutuhan keamanan produk terintegrasi:
 
+- Google sign-in dan isolasi data berdasarkan Firebase UID
+- Firestore Security Rules untuk kepemilikan data akun
 - Hide balance toggle
 - PIN lock
 - Biometric lock
@@ -435,6 +441,8 @@ Security untuk v1.0 atau lanjutan:
 - Pengguna bisa mengaktifkan lock app.
 - Biometric bersifat opsional.
 - Security tidak mengganggu input cepat.
+- Pergantian akun membuang state dan listener akun sebelumnya.
+- Logout menunggu sinkronisasi; membuang perubahan memerlukan cadangan dan konfirmasi eksplisit.
 
 ---
 
@@ -580,7 +588,7 @@ Yang tidak boleh disalin mentah:
 - Apple Wallet clone
 - iOS-only interaction yang aneh di Android
 
-DompetKu harus menjadi aplikasi Android yang terinspirasi iOS, bukan aplikasi yang pura-pura menjadi iPhone.
+DompetKu harus mengadaptasi inspirasi visual iOS secara konsisten dengan pola interaksi yang nyaman untuk Android dan web.
 
 ---
 
@@ -658,6 +666,8 @@ Recommended stack:
 
 - Flutter
 - Dart
+- Firebase Authentication
+- Cloud Firestore
 - Drift
 - SQLite
 - Riverpod
@@ -672,14 +682,16 @@ Recommended stack:
 
 Rules:
 
-- Core app must work offline.
-- No backend for v1.0.
-- No login/register for v1.0.
+- Android and web must share Google sign-in and UID-scoped Firestore account data.
+- Use existing Firebase services without adding a custom backend or automatically enabling billing.
+- Gate account repositories behind completed authentication initialization.
+- Treat device storage as cache, device preferences, or a legacy migration source.
+- Preserve pending writes and show synchronization, retry, and connection errors accurately.
+- Test account isolation and cross-client synchronization using Firebase emulators and test accounts.
 - No tracking.
 - No ads.
 - No unnecessary package.
-- Web preview is allowed only for development.
-- Android is the primary target.
+- Android and web are equal product platforms with the same financial rules and core features.
 
 ---
 
@@ -693,7 +705,7 @@ DompetKu harus:
 - Tidak menggunakan animasi berat berlebihan
 - Tidak memakai asset besar tanpa kebutuhan
 - Tetap nyaman di Redmi 13
-- Tetap bisa berjalan offline
+- Menampilkan status sinkronisasi dan pemulihan koneksi tanpa kehilangan perubahan
 
 Target pengalaman:
 
@@ -746,10 +758,14 @@ Kode harus:
 
 ## 16. Release Scope
 
-## 16.1 Version 1.0 Scope
+## 16.1 Integrated Product Scope
 
-DompetKu v1.0 dianggap layak digunakan jika sudah memiliki:
+Target produk terintegrasi dianggap siap jika sudah memiliki dan memverifikasi:
 
+- Google sign-in di Android dan web
+- Dataset Firestore bersama per Firebase UID
+- Sinkronisasi data antarperangkat dan isolasi antar-akun
+- Migrasi aman data perangkat lama dengan cadangan dan konfirmasi
 - Onboarding
 - Dashboard
 - Add income
@@ -763,19 +779,16 @@ DompetKu v1.0 dianggap layak digunakan jika sudah memiliki:
 - Export/import JSON
 - Export CSV
 - Settings
-- Offline storage
-- Android build
+- Status sinkronisasi, perubahan tertunda, dan pemulihan koneksi
+- Android build dan web deployment
 
 ---
 
-## 16.2 Out of Scope for v1.0
+## 16.2 Out of Scope
 
-Fitur berikut tidak masuk v1.0:
+Fitur berikut tidak termasuk cakupan pengembangan saat ini:
 
-- Cloud sync
-- Login/register
-- Multi-device sync
-- Firebase/Supabase
+- Backend kustom tambahan
 - OCR struk
 - AI financial assistant
 - Invoice lengkap
@@ -808,23 +821,24 @@ Output:
 
 ---
 
-## Phase 2 - Local Data Foundation
+## Phase 2 - Connected Account Foundation
 
-Tujuan: membuat fondasi data offline.
+Tujuan: membuat fondasi akun dan data terhubung yang sama untuk Android dan web.
 
 Scope:
 
-- Drift setup
-- SQLite database
-- Tables
-- DAOs
+- Firebase Authentication dan login Google di kedua platform
+- Firestore dataset per UID dan Security Rules
+- Inisialisasi sesi sebelum repository akun
+- Listener bersama dan status sinkronisasi
+- Migrasi data Drift/SQLite lama dengan backup dan konfirmasi
 - Repository
 - Seed categories
 - Seed wallets
 
 Output:
 
-- Data lokal siap dipakai oleh fitur transaksi.
+- Data akun yang sama siap dipakai oleh fitur transaksi pada Android dan web.
 
 ---
 
@@ -898,7 +912,8 @@ Scope:
 - Biometric lock
 - Dark mode polish
 - Animation polish
-- Responsive Android layout
+- Responsive Android and web layouts
+- Account isolation and synchronization checks across Android and web
 - README screenshot
 - Release APK
 
@@ -913,10 +928,10 @@ Output:
 DompetKu berhasil jika:
 
 - Pengguna bisa mencatat transaksi harian tanpa merasa ribet.
-- Aplikasi bisa dipakai offline.
+- Data akun yang sama tersedia di Android dan web setelah sinkronisasi berhasil.
 - Dashboard langsung memberi gambaran kondisi uang.
 - UI tidak terasa generik.
-- Aplikasi berjalan stabil di Android.
+- Aplikasi berjalan stabil di Android dan browser mobile maupun desktop.
 - Data bisa dibackup.
 - Repo GitHub terlihat rapi dan profesional.
 - Project bisa dilanjutkan dengan Codex tanpa arah yang kabur.
@@ -933,7 +948,7 @@ Setiap perubahan UI harus melewati pertanyaan berikut:
 4. Apakah spacing sudah lega?
 5. Apakah warna terlalu ramai?
 6. Apakah komponen ini terasa seperti bagian dari satu design system?
-7. Apakah ini nyaman digunakan di Android?
+7. Apakah ini nyaman digunakan di Android dan web?
 8. Apakah animasi membantu, bukan mengganggu?
 9. Apakah input masih cepat?
 10. Apakah ini sesuai karakter DompetKu?
@@ -944,6 +959,6 @@ Jika jawabannya lemah, desain harus direvisi.
 
 ## 20. Final Product Statement
 
-DompetKu is an offline-first personal money management app for Android, designed for everyday income, expense, wallet, and budget tracking. It focuses on fast transaction input, clear financial summaries, useful analytics, and a premium iOS-inspired interface adapted for Android.
+DompetKu is a connected personal money management app for Android and web, designed for everyday income, expense, wallet, and budget tracking through one account. Both platforms must share Google sign-in, UID-scoped Firestore data, consistent financial rules, and synchronization across devices. It focuses on fast transaction input, clear financial summaries, useful analytics, and a premium iOS-inspired interface adapted for mobile and browser use.
 
 The app must be private, lightweight, stable, elegant, and practical for daily use.
