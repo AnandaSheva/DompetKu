@@ -2,13 +2,13 @@
 
 DompetKu is developed as a connected personal finance app for Android and web. Both platforms must share account data, financial rules, and core features through Google sign-in and Firebase Firestore.
 
-Web currently implements Firebase account storage. Android account integration and cross-platform synchronization still require implementation and verification.
+Android and web now use the shared Firebase account path in source, including native Google sign-in, explicit legacy-data migration, and Android bill alarms. Device verification and publication remain separate release steps.
 
 ## Near Term
 
-- Configure Firebase and Google sign-in for Android using the existing account model
-- Connect Android repositories to the same UID-scoped Firestore datasets as web
-- Migrate existing device data only after a saved backup, visible destination account, and explicit user action
+- Verify native Google sign-in on debug and release-signed Android builds
+- Verify Android/web synchronization and safe migration of existing device data
+- Verify notification permission, app closure, reboot, account switching, and battery-saving behavior on Android
 - Align account, synchronization, retry, and error states across Android and web
 - Verify Android/web synchronization, account isolation, concurrent edits, pending writes, logout, and restore using Firebase emulators and test accounts
 - UI polish and accessibility fixes

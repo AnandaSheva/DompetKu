@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/providers/app_providers.dart';
+import '../../app/providers/auth_providers.dart';
 import '../auth/cloud_account_panel.dart';
 import '../../data/store/cloud_finance_store.dart';
 import '../../app/theme/app_colors.dart';
@@ -63,8 +64,10 @@ class SettingsPage extends ConsumerWidget {
         children: [
           Text('Pengaturan', style: theme.textTheme.displayMedium),
           const SizedBox(height: AppSpacing.xxl),
-          if (kIsWeb) const CloudAccountPanel(),
-          if (kIsWeb) const BillNotificationSettingsCard(),
+          if (ref.watch(currentAccountProvider) != null)
+            const CloudAccountPanel(),
+          if (ref.watch(currentAccountProvider) != null)
+            const BillNotificationSettingsCard(),
           _SettingsTile(
             icon: Icons.dark_mode_rounded,
             title: 'Tampilan',
@@ -565,7 +568,7 @@ class SettingsPage extends ConsumerWidget {
         context: context,
         title: 'Pulihkan cadangan?',
         message:
-            'Memulihkan cadangan akan mengganti data yang ada ${kIsWeb ? 'di akun Google ini dan semua perangkat yang terhubung' : 'di perangkat ini'}. Pastikan kamu sudah mencadangkan data terbaru.\n\nIsi cadangan: ${preview.transactions} transaksi, ${preview.wallets} dompet, ${preview.categories} kategori, ${preview.budgets} budget, ${preview.recurringBills} jadwal tagihan, dan ${preview.savingsGoals} target tabungan.',
+            'Memulihkan cadangan akan mengganti data yang ada ${ref.read(cloudStoreProvider) != null ? 'di akun Google ini dan semua perangkat yang terhubung' : 'di perangkat ini'}. Pastikan kamu sudah mencadangkan data terbaru.\n\nIsi cadangan: ${preview.transactions} transaksi, ${preview.wallets} dompet, ${preview.categories} kategori, ${preview.budgets} budget, ${preview.recurringBills} jadwal tagihan, dan ${preview.savingsGoals} target tabungan.',
         confirmLabel: 'Pulihkan',
         danger: true,
       );
@@ -593,7 +596,8 @@ class SettingsPage extends ConsumerWidget {
   Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => const _ResetDialog(),
+      builder: (context) =>
+          _ResetDialog(account: ref.read(cloudStoreProvider) != null),
     );
     if (confirmed != true) return;
     final backupRepository = ref.read(backupRepositoryProvider);
@@ -743,7 +747,7 @@ class SettingsPage extends ConsumerWidget {
                 child: Text(
                   kIsWeb
                       ? '$versionLabel\nData keuangan disimpan di Google Firebase sesuai akun. Cache browser mengikuti pilihan perangkat pribadi. Tanpa iklan dan analytics.'
-                      : '$versionLabel\nData tersimpan lokal di perangkat. Tidak perlu akun atau koneksi cloud.',
+                      : '$versionLabel\nData keuangan disinkronkan melalui Google Firebase sesuai akun. Cache disimpan di perangkat. Tanpa iklan dan analytics.',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),
@@ -1132,7 +1136,8 @@ class _PinSetupResult {
 }
 
 class _ResetDialog extends StatefulWidget {
-  const _ResetDialog();
+  const _ResetDialog({required this.account});
+  final bool account;
 
   @override
   State<_ResetDialog> createState() => _ResetDialogState();
@@ -1158,7 +1163,7 @@ class _ResetDialogState extends State<_ResetDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            kIsWeb
+            widget.account
                 ? 'Data akun akan direset pada semua perangkat yang terhubung. Sinkronkan semua perangkat dan simpan cadangan terlebih dahulu. Data lokal lama yang belum dipindahkan tetap terpisah.'
                 : 'Semua transaksi, dompet, kategori, budget, dan pengaturan akan dihapus dari perangkat ini. Data tidak bisa dikembalikan kecuali kamu punya cadangan.',
           ),

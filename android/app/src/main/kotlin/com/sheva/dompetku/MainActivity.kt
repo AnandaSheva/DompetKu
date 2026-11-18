@@ -8,8 +8,11 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 
 class MainActivity : FlutterFragmentActivity() {
+    private var reminders: BillReminderBridge? = null
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        reminders = BillReminderBridge(this, flutterEngine.dartExecutor.binaryMessenger)
+        reminders?.opened(intent?.getStringExtra(BillReminderScheduler.OPEN_ACCOUNT))
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.sheva.dompetku/update")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -31,6 +34,17 @@ class MainActivity : FlutterFragmentActivity() {
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        reminders?.opened(intent.getStringExtra(BillReminderScheduler.OPEN_ACCOUNT))
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        reminders?.onPermissionResult(requestCode)
     }
 
     private fun openApk(path: String, result: MethodChannel.Result) {

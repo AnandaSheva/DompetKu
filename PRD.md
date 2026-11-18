@@ -10,7 +10,7 @@ Fokus DompetKu adalah membantu pengguna memahami kondisi uang pribadi secara cep
 
 Aplikasi harus terasa **simple, elegant, premium, cepat, stabil, terhubung, dan iOS-like**, serta nyaman digunakan di Android dan browser.
 
-Dokumen ini menetapkan target pengembangan bersama untuk kedua platform. Integrasi Firebase sudah tersedia pada web; konfigurasi Firebase, login, repository akun, dan migrasi data Android masih perlu diimplementasikan dan diuji sebelum dinyatakan tersedia.
+Dokumen ini menetapkan target pengembangan bersama untuk kedua platform. Source Android dan web sudah memakai autentikasi serta penyimpanan akun Firebase yang sama. Android memiliki login Google native, migrasi data perangkat dengan cadangan, dan pengingat tagihan native; pengujian pada perangkat tetap wajib sebelum publikasi.
 
 ---
 

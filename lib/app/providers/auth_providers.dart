@@ -5,8 +5,13 @@ import '../../data/auth/auth_repository.dart';
 import '../../data/store/cloud_finance_store.dart';
 
 final webPlatformProvider = Provider<bool>((ref) => kIsWeb);
+final accountPlatformProvider = Provider<bool>(
+  (ref) =>
+      ref.watch(webPlatformProvider) ||
+      defaultTargetPlatform == TargetPlatform.android,
+);
 final authRepositoryProvider = Provider<AuthRepository>(
-  (ref) => FirebaseAuthRepository(),
+  (ref) => FirebaseAuthRepository(isWeb: ref.watch(webPlatformProvider)),
 );
 final authStateProvider = StreamProvider<AppAccount?>(
   (ref) => ref.watch(authRepositoryProvider).authStateChanges(),

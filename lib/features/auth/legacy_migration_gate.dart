@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,6 +12,7 @@ import '../../data/local/database/app_database.dart';
 import '../../data/auth/browser_session.dart';
 import '../../data/repositories/backup_repository.dart';
 import '../../shared/widgets/loading_state.dart';
+import '../../shared/widgets/app_confirm_dialog.dart';
 import 'cloud_account_panel.dart';
 
 class LegacyMigrationGate extends ConsumerStatefulWidget {
@@ -29,6 +31,7 @@ class _LegacyMigrationGateState extends ConsumerState<LegacyMigrationGate> {
   bool _busy = false;
   bool _exported = false;
   bool _confirmedBackup = false;
+  bool _accountUsed = false;
   String? _message;
 
   @override
@@ -44,10 +47,13 @@ class _LegacyMigrationGateState extends ConsumerState<LegacyMigrationGate> {
     }
     try {
       final account = ref.read(currentAccountProvider)!;
-      if (ref.read(cloudStoreProvider)!.legacyMigrated) return;
+      final alreadyMigrated = ref.read(cloudStoreProvider)!.legacyMigrated;
+      if (kIsWeb && alreadyMigrated) return;
+      if (!kIsWeb && legacyDeviceMigrationComplete(account.uid)) return;
       if (legacyOwner != null && legacyOwner != account.uid) return;
       final settings = await ref.read(settingsRepositoryProvider).getSettings();
-      if (settings?.onboardingCompleted == true) return;
+      _accountUsed = settings?.onboardingCompleted == true || alreadyMigrated;
+      if (kIsWeb && _accountUsed) return;
       final legacy = _legacy = AppDatabase.defaults();
       final wallets = await legacy.walletsDao.getAll();
       final categories = await legacy.categoriesDao.getAll();
@@ -65,7 +71,7 @@ class _LegacyMigrationGateState extends ConsumerState<LegacyMigrationGate> {
       if (mounted) {
         setState(
           () => _message =
-              'Data browser lama belum bisa dibaca. '
+              'Data perangkat lama belum bisa dibaca. '
               'Data tersebut tetap disimpan dan belum dipindahkan.',
         );
       }
@@ -98,6 +104,18 @@ class _LegacyMigrationGateState extends ConsumerState<LegacyMigrationGate> {
   }
 
   Future<void> _migrate() async {
+    if (_accountUsed) {
+      final confirmed = await showAppConfirmDialog(
+        context: context,
+        title: 'Ganti data akun dengan data perangkat?',
+        message:
+            'Akun ${ref.read(currentAccountProvider)?.email ?? 'ini'} sudah memiliki data. '
+            'Pemindahan ini mengganti data akun di semua perangkat. Cadangkan data akun terbaru melalui Pengaturan sebelum melanjutkan.',
+        confirmLabel: 'Ganti data akun',
+        danger: true,
+      );
+      if (!confirmed || !mounted) return;
+    }
     final store = ref.read(cloudStoreProvider)!;
     final repository = ref.read(backupRepositoryProvider);
     final payload = Map<String, dynamic>.from(_preview!.payload)
@@ -109,7 +127,22 @@ class _LegacyMigrationGateState extends ConsumerState<LegacyMigrationGate> {
     });
     try {
       rememberLegacyOwner(ref.read(currentAccountProvider)!.uid);
-      await store.migrate(key, () => repository.restoreImport(_preview!));
+      await flushSessionStorage();
+      if (!kIsWeb && store.legacyMigrated) {
+        // An account can have migrated an older browser already. Preserve its
+        // immutable fingerprint and use the explicitly confirmed restore flow.
+        await repository.restoreImport(_preview!);
+      } else {
+        await store.migrate(
+          key,
+          () => repository.restoreImport(_preview!),
+          replaceExisting: _accountUsed,
+        );
+      }
+      if (!kIsWeb) {
+        rememberLegacyDeviceMigration(ref.read(currentAccountProvider)!.uid);
+        await flushSessionStorage();
+      }
       if (mounted) setState(() => _skipped = true);
     } catch (_) {
       if (mounted) {
@@ -127,7 +160,7 @@ class _LegacyMigrationGateState extends ConsumerState<LegacyMigrationGate> {
   @override
   Widget build(BuildContext context) {
     if (!_checked) {
-      return const LoadingState(message: 'Memeriksa data browser lama');
+      return const LoadingState(message: 'Memeriksa data perangkat lama');
     }
     if (_skipped || (_preview == null && _message == null)) return widget.child;
     final theme = Theme.of(context);
@@ -145,7 +178,9 @@ class _LegacyMigrationGateState extends ConsumerState<LegacyMigrationGate> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Pindahkan data browser?',
+                    kIsWeb
+                        ? 'Pindahkan data browser?'
+                        : 'Pindahkan data perangkat?',
                     style: theme.textTheme.headlineMedium,
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -161,7 +196,9 @@ class _LegacyMigrationGateState extends ConsumerState<LegacyMigrationGate> {
                     const SizedBox(height: AppSpacing.xl),
                     OutlinedButton(
                       onPressed: _busy ? null : _export,
-                      child: const Text('Unduh cadangan JSON'),
+                      child: Text(
+                        kIsWeb ? 'Unduh cadangan JSON' : 'Simpan cadangan JSON',
+                      ),
                     ),
                     if (_exported)
                       CheckboxListTile(

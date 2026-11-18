@@ -1,7 +1,12 @@
 import 'bill_notification_client.dart';
 import 'bill_reminder_batch.dart';
+import 'package:flutter/foundation.dart';
+import 'native_bill_notifications.dart';
 
-BillNotificationClient createBillNotificationClient() => _UnavailableClient();
+BillNotificationClient createBillNotificationClient() =>
+    defaultTargetPlatform == TargetPlatform.android
+    ? NativeBillNotificationClient()
+    : _UnavailableClient();
 
 class _UnavailableClient implements BillNotificationClient {
   @override

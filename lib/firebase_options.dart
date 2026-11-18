@@ -21,10 +21,12 @@ class DefaultFirebaseOptions {
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for android - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        if (android.apiKey.isEmpty || android.appId.isEmpty) {
+          throw StateError(
+            'Konfigurasi Firebase Android belum diisi pada build.',
+          );
+        }
+        return android;
       case TargetPlatform.iOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for ios - '
@@ -51,6 +53,14 @@ class DefaultFirebaseOptions {
         );
     }
   }
+
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: String.fromEnvironment('FIREBASE_ANDROID_API_KEY'),
+    appId: String.fromEnvironment('FIREBASE_ANDROID_APP_ID'),
+    messagingSenderId: '837744778374',
+    projectId: 'dompetku-web-f8e4e',
+    storageBucket: 'dompetku-web-f8e4e.firebasestorage.app',
+  );
 
   static const FirebaseOptions web = FirebaseOptions(
     // Supplied at build time; keep this binding after running FlutterFire CLI.

@@ -15,9 +15,11 @@ Future<void> showBillNotificationRecommendation(
   context: context,
   builder: (dialogContext) => AlertDialog(
     title: const Text('Aktifkan pengingat?'),
-    content: const Text(
-      'Disarankan agar tagihan tidak terlewat. Pengingat H-1 dan hari H hanya '
-      'berjalan saat DompetKu dibuka. Opsional, bisa diubah di Pengaturan.',
+    content: Text(
+      ref.read(webPlatformProvider)
+          ? 'Pengingat H-1 dan hari H berjalan saat DompetKu dibuka. Opsional, bisa diubah di Pengaturan.'
+          : 'Pengingat H-1 dan hari H dijadwalkan sekitar pukul 09.00, termasuk saat aplikasi ditutup. '
+                'Buka DompetKu untuk memperbarui jadwal dari akun. Opsional, bisa diubah di Pengaturan.',
     ),
     actionsPadding: const EdgeInsets.fromLTRB(
       AppSpacing.xl,
@@ -67,7 +69,7 @@ Future<void> setBillNotificationsEnabled(
     return;
   }
   final state = ref.read(billReminderProvider);
-  if (!enabled) return;
+  if (!enabled && state.error == null) return;
   final message =
       state.error ??
       switch (state.permission) {
@@ -78,7 +80,7 @@ Future<void> setBillNotificationsEnabled(
         BillNotificationPermission.insecure =>
           'Buka DompetKu melalui HTTPS untuk mengaktifkan notifikasi.',
         BillNotificationPermission.unavailable =>
-          'Browser ini belum mendukung notifikasi web.',
+          'Perangkat ini belum mendukung pengingat yang tersedia.',
         _ => null,
       };
   if (message == null) return;

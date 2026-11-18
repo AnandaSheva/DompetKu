@@ -12,11 +12,13 @@ Use this checklist before publishing a DompetKu GitHub Release. Replace `{VERSIO
 - Confirm release build passed.
 - Confirm `android/key.properties` exists locally.
 - Confirm no keystore or signing secrets are staged.
+- Configure FIREBASE_ANDROID_API_KEY, FIREBASE_ANDROID_APP_ID, and GOOGLE_SERVER_CLIENT_ID in ignored .env.local. The release script passes this file without printing values.
+- CI APK builds require the same three repository secrets. Never echo Gradle command arguments containing encoded Dart defines.
 - State which account integrations the release actually supports. Documentation targets do not prove Android Firebase support is available.
 
 ## Connected Android/Web Release Requirements
 
-These checks must pass before publishing a release as supporting shared Android/web account data. Android account integration is still planned; do not mark these checks complete based on web tests alone.
+These checks must pass before publishing a release as supporting shared Android/web account data. Native account integration is implemented in source; do not mark device checks complete based on web tests alone.
 
 - Verify Google sign-in, authentication initialization, and account-scoped repositories on Android and web.
 - Verify the same UID opens the same Firestore dataset and financial results on both platforms.
@@ -41,7 +43,7 @@ An APK filename and GitHub tag do not change the installed Android version. Neve
 For a manual build on other platforms:
 
 ```bash
-flutter build apk --release --split-per-abi
+flutter build apk --release --split-per-abi --dart-define-from-file=.env.local
 ```
 
 Expected APK outputs:

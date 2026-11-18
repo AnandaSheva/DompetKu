@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:dompet_sheva/app/app.dart';
 import 'package:dompet_sheva/app/providers/app_providers.dart';
+import 'package:dompet_sheva/app/providers/auth_providers.dart';
 import 'package:dompet_sheva/app/providers/planning_providers.dart';
 import 'package:dompet_sheva/app/theme/app_theme.dart';
 import 'package:dompet_sheva/data/local/database/app_database.dart';
@@ -14,6 +15,7 @@ import 'package:dompet_sheva/features/dashboard/dashboard_page.dart';
 import 'package:dompet_sheva/features/analytics/analytics_page.dart';
 import 'package:dompet_sheva/features/settings/settings_page.dart';
 import 'package:dompet_sheva/features/wallets/wallets_page.dart';
+import 'package:dompet_sheva/features/security/app_lock_gate.dart';
 import 'package:dompet_sheva/shared/widgets/premium_bottom_nav.dart';
 
 void main() {
@@ -82,9 +84,32 @@ void main() {
     expect(find.text('Ringkasan periode'), findsOneWidget);
     expect(find.text('Riwayat terbaru'), findsOneWidget);
   });
+
+  testWidgets(
+    'native app lock covers the Navigator including notification routes',
+    (tester) async {
+      await tester.pumpWidget(_withOverrides(const FinanceApp(), locked: true));
+      await tester.pumpAndSettle();
+      final navigator = find.byType(Navigator).first;
+      expect(
+        find.ancestor(of: navigator, matching: find.byType(AppLockGate)),
+        findsOneWidget,
+      );
+      tester
+          .state<NavigatorState>(navigator)
+          .push(
+            MaterialPageRoute<void>(
+              builder: (_) =>
+                  const Scaffold(body: Text('Halaman dari notifikasi')),
+            ),
+          );
+      await tester.pumpAndSettle();
+      expect(find.text('Masukkan PIN untuk membuka DompetKu'), findsOneWidget);
+    },
+  );
 }
 
-Widget _withOverrides(Widget child) {
+Widget _withOverrides(Widget child, {bool locked = false}) {
   final now = DateTime(2026, 7, 2, 9);
   final settings = AppSettingEntry(
     id: 1,
@@ -121,6 +146,7 @@ Widget _withOverrides(Widget child) {
 
   return ProviderScope(
     overrides: [
+      accountPlatformProvider.overrideWithValue(false),
       appBootstrapProvider.overrideWith((ref) async {}),
       appSettingsProvider.overrideWith((ref) => Stream.value(settings)),
       dashboardSummaryProvider.overrideWith((ref) => Stream.value(summary)),
@@ -132,8 +158,8 @@ Widget _withOverrides(Widget child) {
       recurringBillsProvider.overrideWith((ref) => Stream.value([])),
       savingsGoalsProvider.overrideWith((ref) => Stream.value([])),
       securitySettingsProvider.overrideWith(
-        (ref) async => const SecuritySettings(
-          pinEnabled: false,
+        (ref) async => SecuritySettings(
+          pinEnabled: locked,
           biometricEnabled: false,
           autoLockMinutes: 1,
           pinLength: 6,

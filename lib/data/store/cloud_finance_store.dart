@@ -33,7 +33,7 @@ class CloudStatus {
           : pending
           ? 'Menunggu sinkronisasi'
           : fromCache
-          ? 'Data online dari perangkat ini'
+          ? 'Menampilkan cache perangkat'
           : 'Tersimpan di cloud');
 }
 
@@ -567,13 +567,18 @@ class CloudFinanceStore implements FinanceStore {
     }
   }
 
-  Future<void> migrate(String key, Future<void> Function() restore) async {
+  Future<void> migrate(
+    String key,
+    Future<void> Function() restore, {
+    bool replaceExisting = false,
+  }) async {
     if (_migrationKey != null) throw StateError('Migrasi masih berlangsung.');
     _migrationKey = key;
     try {
       // A legacy import is only offered before the account has been used.
-      if ((await appSettingsDao.getSettings())?.onboardingCompleted == true ||
-          (await transactionsDao.getAll()).isNotEmpty) {
+      if (!replaceExisting &&
+          ((await appSettingsDao.getSettings())?.onboardingCompleted == true ||
+              (await transactionsDao.getAll()).isNotEmpty)) {
         throw StateError(
           'Akun sudah memiliki data. Gunakan impor cadangan dengan konfirmasi penggantian.',
         );
@@ -585,6 +590,7 @@ class CloudFinanceStore implements FinanceStore {
   }
 
   Future<void> waitForSync() async {
+    await flushSessionStorage();
     await Future.wait(
       List.of(_billOperations),
     ).timeout(const Duration(seconds: 40));

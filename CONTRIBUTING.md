@@ -4,7 +4,7 @@ Thanks for your interest in improving DompetKu.
 
 DompetKu is a connected personal finance app for Android and web. Contributions should keep shared account data and financial rules consistent across platforms while preserving a simple, lightweight experience and account privacy.
 
-Web already uses Firebase Authentication and Firestore. Android account integration is planned; see [the integration guide](docs/firebase-web.md) for current limitations and the remaining work.
+Android and web share Firebase Authentication and Firestore account storage. Configure Android build values locally and verify native Google sign-in and reminders on a device; see [the integration guide](docs/firebase-web.md).
 
 ## Local Setup
 
@@ -17,7 +17,7 @@ flutter test
 To build a release APK locally:
 
 ```bash
-flutter build apk --release --split-per-abi
+flutter build apk --release --split-per-abi --dart-define-from-file=.env.local
 ```
 
 ## Branch Naming

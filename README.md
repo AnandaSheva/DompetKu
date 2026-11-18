@@ -25,7 +25,7 @@
 
 Android and web are equal product platforms. Development must use Google sign-in, the same Firebase UID and Firestore dataset, consistent financial rules, and synchronization across devices. Device storage supports caching, device preferences, and safe migration of existing data.
 
-Web already implements Firebase Authentication and Firestore. Android still uses the existing Drift data path; its Firebase configuration, sign-in, account repositories, and data migration require implementation and testing. This documentation update defines the shared direction; it does not deliver Android synchronization. See [the integration guide](docs/firebase-web.md) and [ROADMAP.md](ROADMAP.md).
+Android and web use Firebase Authentication and the same UID-scoped Firestore datasets. Android uses native Google sign-in and offers explicit migration of existing Drift data after a saved backup. Native bill reminders use Android alarms; web reminders run while the app is active. Real Google login and native notification delivery still require device verification before publishing. See [the integration guide](docs/firebase-web.md) and [ROADMAP.md](ROADMAP.md).
 
 ## Branding and Compatibility
 
@@ -47,7 +47,7 @@ The GitHub repository and update endpoint still use the existing repository URL.
 - Backup and restore for moving data between phones
 - CSV transaction export
 - In-app update checker with direct APK download
-- Google sign-in and account data synchronization on web; Android integration is planned
+- Google sign-in and shared account data synchronization on Android and web
 
 ## Tagihan dan Target Tabungan
 
@@ -63,7 +63,7 @@ pada bulan yang mendukungnya.
 Target tabungan menyimpan nominal tujuan, tenggat opsional, dan jumlah terkumpul
 yang diperbarui manual. Progres tidak memindahkan uang atau mengubah saldo dompet.
 Kedua fitur disertakan dalam backup JSON; backup lama tetap bisa dipulihkan.
-Android menampilkan jadwal di aplikasi. Di web/PWA, pengingat bersifat opsional.
+Android menyediakan pengingat native H-1 dan hari H sekitar pukul 09.00 berdasarkan jadwal akun terakhir yang tersinkron. Buka aplikasi untuk memperbarui perubahan dari perangkat lain; Android dapat menunda pengiriman karena penghematan baterai. Di web/PWA, pengingat bersifat opsional.
 Rekomendasi awal menyediakan pilihan **Aktifkan** atau **Nanti saja**. Sakelar
 **Notifikasi tagihan** di Pengaturan atau halaman Tagihan dapat diubah kapan saja.
 Izin browser hanya diminta saat pengguna memilih aktif. Pengingat H-1 dan
@@ -78,7 +78,7 @@ pengingat tidak berjalan saat aplikasi ditutup. Tidak ada pembayaran otomatis.
 - Account financial data is stored in Google Firebase; device caches and existing data need careful handling during migration and logout
 - Backup files contain financial data and should be stored safely
 
-The connected design uses the internet for Firebase Authentication and Firestore synchronization on both platforms, alongside supported user-triggered updates, downloads, external links, and sharing. Persistent browser cache requires trusted-device consent. Device caches and backup files are not full database encryption. Android account support remains pending as described above. See [setup and verification](docs/firebase-web.md).
+The connected design uses the internet for Firebase Authentication and Firestore synchronization on both platforms, alongside supported user-triggered updates, downloads, external links, and sharing. Persistent browser cache requires trusted-device consent. Device caches and backup files are not full database encryption. Verify account changes, synchronization, and cache cleanup on Android before publishing. See [setup and verification](docs/firebase-web.md).
 
 ## Download
 
@@ -122,7 +122,7 @@ Commands:
 flutter pub get
 flutter analyze
 flutter test
-flutter build apk --release --split-per-abi
+flutter build apk --release --split-per-abi --dart-define-from-file=.env.local
 ```
 
 Release signing uses a local keystore. Do not commit `android/key.properties`, `.jks`, or `.keystore` files.
@@ -156,9 +156,8 @@ web           Browser host project
 
 ## Roadmap
 
-- Android Google sign-in and Firebase account integration
-- Shared Android/web data synchronization and safe migration of existing device data
-- Cross-platform account isolation and synchronization tests
+- Android device verification for Google sign-in, migration, and reminders
+- Cross-platform account and synchronization regression coverage
 - UI polish
 - Backup encryption
 - Better data export

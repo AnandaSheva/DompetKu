@@ -21,7 +21,7 @@ Tujuan arsitektur ini adalah menjaga project tetap:
 
 DompetKu adalah aplikasi **pengelolaan keuangan pribadi dengan data terhubung** untuk Android dan web. Arsitektur harus memprioritaskan konsistensi data akun antarperangkat, privasi, performa, stabilitas, dan maintainability.
 
-Dokumen ini menetapkan arsitektur target. Web sudah memakai Firebase Authentication dan Firestore; konfigurasi Firebase, autentikasi, repository akun, dan migrasi Android masih perlu diimplementasikan dan diverifikasi.
+Android dan web memakai Firebase Authentication dan CloudFinanceStore per UID. Android memakai Google sign-in native, migrasi Drift eksplisit, dan AlarmManager untuk pengingat tagihan. Verifikasi perangkat dan rilis tetap diperlukan.
 
 ---
 
@@ -1261,10 +1261,10 @@ The architecture must support a connected Android and web app with consistent fi
 ## Shared account storage and implementation status
 
 `FinanceStore` is the storage contract used by the existing financial repositories.
-`CloudFinanceStore` is the shared account-storage implementation to use on Android
-and web. Today it is wired into web; Android still uses `AppDatabase` with Drift.
-Android account integration must replace that platform split while preserving a
-safe migration path for existing device data. Existing immutable Drift row objects remain
+`CloudFinanceStore` is wired into both Android and web after authentication.
+`AppDatabase` with Drift remains the migration source for existing device data.
+Migration requires a saved backup, visible destination account, and explicit action.
+Existing immutable Drift row objects remain
 value objects at this boundary so financial calculations and forms stay compatible.
 
 Each authenticated UID owns `users/{uid}` and versioned account datasets at
@@ -1275,8 +1275,10 @@ repositories; opening another screen does not create another backend listener.
 
 Auth loading, signed-out, and signed-in states have separate widget trees. The
 signed-in subtree and its Navigator are disposed when the UID changes. Android
-bootstrap currently does not initialize Firebase; enabling native configuration,
-Google sign-in, and account-scoped providers remains implementation work.
+bootstrap initializes Firebase with build-time Android options and restores native
+account state before account repositories are created.
+Native bill alarms use hashed account keys and are canceled on logout.
+The app lock wraps the Navigator so notification routes remain protected.
 Persistent web cache is opt-in; pending
 writes remain visible and prevent logout from discarding them. Failed writes can
 be retried and included in a JSON export. On a trusted device a UID-scoped outbox

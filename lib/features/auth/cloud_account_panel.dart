@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers/auth_providers.dart';
@@ -50,9 +51,11 @@ class CloudAccountPanel extends ConsumerWidget {
             ),
           ),
           Text(
-            trustedDevice
-                ? 'Cache online aktif di perangkat pribadi ini.'
-                : 'Cache sementara. Unduh cadangan sebelum menutup tab saat online.',
+            !kIsWeb
+                ? 'Sesi dan cache akun disimpan di perangkat ini.'
+                : trustedDevice
+                ? 'Cache aktif di perangkat pribadi ini.'
+                : 'Cache sementara. Cadangkan perubahan yang belum tersinkron sebelum menutup tab.',
             style: theme.textTheme.bodySmall,
           ),
           if (status.error != null)
@@ -76,7 +79,7 @@ class CloudAccountPanel extends ConsumerWidget {
       context: context,
       title: 'Keluar dari akun?',
       message:
-          'Pastikan perubahan sudah tersimpan di cloud. Cache akun di browser ini akan dibersihkan.',
+          'Pastikan perubahan sudah tersimpan di cloud. Cache akun dan pengingat di perangkat ini akan dibersihkan.',
       confirmLabel: 'Keluar akun',
     );
     if (!confirmed || !context.mounted) return;
@@ -89,6 +92,7 @@ class CloudAccountPanel extends ConsumerWidget {
       await store?.waitForSync();
       controller.setClosing(true);
       await endWebSession(auth, store);
+      if (!kIsWeb) controller.setClosing(false);
     } catch (_) {
       controller.setClosing(false);
       if (!context.mounted) return;
@@ -108,13 +112,14 @@ class CloudAccountPanel extends ConsumerWidget {
           context: context,
           title: 'Cadangan sudah tersimpan?',
           message:
-              'Pastikan file JSON sudah tersimpan. Perubahan yang belum dikirim akan dibersihkan dari browser ini dan dapat dipulihkan melalui impor cadangan.',
+              'Pastikan file JSON sudah tersimpan. Perubahan yang belum dikirim akan dibersihkan dari perangkat ini dan dapat dipulihkan melalui impor cadangan.',
           confirmLabel: 'Keluar dan bersihkan',
           danger: true,
         );
         if (!saved || !context.mounted) return;
         controller.setClosing(true);
         await endWebSession(auth, store, discardPending: true);
+        if (!kIsWeb) controller.setClosing(false);
       } catch (_) {
         controller.setClosing(false);
         if (context.mounted) {
@@ -160,8 +165,10 @@ class CloudStartupError extends ConsumerWidget {
                   onPressed: () {
                     if (ref.read(cloudStoreProvider) == null) {
                       ref.invalidate(databaseProvider);
-                    } else {
+                    } else if (kIsWeb) {
                       reloadBrowser();
+                    } else {
+                      ref.invalidate(authStateProvider);
                     }
                   },
                   child: const Text('Muat ulang'),

@@ -1,8 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers/app_providers.dart';
+import '../../app/providers/auth_providers.dart';
 import '../../app/providers/planning_providers.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_radius.dart';
@@ -72,10 +72,10 @@ class _PlanningPageState extends ConsumerState<PlanningPage> {
             const Text(
               'Atur tagihan rutin. Konfirmasi setiap pembayaran untuk mencatat pengeluaran dan melanjutkan jadwal.',
             ),
-            if (kIsWeb) ...[
+            if (ref.watch(currentAccountProvider) != null) ...[
               const SizedBox(height: AppSpacing.sm),
               const Text(
-                'Di web, mengedit tagihan, mencatat pembayaran, dan mengubah status jadwal memerlukan internet.',
+                'Mengedit tagihan, mencatat pembayaran, dan mengubah status jadwal memerlukan internet.',
               ),
               const SizedBox(height: AppSpacing.lg),
               const BillNotificationSettingsCard(),

@@ -1,4 +1,14 @@
 import 'bill_reminder_batch.dart';
+import 'native_bill_schedule.dart';
+
+abstract interface class ScheduledBillNotificationClient {
+  bool get enabled;
+  Future<void> replaceSchedule(
+    List<NativeBillReminder> reminders, {
+    required String accountKey,
+    required int revision,
+  });
+}
 
 enum BillNotificationPermission {
   unavailable,

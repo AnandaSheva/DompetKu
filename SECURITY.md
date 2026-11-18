@@ -13,9 +13,9 @@ Security fixes are focused on the latest public release of DompetKu.
 
 DompetKu's product direction is connected personal finance tracking on Android and web, using Google sign-in and UID-scoped Firebase Firestore data.
 
-Web implements this account model today. Android Firebase configuration, authentication, account storage, and migration remain planned work. Shared security requirements below must be verified on Android before integrated releases are published.
+Android and web implement this account model in source. Android uses native Google sign-in, UID-scoped storage, and explicit migration of existing data. Verify actual device behavior before publishing integrated releases.
 
-- Google sign-in authenticates access to account financial data on both platforms as integration is implemented.
+- Google sign-in authenticates access to account financial data on both platforms through the shared account gate.
 - Firestore Security Rules must enforce ownership by the authenticated Firebase UID for every account path.
 - No ads are included.
 - No analytics or tracking is included.
@@ -27,6 +27,7 @@ Web implements this account model today. Android Firebase configuration, authent
 - App lock is not full database encryption.
 - Backup files contain financial data and should be stored safely.
 - Existing device data must not be uploaded or removed silently; migration requires a saved backup, a visible target account, and explicit user action.
+- Native bill alarms store hashed account/occurrence keys and dates; notifications omit names, amounts, and credentials. Disabling reminders or logging out cancels scheduled alarms.
 - APK files installed from GitHub may trigger Android or Play Protect sideload warnings.
 
 Do not treat DompetKu as a replacement for device-level security, encrypted storage, or a password manager.

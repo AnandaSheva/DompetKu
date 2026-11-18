@@ -6,7 +6,7 @@ This file is the primary guide for AI coding agents working on DompetKu.
 
 DompetKu is a connected personal finance tracker built with Flutter for Android and web. Both platforms must use the same account-based financial data, business rules, and core features, with Google sign-in and Firebase Firestore synchronization across devices.
 
-This is the development direction. The current web implementation uses Firebase; Android account integration and migration of existing device data still need implementation and verification. Do not describe planned Android integration as shipped.
+Android and web now use the shared Firebase account path. Android Google sign-in, explicit legacy-data migration, and local bill alarms are implemented in source. Verify real Google login, migration, and notification delivery on Android before publishing an integrated release.
 
 ## Tech Stack
 
@@ -46,7 +46,7 @@ flutter test
 For release builds:
 
 ```bash
-flutter build apk --release --split-per-abi
+flutter build apk --release --split-per-abi --dart-define-from-file=.env.local
 ```
 
 ## Coding Rules

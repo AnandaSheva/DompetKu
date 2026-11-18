@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [string]$AndroidSdkPath = $env:ANDROID_HOME
+    [string]$AndroidSdkPath = $env:ANDROID_HOME,
+    [string]$DartDefineFile = '.env.local'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -18,6 +19,15 @@ try {
 
     if (-not (Test-Path -LiteralPath 'android/key.properties')) {
         throw 'Configure the release signing key in android/key.properties before building release APKs.'
+    }
+    if (-not (Test-Path -LiteralPath $DartDefineFile)) {
+        throw 'Configure Firebase Android in .env.local or pass -DartDefineFile before building.'
+    }
+    $firebaseDefines = Get-Content -LiteralPath $DartDefineFile -Raw
+    foreach ($requiredKey in @('FIREBASE_ANDROID_API_KEY', 'FIREBASE_ANDROID_APP_ID', 'GOOGLE_SERVER_CLIENT_ID')) {
+        if ($firebaseDefines -notmatch ('(?m)^' + $requiredKey + '=\S+\s*$')) {
+            throw "Set $requiredKey in the local Firebase build configuration. Values are never printed."
+        }
     }
 
     if (-not $AndroidSdkPath) { $AndroidSdkPath = $env:ANDROID_SDK_ROOT }
@@ -47,7 +57,9 @@ try {
     }
 
     # Always rebuild with the pubspec version; renaming an old APK does not update its manifest.
-    & flutter build apk --release --split-per-abi --build-name $versionName --build-number $buildNumber
+    # DEBUG enables command echo in the Gradle wrapper, including encoded defines.
+    $env:DEBUG = ''
+    & flutter build apk --release --split-per-abi --build-name $versionName --build-number $buildNumber --dart-define-from-file=$DartDefineFile
     if ($LASTEXITCODE -ne 0) { throw 'Flutter APK build failed.' }
 
     $metadataPath = 'build/app/outputs/apk/release/output-metadata.json'

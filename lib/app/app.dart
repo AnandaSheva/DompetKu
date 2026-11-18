@@ -22,7 +22,7 @@ class DompetShevaApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ref.watch(webPlatformProvider)
+    return ref.watch(accountPlatformProvider)
         ? const WebAuthGate()
         : const FinanceApp();
   }
@@ -55,29 +55,31 @@ class FinanceApp extends ConsumerWidget {
       builder: (context, child) {
         final brightness = Theme.of(context).colorScheme.brightness;
         final isDark = brightness == Brightness.dark;
-        return AnnotatedRegion<SystemUiOverlayStyle>(
-          value: SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            systemNavigationBarColor: Colors.transparent,
-            systemNavigationBarDividerColor: Colors.transparent,
-            statusBarIconBrightness: isDark
-                ? Brightness.light
-                : Brightness.dark,
-            systemNavigationBarIconBrightness: isDark
-                ? Brightness.light
-                : Brightness.dark,
+        return AppLockGate(
+          child: AnnotatedRegion<SystemUiOverlayStyle>(
+            value: SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              systemNavigationBarColor: Colors.transparent,
+              systemNavigationBarDividerColor: Colors.transparent,
+              statusBarIconBrightness: isDark
+                  ? Brightness.light
+                  : Brightness.dark,
+              systemNavigationBarIconBrightness: isDark
+                  ? Brightness.light
+                  : Brightness.dark,
+            ),
+            child: status == null
+                ? child ?? const SizedBox.shrink()
+                : Column(
+                    children: [
+                      CloudSyncBanner(status: status),
+                      Expanded(child: child ?? const SizedBox.shrink()),
+                    ],
+                  ),
           ),
-          child: status == null
-              ? child ?? const SizedBox.shrink()
-              : Column(
-                  children: [
-                    CloudSyncBanner(status: status),
-                    Expanded(child: child ?? const SizedBox.shrink()),
-                  ],
-                ),
         );
       },
-      home: const AppLockGate(child: _AppGate()),
+      home: const _AppGate(),
     );
   }
 
@@ -122,7 +124,7 @@ class _AppGate extends ConsumerWidget {
             }
             return const LegacyMigrationGate(child: OnboardingPage());
           },
-          loading: () => const LoadingState(message: 'Menyiapkan data lokal'),
+          loading: () => const LoadingState(message: 'Menyiapkan data akun'),
           error: (_, _) => const CloudStartupError(),
         );
       },

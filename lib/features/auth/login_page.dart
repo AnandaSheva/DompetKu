@@ -18,12 +18,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool _busy = false;
   bool _preparing = true;
   bool _sessionReady = false;
-  bool _trusted = trustedDevice;
+  late bool _trusted;
   String? _message = takeSessionNotice();
 
   @override
   void initState() {
     super.initState();
+    _trusted = ref.read(webPlatformProvider) ? trustedDevice : true;
     _prepareSignIn(clearMessage: false);
   }
 
@@ -65,6 +66,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isWeb = ref.watch(webPlatformProvider);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -123,21 +125,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    value: _trusted,
-                    onChanged: _busy || _preparing
-                        ? null
-                        : (value) {
-                            setState(() => _trusted = value ?? false);
-                            _prepareSignIn();
-                          },
-                    title: const Text('Ini perangkat pribadi saya'),
-                    subtitle: const Text(
-                      'Ingat sesi dan simpan cache online di browser ini.',
+                  if (isWeb)
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      value: _trusted,
+                      onChanged: _busy || _preparing
+                          ? null
+                          : (value) {
+                              setState(() => _trusted = value ?? false);
+                              _prepareSignIn();
+                            },
+                      title: const Text('Ini perangkat pribadi saya'),
+                      subtitle: const Text(
+                        'Ingat sesi dan simpan cache online di browser ini.',
+                      ),
                     ),
-                  ),
                   if (_message != null) ...[
                     const SizedBox(height: AppSpacing.lg),
                     Semantics(
@@ -157,9 +160,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                   const SizedBox(height: AppSpacing.xxl),
                   Text(
-                    'Data versi web disimpan di Google Firebase sesuai akunmu. Tanpa iklan dan tanpa analytics. '
-                    'Pada perangkat bersama, cache hanya tersedia selama tab terbuka. '
-                    'Login pertama membutuhkan internet.',
+                    isWeb
+                        ? 'Data disimpan di Google Firebase sesuai akunmu. Tanpa iklan dan tanpa analytics. '
+                              'Pada perangkat bersama, cache hanya tersedia selama tab terbuka. Login pertama membutuhkan internet.'
+                        : 'Data keuangan disinkronkan melalui Google Firebase sesuai akunmu. '
+                              'Sesi dan cache disimpan di perangkat, lalu dibersihkan saat keluar akun. '
+                              'Login dan sinkronisasi memerlukan internet. Tanpa iklan dan tanpa analytics.',
                     style: theme.textTheme.bodySmall,
                   ),
                 ],

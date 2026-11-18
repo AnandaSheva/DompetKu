@@ -90,7 +90,9 @@ class _AccountSessionState extends State<_AccountSession> {
     super.initState();
     final firestore = FirebaseFirestore.instance;
     if (!_firestoreConfigured) {
-      firestore.settings = Settings(persistenceEnabled: trustedDevice);
+      firestore.settings = Settings(
+        persistenceEnabled: kIsWeb ? trustedDevice : true,
+      );
       _firestoreConfigured = true;
     }
     _store = CloudFinanceStore(firestore, widget.account.uid);

@@ -7,7 +7,7 @@ Follow these rules when suggesting changes:
 - Use the existing feature-first architecture.
 - Develop Android and web with the same Google sign-in, UID-scoped Firestore data, financial rules, and core features.
 - Use device storage for caches, device preferences, and safe migration of existing data.
-- Web Firebase integration exists; Android integration is planned and must be implemented and verified before it is described as available.
+- Android and web share Firebase account storage; verify native Google sign-in, legacy migration, and notification delivery on a device before publishing.
 - Use existing Firebase services; do not add custom backend services, ads, analytics, or tracking, or automatically enable billing.
 - Wait for authentication initialization before creating account repositories, enforce UID ownership, and preserve pending writes during logout and account changes.
 - Use Riverpod providers and repositories for data/state access.

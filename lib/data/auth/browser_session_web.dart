@@ -1,5 +1,10 @@
 import 'dart:js_interop';
 
+Future<void> initializeSessionStorage() async {}
+Future<void> flushSessionStorage() async {}
+bool legacyDeviceMigrationComplete(String uid) => false;
+void rememberLegacyDeviceMigration(String uid) {}
+
 @JS('window')
 external _Window get _window;
 

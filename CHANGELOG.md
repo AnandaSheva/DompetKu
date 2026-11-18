@@ -15,7 +15,11 @@ All notable changes to DompetKu are documented in this file.
 
 ## [Unreleased]
 
-- Align Markdown documentation and development rules around connected Android/web account data, Google sign-in, and Firestore synchronization. Android account integration remains planned; this documentation change does not implement it.
+- Implement Android Google sign-in, shared UID-scoped Firestore storage, and explicit migration of existing device data.
+- Add optional Android bill reminders using inexact native alarms, with cancellation on logout or schedule changes.
+- Keep notification routes behind the app lock and retain pending writes until synchronization or confirmed backup/discard.
+
+- Align Markdown documentation and development rules around connected Android/web account data, Google sign-in, and Firestore synchronization.
 - Apply a blue/bright-blue palette across light and dark themes, financial accents, categories, charts, app icons, and web metadata.
 - Display earlier/imported category colors in the blue palette without rewriting stored financial data.
 

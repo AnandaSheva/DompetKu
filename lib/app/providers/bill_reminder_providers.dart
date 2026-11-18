@@ -6,6 +6,7 @@ import '../../data/auth/browser_session.dart';
 import '../../data/notifications/bill_notification_client.dart';
 import '../../data/notifications/bill_reminder_batch.dart';
 import '../../data/notifications/browser_bill_notifications.dart';
+import '../../data/notifications/native_bill_schedule.dart';
 import 'auth_providers.dart';
 import 'planning_providers.dart';
 
@@ -79,8 +80,11 @@ class BillReminderController extends Notifier<BillReminderState> {
     _checkAgain = false;
     final account = ref.watch(currentAccountProvider);
     final isWeb = ref.watch(webPlatformProvider);
-    if (!isWeb || account == null) return const BillReminderState();
+    if (account == null) return const BillReminderState();
     _client = ref.watch(billNotificationClientProvider);
+    if (!isWeb && _client is! ScheduledBillNotificationClient) {
+      return const BillReminderState();
+    }
     final permission = _client.permission;
     if (permission == BillNotificationPermission.unavailable) {
       return const BillReminderState();
@@ -108,6 +112,12 @@ class BillReminderController extends Notifier<BillReminderState> {
     });
     scheduleMicrotask(() {
       if (!_current(generation)) return;
+      if (!isWeb && client is ScheduledBillNotificationClient) {
+        unawaited(
+          _prepareNative(generation, client as ScheduledBillNotificationClient),
+        );
+        return;
+      }
       final pending = _client.takePendingOpen();
       if (pending != null) _openBills(pending);
       if (enabled) {
@@ -115,10 +125,42 @@ class BillReminderController extends Notifier<BillReminderState> {
         unawaited(check());
       }
     });
-    return BillReminderState(permission: permission, enabled: enabled);
+    return BillReminderState(
+      permission: permission,
+      enabled: enabled,
+      busy: !isWeb,
+    );
   }
 
   bool _current(int generation) => ref.mounted && _generation == generation;
+
+  Future<void> _prepareNative(
+    int generation,
+    ScheduledBillNotificationClient scheduler,
+  ) async {
+    try {
+      await _client.prepare();
+      if (!_current(generation) || ref.read(sessionClosingProvider)) return;
+      state = state.copyWith(
+        permission: _client.permission,
+        enabled: scheduler.enabled,
+        busy: false,
+      );
+      final pending = _client.takePendingOpen();
+      if (pending != null) _openBills(pending);
+      if (state.enabled) {
+        _startTimer();
+        await check();
+      }
+    } catch (_) {
+      if (_current(generation)) {
+        state = state.copyWith(
+          error: 'Pengingat perangkat belum siap. Coba lagi.',
+          busy: false,
+        );
+      }
+    }
+  }
 
   bool takeRecommendation() {
     if (_accountKey == null ||
@@ -170,8 +212,17 @@ class BillReminderController extends Notifier<BillReminderState> {
     _invalidate();
     if (!enabled) {
       _timer?.cancel();
-      _client.setEnabled(false);
-      state = state.copyWith(enabled: false);
+      try {
+        _client.setEnabled(false);
+        if (_client is ScheduledBillNotificationClient) await _client.prepare();
+        if (_current(generation)) state = state.copyWith(enabled: false);
+      } catch (_) {
+        if (_current(generation)) {
+          state = state.copyWith(
+            error: 'Pengingat belum berhasil dinonaktifkan. Coba lagi.',
+          );
+        }
+      }
       return;
     }
     state = state.copyWith(busy: true);
@@ -186,6 +237,8 @@ class BillReminderController extends Notifier<BillReminderState> {
       await _client.prepare();
       if (!_current(generation) || ref.read(sessionClosingProvider)) return;
       _client.setEnabled(true);
+      if (_client is ScheduledBillNotificationClient) await _client.prepare();
+      if (!_current(generation) || ref.read(sessionClosingProvider)) return;
       state = state.copyWith(
         permission: permission,
         enabled: true,
@@ -237,9 +290,34 @@ class BillReminderController extends Notifier<BillReminderState> {
             bills.isLoading ||
             bills.hasError ||
             !bills.hasValue) {
+          if (_client is ScheduledBillNotificationClient &&
+              (cloud?.pending == true ||
+                  cloud?.loading == true ||
+                  bills.hasError)) {
+            await (_client as ScheduledBillNotificationClient).replaceSchedule(
+              const [],
+              accountKey: _accountKey!,
+              revision: _revision,
+            );
+          }
           return;
         }
         final revision = _revision;
+        if (_client is ScheduledBillNotificationClient) {
+          await (_client as ScheduledBillNotificationClient).replaceSchedule(
+            NativeBillReminder.plan(
+              bills: bills.requireValue,
+              now: ref.read(billReminderClockProvider)(),
+              dataset: cloud.dataset,
+            ),
+            accountKey: _accountKey!,
+            revision: revision,
+          );
+          if (_current(generation) && state.error != null) {
+            state = state.copyWith();
+          }
+          continue;
+        }
         final batches = BillReminderBatch.forDay(
           bills: bills.requireValue,
           now: ref.read(billReminderClockProvider)(),
@@ -268,7 +346,7 @@ class BillReminderController extends Notifier<BillReminderState> {
       if (_current(generation)) {
         state = state.copyWith(
           error:
-              'Pengingat belum bisa ditampilkan. Periksa izin browser lalu coba lagi.',
+              'Pengingat belum bisa diperbarui. Periksa izin notifikasi lalu coba lagi.',
         );
       }
     } finally {
@@ -279,6 +357,7 @@ class BillReminderController extends Notifier<BillReminderState> {
   Future<void> refresh() async {
     if (_accountKey == null) return;
     _invalidate();
+    if (_client is ScheduledBillNotificationClient) await _client.prepare();
     state = state.copyWith(permission: _client.permission);
     await check();
   }

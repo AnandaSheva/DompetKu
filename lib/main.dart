@@ -10,30 +10,38 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'app/app.dart';
 import 'firebase_options.dart';
 import 'features/auth/firebase_startup_error.dart';
+import 'data/auth/browser_session.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (kIsWeb) {
+  if (kIsWeb || defaultTargetPlatform == TargetPlatform.android) {
     const useEmulators =
         kDebugMode && bool.fromEnvironment('FIREBASE_EMULATORS');
+    const emulatorHost = String.fromEnvironment(
+      'FIREBASE_EMULATOR_HOST',
+      defaultValue: kIsWeb ? '127.0.0.1' : '10.0.2.2',
+    );
     try {
+      await initializeSessionStorage();
       await Firebase.initializeApp(
         options: useEmulators
             ? const FirebaseOptions(
                 apiKey: 'demo-api-key',
-                appId: '1:123456789:web:dompetku',
+                appId: kIsWeb
+                    ? '1:123456789:web:dompetku'
+                    : '1:123456789:android:dompetku',
                 messagingSenderId: '123456789',
                 projectId: 'demo-dompetku',
               )
             : DefaultFirebaseOptions.currentPlatform,
       ).timeout(const Duration(seconds: 20));
     } catch (_) {
-      runApp(const FirebaseStartupError());
+      runApp(FirebaseStartupError(onRetry: main));
       return;
     }
     if (useEmulators) {
-      await FirebaseAuth.instance.useAuthEmulator('127.0.0.1', 9099);
-      FirebaseFirestore.instance.useFirestoreEmulator('127.0.0.1', 8080);
+      await FirebaseAuth.instance.useAuthEmulator(emulatorHost, 9099);
+      FirebaseFirestore.instance.useFirestoreEmulator(emulatorHost, 8080);
     }
   }
   await initializeDateFormatting('id_ID');

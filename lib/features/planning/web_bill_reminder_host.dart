@@ -8,7 +8,7 @@ import '../../app/providers/bill_reminder_providers.dart';
 import 'planning_page.dart';
 import 'widgets/bill_notification_dialogs.dart';
 
-/// Starts only inside the initialized, authenticated web account's app tree.
+/// Starts only inside the initialized, authenticated account's app tree.
 class WebBillReminderHost extends ConsumerStatefulWidget {
   const WebBillReminderHost({super.key, required this.child});
   final Widget child;
@@ -27,7 +27,11 @@ class _WebBillReminderHostState extends ConsumerState<WebBillReminderHost>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !ref.read(webPlatformProvider) || _openingBills) return;
+      if (!mounted ||
+          ref.read(currentAccountProvider) == null ||
+          _openingBills) {
+        return;
+      }
       if (ref.read(billReminderProvider.notifier).takeRecommendation()) {
         unawaited(showBillNotificationRecommendation(context, ref));
       }
@@ -42,15 +46,25 @@ class _WebBillReminderHostState extends ConsumerState<WebBillReminderHost>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && ref.read(webPlatformProvider)) {
+    if (state == AppLifecycleState.resumed &&
+        ref.read(currentAccountProvider) != null) {
       unawaited(ref.read(billReminderProvider.notifier).refresh());
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (ref.watch(webPlatformProvider)) {
+    if (ref.watch(currentAccountProvider) != null) {
       ref.watch(billReminderProvider);
+      ref.listen(billReminderProvider, (_, _) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted &&
+              !_openingBills &&
+              ref.read(billReminderProvider.notifier).takeRecommendation()) {
+            unawaited(showBillNotificationRecommendation(context, ref));
+          }
+        });
+      });
       ref.listen(billReminderProvider.select((value) => value.openRequest), (
         _,
         request,

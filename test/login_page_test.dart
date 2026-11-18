@@ -42,7 +42,10 @@ void main() {
     addTearDown(auth.session.close);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [authRepositoryProvider.overrideWithValue(auth)],
+        overrides: [
+          webPlatformProvider.overrideWithValue(true),
+          authRepositoryProvider.overrideWithValue(auth),
+        ],
         child: const MaterialApp(home: LoginPage()),
       ),
     );
@@ -88,7 +91,10 @@ void main() {
     addTearDown(auth.session.close);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [authRepositoryProvider.overrideWithValue(auth)],
+        overrides: [
+          webPlatformProvider.overrideWithValue(true),
+          authRepositoryProvider.overrideWithValue(auth),
+        ],
         child: const MaterialApp(home: LoginPage()),
       ),
     );
@@ -143,7 +149,10 @@ void main() {
     addTearDown(auth.session.close);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [authRepositoryProvider.overrideWithValue(auth)],
+        overrides: [
+          webPlatformProvider.overrideWithValue(true),
+          authRepositoryProvider.overrideWithValue(auth),
+        ],
         child: const MaterialApp(home: LoginPage()),
       ),
     );

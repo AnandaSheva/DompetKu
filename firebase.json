@@ -5,6 +5,7 @@
         "lib/firebase_options.dart": {
           "projectId": "dompetku-web-f8e4e",
           "configurations": {
+            "android": "1:837744778374:android:64e958087a88fe169c0507",
             "web": "1:837744778374:web:778057b3b86892819c0507"
           }
         }

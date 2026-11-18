@@ -7,16 +7,19 @@ Analytics, Cloud Functions, atau Cloud Storage. Hosting web tetap Vercel.
 
 ## Status implementasi
 
-Web sudah memakai Firebase Authentication dan Firestore. Android masih memakai
-jalur Drift yang ada: `lib/main.dart` menginisialisasi Firebase dalam `kIsWeb`,
-`lib/app/app.dart` memilih `WebAuthGate` melalui provider platform web, dan
-`lib/firebase_options.dart` belum menyediakan opsi Android. Manifest Android
-juga masih menghapus initializer Firebase serta izin transitive
-`ACCESS_NETWORK_STATE` dan `READ_GSERVICES`.
+Android dan web memakai gerbang akun dan `CloudFinanceStore` yang sama. Android
+memakai plugin resmi `google_sign_in` untuk mendapatkan ID token, kemudian
+Firebase Authentication membuka sesi dengan UID yang sama seperti web.
+Bootstrap menyiapkan penyimpanan sesi dan Firebase sebelum repository akun dibuat.
 
-Integrasi akun Android belum tersedia hanya dengan memperbarui dokumentasi.
-Petunjuk web di bawah menjelaskan implementasi yang ada; pekerjaan Android harus
-memenuhi kontrak akun bersama berikut sebelum dinyatakan siap.
+Data Drift perangkat lama tetap dipertahankan dan ditawarkan untuk migrasi setelah
+cadangan tersimpan serta akun tujuan dikonfirmasi. Jika akun Android sudah berisi
+data, penggantian membutuhkan konfirmasi tambahan. Logout menunggu penulisan,
+membatalkan pengingat, lalu membersihkan cache akun. Perubahan tertunda Android
+disimpan per akun untuk pemulihan; penyimpanan perangkat bukan enkripsi database penuh.
+
+Implementasi dan build lokal tidak menggantikan verifikasi login Google nyata,
+migrasi, pergantian akun, dan pengiriman notifikasi pada perangkat sebelum publikasi.
 
 ## Kontrak integrasi bersama
 
@@ -34,23 +37,39 @@ memenuhi kontrak akun bersama berikut sebelum dinyatakan siap.
   staging berhasil sepenuhnya.
 - Uji dengan Firebase emulators dan akun uji, bukan data keuangan produksi.
 
-## Pekerjaan integrasi Android
+## Konfigurasi dan build Android
 
-1. Daftarkan aplikasi Android pada proyek Firebase yang sama dengan application ID
-   yang sudah ada. Siapkan konfigurasi klien dan konfigurasi Google sign-in untuk
-   sertifikat debug/rilis yang digunakan; rahasia penandatanganan tetap di perangkat.
-2. Sediakan opsi Firebase Android dan inisialisasi sebelum mengakses layanan akun.
-   Tinjau penghapusan initializer pada manifest serta izin SDK yang benar-benar
-   diperlukan. Perubahan izin harus dijelaskan dan diperiksa pada merged manifest.
-3. Adaptasikan `AuthRepository` untuk login Google native; alur popup dan pengaturan
-   session storage browser yang ada tidak dapat langsung dianggap berlaku di Android.
-4. Terapkan gerbang autentikasi dan scope UID di Android, lalu hubungkan repository
-   ke `CloudFinanceStore` dengan lifecycle listener serta status sinkronisasi bersama.
-5. Sediakan migrasi Drift/SQLite dengan cadangan tersimpan, akun tujuan terlihat,
-   dan konfirmasi pengguna. Pertahankan database lama sampai hasil migrasi diverifikasi.
-6. Verifikasi akun yang sama pada Android dan web, isolasi akun berbeda, edit
-   bersamaan, koneksi terputus, retry, logout, restore/reset, dan migrasi yang dicoba ulang.
-   Pemeriksaan ini merupakan syarat rilis terintegrasi dan belum dianggap lulus.
+Aplikasi Firebase Android terdaftar pada proyek `dompetku-web-f8e4e` dengan
+application ID `com.sheva.dompetku` dan Firebase app ID
+`1:837744778374:android:64e958087a88fe169c0507`. Sertifikat debug dan rilis yang
+tersedia di checkout saat implementasi telah didaftarkan. Daftarkan SHA1/SHA256
+kembali bila kunci build berubah; jangan mengganti application ID atau kunci rilis.
+
+Isi tiga nilai berikut hanya dalam `.env.local`, mengikuti `.env.example`:
+
+- `FIREBASE_ANDROID_API_KEY`: API key klien Android dari konfigurasi Firebase.
+- `FIREBASE_ANDROID_APP_ID`: Firebase app ID Android di atas.
+- `GOOGLE_SERVER_CLIENT_ID`: OAuth client ID bertipe Web dari proyek yang sama.
+
+Firebase diinisialisasi secara eksplisit di Dart, sehingga konfigurasi ini tidak
+memerlukan `google-services.json` atau plugin Gradle Google Services. Jangan
+menulis API key ke source. Nilai klien tetap berada dalam APK hasil build;
+otorisasi data bergantung pada Firebase Auth dan Security Rules.
+
+```powershell
+flutter run -d <android-device-id> --dart-define-from-file=.env.local
+flutter build apk --debug --dart-define-from-file=.env.local
+.\scripts\build-apk.ps1
+```
+
+Script rilis memerlukan konfigurasi Firebase dan kunci rilis lokal. APK debug hanya
+untuk pengujian. Jangan aktifkan `DEBUG` pada shell Gradle karena wrapper dapat
+mencetak argumen build yang berisi nilai klien.
+
+Untuk emulator Android, mode debug mendukung `FIREBASE_EMULATORS=true` dan
+`FIREBASE_EMULATOR_HOST` (default `10.0.2.2`; browser memakai `127.0.0.1`). Gunakan
+Auth/Firestore Emulator dan akun uji. Login Google nyata tetap membutuhkan
+konfigurasi OAuth serta pengujian perangkat; jangan gunakan data keuangan produksi.
 
 ## Setup Firebase web yang tersedia
 
@@ -168,6 +187,11 @@ firebase emulators:exec --project demo-dompetku --only 'firestore,auth' 'npm --p
 firebase emulators:exec --project demo-dompetku --only 'firestore,auth' 'flutter test --platform chrome test/web/cloud_store_test.dart'
 ```
 
+Pada Flutter 3.47.9 di Windows, runner Chrome dapat berhenti saat pemuatan karena
+resource CanvasKit 404 dan selector path tes bertingkat. Kondisi ini tidak berarti
+tes lulus; periksa konsol browser dan ulangi integrasi pada runner yang berfungsi.
+Tes unit/widget dan tes rules emulator tetap merupakan pemeriksaan terpisah.
+
 Emulator membutuhkan Java 21 atau lebih baru yang didukung Firebase CLI. Pada
 Windows, JBR Android Studio dapat dipakai melalui `JAVA_HOME`. Chrome diperlukan
 untuk tes browser. Semua tes integrasi memakai proyek `demo-dompetku` dan akun
@@ -280,3 +304,29 @@ browser dapat menghapus penanda ini. Notifikasi ditutup saat pengingat dinonakti
 atau sesi akun berakhir. Ketukan notifikasi membuka halaman Tagihan hanya untuk
 akun yang sesuai. Bagian ini menjelaskan pengingat web/PWA yang sudah ada;
 pengingat native mengikuti kemampuan Android dan perlu diverifikasi tersendiri.
+
+## Pengingat native Android
+
+Pengingat bersifat opsional dan memakai sakelar yang sama di Pengaturan serta
+halaman Tagihan. Android 13+ meminta `POST_NOTIFICATIONS` hanya setelah pengguna
+memilih aktif. `RECEIVE_BOOT_COMPLETED` memulihkan jadwal setelah reboot; akses
+status jaringan mengikuti SDK Firebase. Tidak ada izin alarm presisi, akses file
+luas, layanan foreground, push server, atau backend tambahan.
+
+Jadwal berasal dari snapshot akun yang selesai tersinkron. Setiap tagihan aktif
+hanya menyumbang periode berikutnya yang belum dibayar, dengan pengingat H-1 dan
+hari H sekitar pukul 09.00 waktu perangkat. Alarm memakai `setAndAllowWhileIdle`
+yang tidak presisi: Android dan penghematan baterai dapat menunda pengiriman.
+Jadwal dipulihkan setelah reboot, pembaruan paket, atau perubahan zona waktu.
+
+Hanya hash akun/periode, tanggal, dan jumlah tagihan yang masuk ke penjadwal.
+Notifikasi tidak menyebut nama tagihan, nominal, atau kredensial. Pembayaran,
+lewati periode, jeda, penggantian dataset, penonaktifan, dan logout memperbarui atau
+membatalkan alarm. Ketukan membuka halaman Tagihan untuk akun yang sesuai dan
+seluruh Navigator tetap dilindungi app lock.
+
+Alarm dapat berjalan ketika aplikasi ditutup berdasarkan jadwal tersinkron terakhir.
+Perubahan dari perangkat lain saat proses Android tidak berjalan baru diterapkan
+ketika aplikasi dibuka dan tersinkron kembali. Tidak ada sinkronisasi latar belakang
+terpisah. Force stop dan pembatasan baterai vendor dapat menghentikan pengingat;
+buka kembali aplikasi untuk memulihkan jadwal.

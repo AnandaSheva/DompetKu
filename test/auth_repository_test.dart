@@ -32,7 +32,7 @@ void main() {
       'opens Google immediately after session preparation ($trusted)',
       () async {
         final auth = _FakeFirebaseAuth()..persistence = Completer<void>();
-        final repository = FirebaseAuthRepository(auth: auth);
+        final repository = FirebaseAuthRepository(auth: auth, isWeb: true);
 
         final preparation = repository.prepareGoogleSignIn(trusted: trusted);
         expect(auth.persistenceRequests, [
@@ -62,7 +62,7 @@ void main() {
 
   test('never opens Google with a different device preference', () async {
     final auth = _FakeFirebaseAuth();
-    final repository = FirebaseAuthRepository(auth: auth);
+    final repository = FirebaseAuthRepository(auth: auth, isWeb: true);
     await repository.prepareGoogleSignIn(trusted: true);
 
     expect(
@@ -76,7 +76,7 @@ void main() {
     'failed persistence change blocks login until preparation succeeds',
     () async {
       final auth = _FakeFirebaseAuth();
-      final repository = FirebaseAuthRepository(auth: auth);
+      final repository = FirebaseAuthRepository(auth: auth, isWeb: true);
       await repository.prepareGoogleSignIn(trusted: true);
       auth.persistence = Completer<void>();
       final preparation = repository.prepareGoogleSignIn(trusted: false);
@@ -108,7 +108,7 @@ void main() {
 
   test('returns popup failures to the login page', () async {
     final auth = _FakeFirebaseAuth();
-    final repository = FirebaseAuthRepository(auth: auth);
+    final repository = FirebaseAuthRepository(auth: auth, isWeb: true);
     await repository.prepareGoogleSignIn(trusted: false);
     final login = repository.signInWithGoogle(trusted: false);
     final failure = expectLater(login, throwsA(isA<FirebaseAuthException>()));

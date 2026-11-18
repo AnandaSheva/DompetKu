@@ -59,8 +59,25 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Prepare Firebase Android configuration
+        env:
+          FIREBASE_ANDROID_API_KEY: ${{ secrets.FIREBASE_ANDROID_API_KEY }}
+          FIREBASE_ANDROID_APP_ID: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+          GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          names = ['FIREBASE_ANDROID_API_KEY', 'FIREBASE_ANDROID_APP_ID', 'GOOGLE_SERVER_CLIENT_ID']
+          if any(not os.environ.get(name) for name in names):
+              raise SystemExit('Configure the Firebase Android repository secrets before building an APK.')
+          target = pathlib.Path(os.environ['RUNNER_TEMP']) / 'dompetku-firebase.json'
+          target.write_text(json.dumps({name: os.environ[name] for name in names}))
+          PY
+
       - name: Build split APK
-        run: flutter build apk --release --split-per-abi
+        env:
+          DEBUG: ""
+        run: flutter build apk --release --split-per-abi --dart-define-from-file="$RUNNER_TEMP/dompetku-firebase.json"
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v7
