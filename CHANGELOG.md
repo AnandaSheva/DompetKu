@@ -2,6 +2,14 @@
 
 All notable changes to DompetKu are documented in this file.
 
+## [2.0.0] - 2026-11-18
+
+- Menambahkan login Google pada Android.
+- Menyinkronkan data akun antara Android dan web.
+- Menambahkan pemindahan data perangkat lama dengan cadangan dan konfirmasi.
+- Menambahkan pengingat tagihan native Android.
+- Memperkuat perlindungan PIN saat membuka aplikasi melalui notifikasi.
+
 ## [1.5.0] - 2026-11-14
 
 - Memperbaiki pesan dan validasi penghapusan kategori.
