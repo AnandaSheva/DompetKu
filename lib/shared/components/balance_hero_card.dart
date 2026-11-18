@@ -4,6 +4,7 @@ import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_radius.dart';
 import '../../app/theme/app_shadows.dart';
 import '../../app/theme/app_spacing.dart';
+import '../widgets/pressable_surface.dart';
 
 class BalanceHeroCard extends StatelessWidget {
   const BalanceHeroCard({
@@ -13,6 +14,7 @@ class BalanceHeroCard extends StatelessWidget {
     required this.monthlyStatus,
     this.hideBalance = false,
     this.onToggleVisibility,
+    this.onOpenWallets,
   });
 
   final String totalBalance;
@@ -20,6 +22,7 @@ class BalanceHeroCard extends StatelessWidget {
   final String monthlyStatus;
   final bool hideBalance;
   final VoidCallback? onToggleVisibility;
+  final VoidCallback? onOpenWallets;
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +117,13 @@ class BalanceHeroCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _HeroInfoTile(label: 'Dompet', value: walletInfo),
+                child: Semantics(
+                  button: onOpenWallets != null,
+                  child: PressableSurface(
+                    onTap: onOpenWallets,
+                    child: _HeroInfoTile(label: 'Dompet', value: walletInfo),
+                  ),
+                ),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(

@@ -19,6 +19,7 @@ import '../../shared/helpers/category_icon_mapper.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../transactions/widgets/transaction_tile.dart';
 import '../planning/planning_page.dart';
+import '../wallets/wallets_page.dart';
 
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
@@ -59,6 +60,16 @@ class DashboardPage extends ConsumerWidget {
                         hidden: hideBalance,
                       ),
                       walletInfo: '${data.walletCount} dompet',
+                      onOpenWallets: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => Scaffold(
+                              appBar: AppBar(),
+                              body: const WalletsPage(),
+                            ),
+                          ),
+                        );
+                      },
                       monthlyStatus: data.netCashflow >= 0
                           ? 'Positif'
                           : 'Perlu dicek',
