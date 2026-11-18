@@ -22,9 +22,11 @@ service cloud.firestore {
         && identifier(data.createdAt) && identifier(data.updatedAt);
     }
     function validWallet(d) {
-      return d.keys().hasOnly(['id','name','type','initialBalance','reservedBalance','isArchived','createdAt','updatedAt'])
+      return d.keys().hasOnly(['id','name','type','initialBalance','reservedBalance','isArchived','deletedAt','createdAt','updatedAt'])
         && text(d.name, 80) && d.type in ['cash','ewallet','bank','savings']
         && money(d.initialBalance) && d.isArchived is bool
+        && optionalId(d.get('deletedAt', null))
+        && (d.get('deletedAt', null) == null || d.isArchived)
         && money(d.get('reservedBalance', 0)) && d.get('reservedBalance', 0) >= 0
         && (d.type == 'bank' || d.get('reservedBalance', 0) == 0);
     }
@@ -97,6 +99,20 @@ service cloud.firestore {
         && (d.legacyMigration == null || (d.legacyMigration is string && d.legacyMigration.matches('^[a-f0-9]{64}$')))
         && d.get('retiredDatasets', []) is list && d.get('retiredDatasets', []).size() <= 100;
     }
+    function activeDataset(uid, dataset) {
+      let path = /databases/$(database)/documents/users/$(uid);
+      return exists(path) && get(path).data.activeDataset == dataset;
+    }
+    function deletedWallet(uid, dataset, id) {
+      let path = /databases/$(database)/documents/users/$(uid)/datasets/$(dataset)/wallets/$(id);
+      return existsAfter(path) && getAfter(path).data.get('deletedAt', null) != null;
+    }
+    function writableHistory(uid, dataset, d) {
+      // Staged restores and retired dataset cleanup must preserve log rows too.
+      return !activeDataset(uid, dataset)
+        || (!deletedWallet(uid, dataset, d.walletId)
+          && (d.transferWalletId == null || !deletedWallet(uid, dataset, d.transferWalletId)));
+    }
     match /users/{uid} {
       allow get: if owner(uid);
       allow create: if owner(uid) && profile(request.resource.data);
@@ -106,10 +122,21 @@ service cloud.firestore {
           || request.resource.data.legacyMigration == resource.data.legacyMigration);
       match /datasets/{dataset}/{collection}/{documentId} {
         allow read: if owner(uid) && knownCollection(collection);
-        allow create, update: if owner(uid) && knownCollection(collection)
+        allow create: if owner(uid) && knownCollection(collection)
           && base(request.resource.data, documentId)
-          && validRow(collection, request.resource.data);
-        allow delete: if owner(uid) && knownCollection(collection);
+          && validRow(collection, request.resource.data)
+          && (collection != 'transactions' || writableHistory(uid, dataset, request.resource.data));
+        allow update: if owner(uid) && knownCollection(collection)
+          && base(request.resource.data, documentId)
+          && validRow(collection, request.resource.data)
+          && (collection != 'wallets' || resource.data.get('deletedAt', null) == null
+            || request.resource.data == resource.data)
+          && (collection != 'transactions' || (writableHistory(uid, dataset, resource.data)
+            && writableHistory(uid, dataset, request.resource.data)));
+        allow delete: if owner(uid) && knownCollection(collection)
+          && (collection != 'wallets' || !activeDataset(uid, dataset)
+            || resource.data.get('deletedAt', null) == null)
+          && (collection != 'transactions' || writableHistory(uid, dataset, resource.data));
       }
     }
   }

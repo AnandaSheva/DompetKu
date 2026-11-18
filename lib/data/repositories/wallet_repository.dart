@@ -25,7 +25,8 @@ class WalletRepository {
 
       controller.add([
         for (final wallet in currentWallets)
-          _walletBalance(wallet, currentTransactions),
+          if (wallet.deletedAt == null)
+            _walletBalance(wallet, currentTransactions),
       ]);
     }
 
@@ -46,8 +47,10 @@ class WalletRepository {
     return controller.stream;
   }
 
-  Future<List<WalletEntry>> getWallets() {
-    return _database.walletsDao.getAll();
+  Future<List<WalletEntry>> getWallets() async {
+    return (await _database.walletsDao.getAll())
+        .where((wallet) => wallet.deletedAt == null)
+        .toList();
   }
 
   Future<WalletBalance?> getWalletBalance({
@@ -121,6 +124,7 @@ class WalletRepository {
     required int initialBalance,
     int? reservedBalance,
   }) async {
+    await _requireExistingWallet(wallet.id);
     final reserve = _reservedBalance(
       type,
       reservedBalance ?? wallet.reservedBalance,
@@ -159,16 +163,26 @@ class WalletRepository {
   }
 
   Future<String?> deleteWallet(int walletId) async {
-    final bills = await _database.recurringBillsDao.getAll();
-    if (bills.any((bill) => bill.walletId == walletId)) {
-      return 'Dompet masih dipakai jadwal tagihan. Ubah atau hapus jadwal terlebih dahulu.';
-    }
-    final count = await _database.transactionsDao.countByWallet(walletId);
-    if (count > 0) {
-      return 'Dompet ini masih memiliki transaksi.';
-    }
-
-    await _database.walletsDao.deleteById(walletId);
+    await _database.transaction(() async {
+      final wallet = (await _database.walletsDao.getAll())
+          .where((entry) => entry.id == walletId)
+          .firstOrNull;
+      if (wallet == null || wallet.deletedAt != null) return;
+      final now = DateTime.now();
+      // A tombstone keeps both sides of transfers and backup references intact.
+      await _database.walletsDao.updateEntry(
+        wallet
+            .copyWith(deletedAt: Value(now), isArchived: true, updatedAt: now)
+            .toCompanion(true),
+      );
+      for (final bill in await _database.recurringBillsDao.getAll()) {
+        if (bill.walletId == walletId && bill.isActive) {
+          await _database.recurringBillsDao.updateEntry(
+            bill.copyWith(isActive: false, updatedAt: now).toCompanion(true),
+          );
+        }
+      }
+    });
     return null;
   }
 
@@ -177,10 +191,18 @@ class WalletRepository {
   }
 
   Future<void> setArchived(WalletEntry wallet, bool value) async {
+    await _requireExistingWallet(wallet.id);
     await _database.walletsDao.updateEntry(
       wallet
           .copyWith(isArchived: value, updatedAt: DateTime.now())
           .toCompanion(true),
     );
+  }
+
+  Future<void> _requireExistingWallet(int id) async {
+    final wallets = await getWallets();
+    if (!wallets.any((wallet) => wallet.id == id)) {
+      throw ArgumentError('Dompet sudah dihapus.');
+    }
   }
 }

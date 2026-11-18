@@ -199,7 +199,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
 
     return TransactionTile(
       title: title,
-      subtitle: subtitle,
+      subtitle: detail.isLog ? '$subtitle · Log dompet dihapus' : subtitle,
       timeLabel: DateFormatter.dateTimeLabel(detail.transaction.date),
       amount: CurrencyFormatter.rupiah(
         detail.transaction.amount,
@@ -208,7 +208,9 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
       type: _previewType(detail.type),
       icon: _transactionIcon(detail),
       onTap: () => _showDetail(detail, hideBalance),
-      onLongPress: () => _confirmDelete(detail),
+      onLongPress: detail.isLog
+          ? () => _showDetail(detail, hideBalance)
+          : () => _confirmDelete(detail),
     );
   }
 
@@ -216,6 +218,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (sheetContext) {
         final theme = Theme.of(sheetContext);
         final title = detail.type == TransactionType.transfer
@@ -231,7 +234,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
         };
 
         return SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.screen,
               AppSpacing.sm,
@@ -272,7 +275,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                       ? detail.transaction.note!
                       : 'Tidak ada catatan',
                 ),
-                if (detail.type == TransactionType.expense) ...[
+                if (!detail.isLog &&
+                    detail.type == TransactionType.expense) ...[
                   const SizedBox(height: AppSpacing.md),
                   TextButton.icon(
                     icon: const Icon(Icons.event_repeat_rounded),
@@ -287,19 +291,25 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                   ),
                 ],
                 const SizedBox(height: AppSpacing.xl),
-                AppFormActions(
-                  secondaryLabel: 'Edit',
-                  primaryLabel: 'Hapus',
-                  danger: true,
-                  onSecondaryPressed: () {
-                    Navigator.pop(sheetContext);
-                    _edit(detail);
-                  },
-                  onPrimaryPressed: () {
-                    Navigator.pop(sheetContext);
-                    _confirmDelete(detail);
-                  },
-                ),
+                if (detail.isLog)
+                  Text(
+                    'Log transaksi · Dompet telah dihapus. Riwayat ini hanya bisa dibaca.',
+                    style: theme.textTheme.bodyMedium,
+                  )
+                else
+                  AppFormActions(
+                    secondaryLabel: 'Edit',
+                    primaryLabel: 'Hapus',
+                    danger: true,
+                    onSecondaryPressed: () {
+                      Navigator.pop(sheetContext);
+                      _edit(detail);
+                    },
+                    onPrimaryPressed: () {
+                      Navigator.pop(sheetContext);
+                      _confirmDelete(detail);
+                    },
+                  ),
               ],
             ),
           ),
@@ -309,6 +319,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
   }
 
   void _edit(TransactionDetail detail) {
+    if (detail.isLog) return;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -321,6 +332,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
   }
 
   Future<void> _confirmDelete(TransactionDetail detail) async {
+    if (detail.isLog) return;
     final confirmed = await showAppConfirmDialog(
       context: context,
       title: 'Hapus transaksi?',
@@ -331,7 +343,19 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
 
     if (!confirmed) return;
 
-    await ref.read(transactionRepositoryProvider).delete(detail.transaction.id);
+    try {
+      await ref
+          .read(transactionRepositoryProvider)
+          .delete(detail.transaction.id);
+    } on ArgumentError catch (error) {
+      if (!mounted) return;
+      TopToast.show(
+        context,
+        error.message.toString(),
+        type: TopToastType.warning,
+      );
+      return;
+    }
     if (!mounted) return;
     TopToast.show(
       context,

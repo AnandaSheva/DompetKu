@@ -99,6 +99,19 @@ class TransactionRepository {
     final existing = id == null
         ? null
         : await _database.transactionsDao.getById(id);
+    final wallets = await _database.walletsDao.getAll();
+    if (existing != null) _requireEditable(existing, wallets);
+    for (final selectedId in [
+      walletId,
+      if (transferWalletId != null && type == TransactionType.transfer)
+        transferWalletId,
+    ]) {
+      if (!wallets.any(
+        (wallet) => wallet.id == selectedId && wallet.deletedAt == null,
+      )) {
+        throw ArgumentError('Dompet sudah dihapus. Pilih dompet lain.');
+      }
+    }
     final companion = TransactionEntriesCompanion(
       id: id == null ? const Value.absent() : Value(id),
       type: Value(type.value),
@@ -122,7 +135,22 @@ class TransactionRepository {
   }
 
   Future<void> delete(int id) async {
+    final existing = await _database.transactionsDao.getById(id);
+    if (existing == null) return;
+    _requireEditable(existing, await _database.walletsDao.getAll());
     await _database.transactionsDao.deleteById(id);
+  }
+
+  void _requireEditable(TransactionEntry entry, List<WalletEntry> wallets) {
+    if (wallets.any(
+      (wallet) =>
+          wallet.deletedAt != null &&
+          (wallet.id == entry.walletId || wallet.id == entry.transferWalletId),
+    )) {
+      throw ArgumentError(
+        'Log transaksi dari dompet yang dihapus hanya bisa dibaca.',
+      );
+    }
   }
 
   List<TransactionDetail> _details({

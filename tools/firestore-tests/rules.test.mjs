@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { before, after, beforeEach, test } from 'node:test';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { doc, setDoc, getDoc, getDocs, collection, writeBatch, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocs, collection, writeBatch, updateDoc, deleteDoc } from 'firebase/firestore';
 
 let env;
 const projectId = 'demo-dompetku';
@@ -19,6 +19,56 @@ before(async () => {
 });
 beforeEach(() => env.clearFirestore());
 after(async () => env?.cleanup());
+
+test('wallet deletion validates the tombstone and prevents stale resurrection', async () => {
+  const db = env.authenticatedContext('alice').firestore();
+  const ref = doc(db, path('alice'));
+  await setDoc(doc(db, 'users/alice'), {schemaVersion:1,activeDataset:'initial',createdAt:now,legacyMigration:null});
+  for (const deletedAt of [-1, 0, 1.5, 'today']) {
+    await assertFails(setDoc(ref, {...wallet, isArchived:true, deletedAt}));
+  }
+  await assertFails(setDoc(ref, {...wallet, deletedAt:now}));
+  await assertSucceeds(setDoc(ref, wallet));
+  await assertSucceeds(updateDoc(ref, {isArchived:true, deletedAt:now}));
+  await assertSucceeds(getDoc(ref));
+  await assertFails(setDoc(ref, wallet));
+  await assertFails(updateDoc(ref, {name:'Changed'}));
+  await assertFails(deleteDoc(ref));
+  const bob = env.authenticatedContext('bob').firestore();
+  await assertFails(getDoc(doc(bob, path('alice'))));
+  await assertFails(updateDoc(doc(bob, path('alice')), {deletedAt:null}));
+});
+
+test('deleted-wallet logs are readable but immutable including both transfer directions', async () => {
+  const db = env.authenticatedContext('alice').firestore();
+  const profileRef = doc(db, 'users/alice');
+  await setDoc(profileRef, {schemaVersion:1,activeDataset:'initial',createdAt:now,legacyMigration:null});
+  await setDoc(doc(db,path('alice')),wallet);
+  await setDoc(doc(db,path('alice','wallets',2)),{...wallet,id:2,name:'Active'});
+  const rows = [
+    {id:1,type:'expense',amount:1000,categoryId:1,walletId:1,transferWalletId:null,date:now,note:null,createdAt:now,updatedAt:now},
+    {id:2,type:'transfer',amount:2000,categoryId:null,walletId:1,transferWalletId:2,date:now,note:null,createdAt:now,updatedAt:now},
+    {id:3,type:'transfer',amount:3000,categoryId:null,walletId:2,transferWalletId:1,date:now,note:null,createdAt:now,updatedAt:now},
+  ];
+  for (const row of rows) await setDoc(doc(db,path('alice','transactions',row.id)),row);
+  await updateDoc(doc(db,path('alice')), {isArchived:true,deletedAt:now});
+  for (const row of rows) {
+    const ref = doc(db,path('alice','transactions',row.id));
+    await assertSucceeds(getDoc(ref));
+    await assertFails(updateDoc(ref,{amount:1}));
+    await assertFails(deleteDoc(ref));
+    await assertFails(setDoc(ref,{...rows[0],id:row.id,walletId:2}));
+    await assertFails(setDoc(doc(db,path('alice','transactions',row.id+10)),{...row,id:row.id+10}));
+  }
+  // A replacement dataset can restore log rows before it becomes active.
+  await assertSucceeds(setDoc(doc(db,path('alice','wallets',1,'restored')),{...wallet,isArchived:true,deletedAt:now}));
+  await assertSucceeds(setDoc(doc(db,path('alice','transactions',1,'restored')),rows[0]));
+  await updateDoc(profileRef,{activeDataset:'restored'});
+  await assertFails(updateDoc(doc(db,path('alice','transactions',1,'restored')),{amount:1}));
+  // Retired data remains eligible for the existing cleanup flow.
+  await assertSucceeds(deleteDoc(doc(db,path('alice','transactions',1))));
+  await assertSucceeds(deleteDoc(doc(db,path('alice'))));
+});
 
 test('owner can create, list and read their own data', async () => {
   const db = env.authenticatedContext('alice').firestore();

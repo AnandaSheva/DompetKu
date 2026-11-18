@@ -185,6 +185,9 @@ void main() {
         await original.customStatement(
           'ALTER TABLE wallets DROP COLUMN reserved_balance',
         );
+        await original.customStatement(
+          'ALTER TABLE wallets DROP COLUMN deleted_at',
+        );
         await original.customStatement('PRAGMA user_version = 4');
         await original.close();
         originalClosed = true;
@@ -193,7 +196,7 @@ void main() {
         expect(
           (await upgraded.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          5,
+          6,
         );
         expect(
           await upgraded.customSelect('PRAGMA foreign_key_check').get(),

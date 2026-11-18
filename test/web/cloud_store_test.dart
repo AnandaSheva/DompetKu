@@ -71,6 +71,102 @@ void main() {
     await app.delete();
   });
 
+  test(
+    'offline wallet deletion syncs logs, pauses bills and survives restore across clients',
+    () async {
+      final walletRepository = WalletRepository(store);
+      final repository = TransactionRepository(store);
+      final wallets = await walletRepository.getWallets();
+      final source = wallets.first;
+      final destination = wallets.last;
+      final category = (await store.categoriesDao.getByType('expense')).first;
+      await repository.save(
+        type: TransactionType.transfer,
+        amount: 30000,
+        walletId: source.id,
+        transferWalletId: destination.id,
+        date: DateTime.now(),
+      );
+      await repository.save(
+        type: TransactionType.expense,
+        amount: 10000,
+        categoryId: category.id,
+        walletId: source.id,
+        date: DateTime.now(),
+      );
+      await PlanningRepository(store).saveBill(
+        title: 'Internet',
+        amount: 10000,
+        categoryId: category.id,
+        walletId: source.id,
+        nextDueDate: DateTime.now(),
+        frequency: 'monthly',
+      );
+      await store.waitForSync();
+      final before = await store.transactionsDao.getAll();
+      await firestore.disableNetwork();
+      await walletRepository.deleteWallet(source.id);
+      expect(store.status.pending, true);
+      expect((await repository.getDetails()).every((d) => d.isLog), true);
+      expect(
+        (await walletRepository.getWallets()).any((w) => w.id == source.id),
+        false,
+      );
+      await firestore.enableNetwork();
+      await store.waitForSync();
+      final second = CloudFinanceStore(firestore, store.uid);
+      try {
+        await second.initialize();
+        final secondWallets = WalletRepository(second);
+        expect(
+          await secondWallets.getWalletBalance(walletId: source.id),
+          isNull,
+        );
+        expect(
+          (await secondWallets.getWalletBalance(
+            walletId: destination.id,
+          ))!.balance,
+          30000,
+        );
+        expect(await second.transactionsDao.getAll(), before);
+        final logs = await TransactionRepository(second).getDetails();
+        expect(logs, hasLength(2));
+        expect(logs.every((d) => d.isLog), true);
+        expect(
+          (await second.recurringBillsDao.getAll()).single.isActive,
+          false,
+        );
+        await expectLater(
+          TransactionRepository(second).delete(logs.first.transaction.id),
+          throwsArgumentError,
+        );
+        final backup = BackupRepository(second);
+        final payload = await backup.exportPayload();
+        await backup.restoreImport(backup.previewFromJson(jsonEncode(payload)));
+        await second.waitForSync();
+        expect(
+          (await TransactionRepository(
+            second,
+          ).getDetails()).every((d) => d.isLog),
+          true,
+        );
+        await secondWallets.addWallet(name: source.name, type: source.type);
+        await second.waitForSync();
+        expect(
+          (await secondWallets.getWallets())
+              .singleWhere((w) => w.name == source.name)
+              .id,
+          isNot(source.id),
+        );
+        // Reset must still be able to retire and clean up datasets containing logs.
+        await backup.resetData();
+        expect(await second.transactionsDao.getAll(), isEmpty);
+      } finally {
+        await second.close();
+      }
+    },
+  );
+
   test('seeds once and shares existing calculations for transfers', () async {
     final wallets = await store.walletsDao.getAll();
     expect(wallets, hasLength(4));

@@ -54,6 +54,8 @@ class WalletEntries extends Table {
   IntColumn get initialBalance => integer().withDefault(const Constant(0))();
   IntColumn get reservedBalance => integer().withDefault(const Constant(0))();
   BoolColumn get isArchived => boolean().withDefault(const Constant(false))();
+  // Retain the wallet as a historical reference after deletion.
+  DateTimeColumn get deletedAt => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 }
@@ -400,7 +402,11 @@ class WalletsDao extends DatabaseAccessor<AppDatabase>
   @override
   Future<int> countDuplicate({required String name, int? exceptId}) {
     final query = select(walletEntries)
-      ..where((table) => table.name.lower().equals(name.toLowerCase()));
+      ..where(
+        (table) =>
+            table.name.lower().equals(name.toLowerCase()) &
+            table.deletedAt.isNull(),
+      );
     if (exceptId != null) {
       query.where((table) => table.id.equals(exceptId).not());
     }
@@ -652,7 +658,7 @@ class AppDatabase extends _$AppDatabase implements FinanceStore {
       select(quickTemplateEntries).get();
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration {
@@ -674,6 +680,9 @@ class AppDatabase extends _$AppDatabase implements FinanceStore {
         }
         if (from < 5) {
           await m.addColumn(walletEntries, walletEntries.reservedBalance);
+        }
+        if (from < 6) {
+          await m.addColumn(walletEntries, walletEntries.deletedAt);
         }
       },
       beforeOpen: (details) async {

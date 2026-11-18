@@ -17,6 +17,9 @@ class TransactionDetail {
   final WalletEntry? transferWallet;
 
   TransactionType get type => TransactionType.fromValue(transaction.type);
+
+  bool get isLog =>
+      wallet.deletedAt != null || transferWallet?.deletedAt != null;
 }
 
 class WalletBalance {

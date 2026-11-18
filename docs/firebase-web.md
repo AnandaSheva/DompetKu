@@ -203,6 +203,20 @@ hanya digunakan pada debug build; release selalu menggunakan konfigurasi proyek.
 
 ## Deploy dan verifikasi
 
+Dompet dapat dihapus meskipun sudah memiliki transaksi. Dompet dihapus dari
+daftar pilihan dan total saldo, sedangkan referensi namanya tetap disimpan
+dengan `deletedAt` untuk menjaga riwayat dan kedua sisi transfer. Transaksi
+terkait tampil sebagai log yang hanya bisa dibaca; pemasukan, pengeluaran,
+dan penggunaan budget historis tetap dihitung. Jadwal tagihan terkait dijeda
+dan perlu dipindah ke dompet aktif sebelum diaktifkan kembali. Backup JSON
+menyertakan status penghapusan agar pemulihan tidak mengaktifkan dompet lama.
+
+Deploy `firestore.rules` terbaru sebelum menerbitkan klien dengan fitur
+penghapusan ini. Rules memvalidasi `deletedAt`, mencegah perangkat dengan data
+lama mengaktifkan kembali dompet yang dihapus atau mengubah log, serta tetap
+mendukung staging pemulihan dan pembersihan dataset lama. Migrasi Drift v6
+menambahkan penanda penghapusan tanpa mengubah data dompet atau transaksi lama.
+
 ```powershell
 flutter build web --release --no-web-resources-cdn --dart-define-from-file=.env.local
 ```

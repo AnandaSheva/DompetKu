@@ -30,6 +30,30 @@ Finder _field(String label) => find.byWidgetPredicate(
 void main() {
   tearDown(TopToast.dismiss);
 
+  testWidgets(
+    'wallet with transactions can be deleted after explicit confirmation',
+    (tester) async {
+      final repository = _WalletRepository()..count = 3;
+      await _pump(tester, repository);
+      await tester.tap(find.text('BRI'));
+      await tester.pumpAndSettle();
+      expect(find.text('3 transaksi'), findsOneWidget);
+      await tester.ensureVisible(find.text('Hapus'));
+      await tester.tap(find.text('Hapus'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Riwayat transaksi tetap tersimpan sebagai log'),
+        findsOneWidget,
+      );
+      expect(repository.deletedId, isNull);
+      await tester.tap(find.text('Hapus'));
+      await tester.pumpAndSettle();
+      expect(repository.deletedId, _bank.id);
+      expect(tester.takeException(), isNull);
+      TopToast.dismiss();
+    },
+  );
+
   for (final theme in [AppTheme.light, AppTheme.dark]) {
     testWidgets(
       'bank form saves its reserve in ${theme.brightness.name} theme',
@@ -168,10 +192,18 @@ Future<void> _pump(
 class _WalletRepository extends WalletRepository {
   _WalletRepository() : super(_UnusedStore());
   int? savedId, savedInitialBalance, savedReserve;
+  int count = 0;
+  int? deletedId;
   String? savedName, savedType;
 
   @override
-  Future<int> transactionCount(int walletId) async => 0;
+  Future<int> transactionCount(int walletId) async => count;
+
+  @override
+  Future<String?> deleteWallet(int walletId) async {
+    deletedId = walletId;
+    return null;
+  }
 
   @override
   Future<void> addWallet({

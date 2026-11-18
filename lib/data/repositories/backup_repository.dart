@@ -367,7 +367,12 @@ class BackupRepository {
           (type != 'bank' && reserve != 0)) {
         throw FormatException('Saldo endapan pada file cadangan tidak valid.');
       }
-      _optionalBool(item, 'is_archived');
+      final deletedAt = _optionalDate(item, 'deleted_at');
+      final archived = _optionalBool(item, 'is_archived') ?? false;
+      if (deletedAt != null &&
+          (!archived || deletedAt.millisecondsSinceEpoch <= 0)) {
+        throw FormatException('Status dompet pada file cadangan tidak valid.');
+      }
     }
     return ids;
   }
@@ -602,6 +607,7 @@ class BackupRepository {
     'initial_balance': entry.initialBalance,
     'reserved_balance': entry.reservedBalance,
     'is_archived': entry.isArchived,
+    'deleted_at': entry.deletedAt?.toIso8601String(),
   };
 
   Map<String, dynamic> _budgetToJson(BudgetEntry entry) => {
@@ -667,6 +673,7 @@ class BackupRepository {
       initialBalance: Value(_optionalInt(item, 'initial_balance') ?? 0),
       reservedBalance: Value(_optionalInt(item, 'reserved_balance') ?? 0),
       isArchived: Value(_optionalBool(item, 'is_archived') ?? false),
+      deletedAt: Value(_optionalDate(item, 'deleted_at')),
       createdAt: now,
       updatedAt: now,
     );

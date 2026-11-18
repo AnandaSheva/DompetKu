@@ -71,11 +71,16 @@ class CloudFinanceStore implements FinanceStore {
     _wallets = _CloudTable(
       this,
       'wallets',
-      (json) => WalletEntry.fromJson({'reservedBalance': 0, ...json}),
+      (json) => WalletEntry.fromJson({
+        'reservedBalance': 0,
+        'deletedAt': null,
+        ...json,
+      }),
       defaults: {
         'initialBalance': 0,
         'reservedBalance': 0,
         'isArchived': false,
+        'deletedAt': null,
       },
       compare: (a, b) => a.id.compareTo(b.id),
     );
@@ -855,6 +860,7 @@ class _CloudWallets implements WalletsStore {
           .where(
             (row) =>
                 row.id != exceptId &&
+                row.deletedAt == null &&
                 row.name.toLowerCase() == name.toLowerCase(),
           )
           .length;
@@ -1252,6 +1258,7 @@ class _CloudBills implements BillsStore, AtomicBillPayments {
         if (needsReferences &&
             (wallet?.exists != true ||
                 wallet?.data()?['isArchived'] != false ||
+                wallet?.data()?['deletedAt'] != null ||
                 category?.exists != true ||
                 category?.data()?['isArchived'] != false ||
                 !['expense', 'both'].contains(category?.data()?['type']))) {

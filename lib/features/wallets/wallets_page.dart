@@ -206,26 +206,34 @@ class WalletsPage extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.xl),
                     AppFormActions(
                       secondaryLabel: 'Edit',
-                      primaryLabel: wallet.wallet.isArchived
-                          ? 'Aktifkan'
-                          : count > 0
-                          ? 'Nonaktifkan'
-                          : 'Hapus',
-                      danger: !wallet.wallet.isArchived,
+                      primaryLabel: 'Hapus',
+                      danger: true,
                       onSecondaryPressed: () {
                         Navigator.pop(sheetContext);
                         _showWalletForm(context, ref, wallet.wallet);
                       },
                       onPrimaryPressed: () {
                         Navigator.pop(sheetContext);
-                        if (wallet.wallet.isArchived) {
-                          _archiveWallet(context, ref, wallet.wallet, false);
-                        } else if (count > 0) {
-                          _archiveWallet(context, ref, wallet.wallet, true);
-                        } else {
-                          _deleteWallet(context, ref, wallet.wallet);
-                        }
+                        _deleteWallet(context, ref, wallet.wallet);
                       },
+                    ),
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          _archiveWallet(
+                            context,
+                            ref,
+                            wallet.wallet,
+                            !wallet.wallet.isArchived,
+                          );
+                        },
+                        child: Text(
+                          wallet.wallet.isArchived
+                              ? 'Aktifkan dompet'
+                              : 'Nonaktifkan dompet',
+                        ),
+                      ),
                     ),
                   ],
                 );
@@ -245,7 +253,10 @@ class WalletsPage extends ConsumerWidget {
     final confirmed = await showAppConfirmDialog(
       context: context,
       title: 'Hapus dompet?',
-      message: '${wallet.name} akan dihapus jika belum dipakai transaksi.',
+      message:
+          '${wallet.name} akan dihapus dari daftar dompet dan total saldo. '
+          'Riwayat transaksi tetap tersimpan sebagai log yang hanya bisa dibaca. '
+          'Jadwal tagihan dari dompet ini akan dijeda.',
       confirmLabel: 'Hapus',
       danger: true,
     );

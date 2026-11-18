@@ -177,7 +177,6 @@ void main() {
     'paused and archived references block payment; deletion stays safe',
     () async {
       final bill = await createBill();
-      expect(await WalletRepository(db).deleteWallet(walletId), isNotNull);
       final category = (await db.categoriesDao.getAll()).firstWhere(
         (v) => v.id == categoryId,
       );
@@ -198,6 +197,12 @@ void main() {
         throwsArgumentError,
       );
       expect(await db.transactionsDao.getAll(), isEmpty);
+      expect(await WalletRepository(db).deleteWallet(walletId), isNull);
+      expect((await db.recurringBillsDao.getById(bill.id))!.isActive, false);
+      expect(
+        await WalletRepository(db).getWalletBalance(walletId: walletId),
+        isNull,
+      );
     },
   );
 
@@ -431,6 +436,9 @@ void main() {
       await original.customStatement(
         'ALTER TABLE wallets DROP COLUMN reserved_balance',
       );
+      await original.customStatement(
+        'ALTER TABLE wallets DROP COLUMN deleted_at',
+      );
       await original.customStatement('PRAGMA user_version = 3');
       await original.close();
       final upgraded = AppDatabase(NativeDatabase(file));
@@ -444,7 +452,7 @@ void main() {
         expect(
           (await upgraded.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          5,
+          6,
         );
       } finally {
         await upgraded.close();

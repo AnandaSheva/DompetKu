@@ -518,7 +518,7 @@ TransactionTile _tile(TransactionDetail detail, bool hideBalance) {
 
   return TransactionTile(
     title: title,
-    subtitle: subtitle,
+    subtitle: detail.isLog ? '$subtitle · Log dompet dihapus' : subtitle,
     timeLabel: DateFormatter.dateTimeLabel(transaction.date),
     amount: CurrencyFormatter.rupiah(transaction.amount, hidden: hideBalance),
     type: type,

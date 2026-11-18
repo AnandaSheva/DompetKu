@@ -914,6 +914,17 @@ class $WalletEntriesTable extends WalletEntries
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -944,6 +955,7 @@ class $WalletEntriesTable extends WalletEntries
     initialBalance,
     reservedBalance,
     isArchived,
+    deletedAt,
     createdAt,
     updatedAt,
   ];
@@ -1002,6 +1014,12 @@ class $WalletEntriesTable extends WalletEntries
         isArchived.isAcceptableOrUnknown(data['is_archived']!, _isArchivedMeta),
       );
     }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1051,6 +1069,10 @@ class $WalletEntriesTable extends WalletEntries
         DriftSqlType.bool,
         data['${effectivePrefix}is_archived'],
       )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1075,6 +1097,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
   final int initialBalance;
   final int reservedBalance;
   final bool isArchived;
+  final DateTime? deletedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
   const WalletEntry({
@@ -1084,6 +1107,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
     required this.initialBalance,
     required this.reservedBalance,
     required this.isArchived,
+    this.deletedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -1096,6 +1120,9 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
     map['initial_balance'] = Variable<int>(initialBalance);
     map['reserved_balance'] = Variable<int>(reservedBalance);
     map['is_archived'] = Variable<bool>(isArchived);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -1109,6 +1136,9 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
       initialBalance: Value(initialBalance),
       reservedBalance: Value(reservedBalance),
       isArchived: Value(isArchived),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -1126,6 +1156,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
       initialBalance: serializer.fromJson<int>(json['initialBalance']),
       reservedBalance: serializer.fromJson<int>(json['reservedBalance']),
       isArchived: serializer.fromJson<bool>(json['isArchived']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -1140,6 +1171,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
       'initialBalance': serializer.toJson<int>(initialBalance),
       'reservedBalance': serializer.toJson<int>(reservedBalance),
       'isArchived': serializer.toJson<bool>(isArchived),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -1152,6 +1184,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
     int? initialBalance,
     int? reservedBalance,
     bool? isArchived,
+    Value<DateTime?> deletedAt = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => WalletEntry(
@@ -1161,6 +1194,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
     initialBalance: initialBalance ?? this.initialBalance,
     reservedBalance: reservedBalance ?? this.reservedBalance,
     isArchived: isArchived ?? this.isArchived,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -1178,6 +1212,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
       isArchived: data.isArchived.present
           ? data.isArchived.value
           : this.isArchived,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1192,6 +1227,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
           ..write('initialBalance: $initialBalance, ')
           ..write('reservedBalance: $reservedBalance, ')
           ..write('isArchived: $isArchived, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1206,6 +1242,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
     initialBalance,
     reservedBalance,
     isArchived,
+    deletedAt,
     createdAt,
     updatedAt,
   );
@@ -1219,6 +1256,7 @@ class WalletEntry extends DataClass implements Insertable<WalletEntry> {
           other.initialBalance == this.initialBalance &&
           other.reservedBalance == this.reservedBalance &&
           other.isArchived == this.isArchived &&
+          other.deletedAt == this.deletedAt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -1230,6 +1268,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
   final Value<int> initialBalance;
   final Value<int> reservedBalance;
   final Value<bool> isArchived;
+  final Value<DateTime?> deletedAt;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const WalletEntriesCompanion({
@@ -1239,6 +1278,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
     this.initialBalance = const Value.absent(),
     this.reservedBalance = const Value.absent(),
     this.isArchived = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -1249,6 +1289,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
     this.initialBalance = const Value.absent(),
     this.reservedBalance = const Value.absent(),
     this.isArchived = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
   }) : name = Value(name),
@@ -1262,6 +1303,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
     Expression<int>? initialBalance,
     Expression<int>? reservedBalance,
     Expression<bool>? isArchived,
+    Expression<DateTime>? deletedAt,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -1272,6 +1314,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
       if (initialBalance != null) 'initial_balance': initialBalance,
       if (reservedBalance != null) 'reserved_balance': reservedBalance,
       if (isArchived != null) 'is_archived': isArchived,
+      if (deletedAt != null) 'deleted_at': deletedAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -1284,6 +1327,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
     Value<int>? initialBalance,
     Value<int>? reservedBalance,
     Value<bool>? isArchived,
+    Value<DateTime?>? deletedAt,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
   }) {
@@ -1294,6 +1338,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
       initialBalance: initialBalance ?? this.initialBalance,
       reservedBalance: reservedBalance ?? this.reservedBalance,
       isArchived: isArchived ?? this.isArchived,
+      deletedAt: deletedAt ?? this.deletedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -1320,6 +1365,9 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
     if (isArchived.present) {
       map['is_archived'] = Variable<bool>(isArchived.value);
     }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1338,6 +1386,7 @@ class WalletEntriesCompanion extends UpdateCompanion<WalletEntry> {
           ..write('initialBalance: $initialBalance, ')
           ..write('reservedBalance: $reservedBalance, ')
           ..write('isArchived: $isArchived, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -5471,6 +5520,7 @@ typedef $$WalletEntriesTableCreateCompanionBuilder =
       Value<int> initialBalance,
       Value<int> reservedBalance,
       Value<bool> isArchived,
+      Value<DateTime?> deletedAt,
       required DateTime createdAt,
       required DateTime updatedAt,
     });
@@ -5482,6 +5532,7 @@ typedef $$WalletEntriesTableUpdateCompanionBuilder =
       Value<int> initialBalance,
       Value<int> reservedBalance,
       Value<bool> isArchived,
+      Value<DateTime?> deletedAt,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -5581,6 +5632,11 @@ class $$WalletEntriesTableFilterComposer
 
   ColumnFilters<bool> get isArchived => $composableBuilder(
     column: $table.isArchived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5684,6 +5740,11 @@ class $$WalletEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -5727,6 +5788,9 @@ class $$WalletEntriesTableAnnotationComposer
     column: $table.isArchived,
     builder: (column) => column,
   );
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -5824,6 +5888,7 @@ class $$WalletEntriesTableTableManager
                 Value<int> initialBalance = const Value.absent(),
                 Value<int> reservedBalance = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => WalletEntriesCompanion(
@@ -5833,6 +5898,7 @@ class $$WalletEntriesTableTableManager
                 initialBalance: initialBalance,
                 reservedBalance: reservedBalance,
                 isArchived: isArchived,
+                deletedAt: deletedAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -5844,6 +5910,7 @@ class $$WalletEntriesTableTableManager
                 Value<int> initialBalance = const Value.absent(),
                 Value<int> reservedBalance = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
               }) => WalletEntriesCompanion.insert(
@@ -5853,6 +5920,7 @@ class $$WalletEntriesTableTableManager
                 initialBalance: initialBalance,
                 reservedBalance: reservedBalance,
                 isArchived: isArchived,
+                deletedAt: deletedAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),

@@ -276,7 +276,12 @@ class PlanningRepository {
 
   Future<void> _validateExpenseReferences(int walletId, int categoryId) async {
     final wallet = (await _database.walletsDao.getAll())
-        .where((entry) => entry.id == walletId && !entry.isArchived)
+        .where(
+          (entry) =>
+              entry.id == walletId &&
+              !entry.isArchived &&
+              entry.deletedAt == null,
+        )
         .firstOrNull;
     final category = (await _database.categoriesDao.getAll())
         .where(

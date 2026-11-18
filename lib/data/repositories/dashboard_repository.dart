@@ -100,7 +100,7 @@ class DashboardRepository {
     final walletsById = {for (final wallet in wallets) wallet.id: wallet};
 
     final walletBalances = [
-      for (final wallet in wallets)
+      for (final wallet in wallets.where((wallet) => wallet.deletedAt == null))
         CalculationHelper.walletBalance(
           walletId: wallet.id,
           initialBalance: wallet.initialBalance,
@@ -164,7 +164,7 @@ class DashboardRepository {
       monthlyIncome: monthlyIncome,
       monthlyExpense: monthlyExpense,
       netCashflow: monthlyIncome - monthlyExpense,
-      walletCount: wallets.length,
+      walletCount: walletBalances.length,
       budgetLimit: budgetLimit,
       budgetSpent: monthlyExpense,
       budgetCount: currentBudgets.length,
