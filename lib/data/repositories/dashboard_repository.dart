@@ -1,8 +1,7 @@
-import 'dart:async';
-
 import '../../core/enums/transaction_type.dart';
 import '../../core/helpers/calculation_helper.dart';
 import '../../core/helpers/monthly_period.dart';
+import '../../core/helpers/stream_combiner.dart';
 import '../local/database/app_database.dart';
 import '../store/finance_store.dart';
 import 'app_models.dart';
@@ -13,71 +12,24 @@ class DashboardRepository {
   final FinanceStore _database;
 
   Stream<DashboardSummary> watchSummary() {
-    final controller = StreamController<DashboardSummary>();
-    List<TransactionEntry>? transactions;
-    List<CategoryEntry>? categories;
-    List<WalletEntry>? wallets;
-    List<BudgetEntry>? budgets;
-    var resetDay = 1;
-    var settingsLoaded = false;
-
-    void emit() {
-      final currentTransactions = transactions;
-      final currentCategories = categories;
-      final currentWallets = wallets;
-      final currentBudgets = budgets;
-      if (currentTransactions == null ||
-          currentCategories == null ||
-          currentWallets == null ||
-          currentBudgets == null ||
-          !settingsLoaded) {
-        return;
-      }
-
-      controller.add(
-        _summary(
-          transactions: currentTransactions,
-          categories: currentCategories,
-          wallets: currentWallets,
-          budgets: currentBudgets,
-          resetDay: resetDay,
-        ),
-      );
-    }
-
-    final transactionSub = _database.transactionsDao.watchAll().listen((value) {
-      transactions = value;
-      emit();
-    });
-    final categorySub = _database.categoriesDao.watchAll().listen((value) {
-      categories = value;
-      emit();
-    });
-    final walletSub = _database.walletsDao.watchAll().listen((value) {
-      wallets = value;
-      emit();
-    });
-    final budgetSub = _database.budgetsDao.watchAll().listen((value) {
-      budgets = value;
-      emit();
-    });
-    final settingsSub = _database.appSettingsDao.watchSettings().listen((
-      value,
-    ) {
-      resetDay = value?.monthlyResetDay ?? 1;
-      settingsLoaded = true;
-      emit();
-    });
-
-    controller.onCancel = () async {
-      await transactionSub.cancel();
-      await categorySub.cancel();
-      await walletSub.cancel();
-      await budgetSub.cancel();
-      await settingsSub.cancel();
-    };
-
-    return controller.stream;
+    return combineLatest<DashboardSummary>(
+      [
+        _database.transactionsDao.watchAll(),
+        _database.categoriesDao.watchAll(),
+        _database.walletsDao.watchAll(),
+        _database.budgetsDao.watchAll(),
+        _database.appSettingsDao.watchSettings(),
+      ],
+      (values) {
+        return _summary(
+          transactions: values[0] as List<TransactionEntry>,
+          categories: values[1] as List<CategoryEntry>,
+          wallets: values[2] as List<WalletEntry>,
+          budgets: values[3] as List<BudgetEntry>,
+          resetDay: (values[4] as AppSettingEntry?)?.monthlyResetDay ?? 1,
+        );
+      },
+    );
   }
 
   DashboardSummary _summary({
@@ -99,21 +51,20 @@ class DashboardRepository {
     };
     final walletsById = {for (final wallet in wallets) wallet.id: wallet};
 
-    final walletBalances = [
-      for (final wallet in wallets.where((wallet) => wallet.deletedAt == null))
-        CalculationHelper.walletBalance(
-          walletId: wallet.id,
-          initialBalance: wallet.initialBalance,
-          transactions: transactions.map(
-            (transaction) => (
-              walletId: transaction.walletId,
-              transferWalletId: transaction.transferWalletId,
-              type: transaction.type,
-              amount: transaction.amount,
-            ),
-          ),
+    final activeWallets = wallets.where((wallet) => wallet.deletedAt == null);
+    final walletBalances = CalculationHelper.walletBalances(
+      initialBalances: {
+        for (final wallet in activeWallets) wallet.id: wallet.initialBalance,
+      },
+      transactions: transactions.map(
+        (transaction) => (
+          walletId: transaction.walletId,
+          transferWalletId: transaction.transferWalletId,
+          type: transaction.type,
+          amount: transaction.amount,
         ),
-    ];
+      ),
+    ).values;
 
     final monthlyIncome = monthly
         .where(

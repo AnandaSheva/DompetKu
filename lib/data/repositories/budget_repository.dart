@@ -1,11 +1,10 @@
-import 'dart:async';
-
 import 'package:drift/drift.dart';
 
 import '../../core/enums/analytics_period.dart';
 import '../../core/enums/transaction_type.dart';
 import '../../core/helpers/calculation_helper.dart';
 import '../../core/helpers/monthly_period.dart';
+import '../../core/helpers/stream_combiner.dart';
 import '../local/database/app_database.dart';
 import '../store/finance_store.dart';
 import 'app_models.dart';
@@ -17,62 +16,23 @@ class BudgetRepository {
   final DateTime Function()? clock;
 
   Stream<List<BudgetProgress>> watchProgress({AnalyticsPeriod? period}) {
-    final controller = StreamController<List<BudgetProgress>>();
-    List<BudgetEntry>? budgets;
-    List<TransactionEntry>? transactions;
-    List<CategoryEntry>? categories;
-    var resetDay = 1;
-    var settingsLoaded = false;
-
-    void emit() {
-      final currentBudgets = budgets;
-      final currentTransactions = transactions;
-      final currentCategories = categories;
-      if (currentBudgets == null ||
-          currentTransactions == null ||
-          currentCategories == null ||
-          !settingsLoaded) {
-        return;
-      }
-      controller.add(
-        _progress(
-          currentBudgets,
-          currentTransactions,
-          currentCategories,
-          resetDay,
+    return combineLatest<List<BudgetProgress>>(
+      [
+        _database.budgetsDao.watchAll(),
+        _database.transactionsDao.watchAll(),
+        _database.categoriesDao.watchAll(),
+        _database.appSettingsDao.watchSettings(),
+      ],
+      (values) {
+        return _progress(
+          values[0] as List<BudgetEntry>,
+          values[1] as List<TransactionEntry>,
+          values[2] as List<CategoryEntry>,
+          (values[3] as AppSettingEntry?)?.monthlyResetDay ?? 1,
           period,
-        ),
-      );
-    }
-
-    final budgetSub = _database.budgetsDao.watchAll().listen((value) {
-      budgets = value;
-      emit();
-    });
-    final transactionSub = _database.transactionsDao.watchAll().listen((value) {
-      transactions = value;
-      emit();
-    });
-    final categorySub = _database.categoriesDao.watchAll().listen((value) {
-      categories = value;
-      emit();
-    });
-    final settingsSub = _database.appSettingsDao.watchSettings().listen((
-      value,
-    ) {
-      resetDay = value?.monthlyResetDay ?? 1;
-      settingsLoaded = true;
-      emit();
-    });
-
-    controller.onCancel = () async {
-      await budgetSub.cancel();
-      await transactionSub.cancel();
-      await categorySub.cancel();
-      await settingsSub.cancel();
-    };
-
-    return controller.stream;
+        );
+      },
+    );
   }
 
   Future<List<BudgetProgress>> getProgress({AnalyticsPeriod? period}) async {
@@ -145,6 +105,8 @@ class BudgetRepository {
       for (final category in categories) category.id: category,
     };
 
+    final spent = _expenseTotals(transactions, resetDay);
+
     return [
       for (final budget in budgets)
         if (firstMonth == null ||
@@ -155,34 +117,51 @@ class BudgetRepository {
             label: budget.categoryId == null
                 ? 'Budget bulanan'
                 : categoriesById[budget.categoryId]?.name ?? 'Kategori',
-            spent: _spentForBudget(budget, transactions, resetDay),
+            spent: spent.of(budget),
             status: CalculationHelper.budgetStatus(
-              _spentForBudget(budget, transactions, resetDay),
+              spent.of(budget),
               budget.limitAmount,
             ),
           ),
     ];
   }
 
-  int _spentForBudget(
-    BudgetEntry budget,
+  /// Sums expenses per budget period in one pass, so each budget is a lookup
+  /// instead of a scan over every transaction.
+  _ExpenseTotals _expenseTotals(
     List<TransactionEntry> transactions,
     int resetDay,
   ) {
-    return transactions
-        .where((transaction) {
-          final month = MonthlyPeriod.containing(
-            transaction.date,
-            resetDay,
-          ).key;
-          final type = TransactionType.fromValue(transaction.type);
-          final categoryMatches =
-              budget.categoryId == null ||
-              transaction.categoryId == budget.categoryId;
-          return month == budget.month &&
-              type == TransactionType.expense &&
-              categoryMatches;
-        })
-        .fold<int>(0, (total, transaction) => total + transaction.amount);
+    final byMonth = <String, int>{};
+    final byMonthAndCategory = <(String, int), int>{};
+    for (final transaction in transactions) {
+      if (TransactionType.fromValue(transaction.type) !=
+          TransactionType.expense) {
+        continue;
+      }
+      final month = MonthlyPeriod.containing(transaction.date, resetDay).key;
+      byMonth[month] = (byMonth[month] ?? 0) + transaction.amount;
+      final categoryId = transaction.categoryId;
+      if (categoryId != null) {
+        final key = (month, categoryId);
+        byMonthAndCategory[key] =
+            (byMonthAndCategory[key] ?? 0) + transaction.amount;
+      }
+    }
+    return _ExpenseTotals(byMonth, byMonthAndCategory);
+  }
+}
+
+class _ExpenseTotals {
+  const _ExpenseTotals(this._byMonth, this._byMonthAndCategory);
+
+  final Map<String, int> _byMonth;
+  final Map<(String, int), int> _byMonthAndCategory;
+
+  int of(BudgetEntry budget) {
+    final categoryId = budget.categoryId;
+    return categoryId == null
+        ? _byMonth[budget.month] ?? 0
+        : _byMonthAndCategory[(budget.month, categoryId)] ?? 0;
   }
 }

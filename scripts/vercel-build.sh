@@ -22,3 +22,8 @@ flutter precache --web
 flutter pub get
 flutter build web --release --no-web-resources-cdn \
   --dart-define=FIREBASE_WEB_API_KEY="${FIREBASE_WEB_API_KEY}"
+
+# A new build id makes browsers install the new offline worker and drop the old cache.
+BUILD_ID="${VERCEL_GIT_COMMIT_SHA:-$(date +%s)}"
+sed -i "s/__BUILD_ID__/${BUILD_ID}/" build/web/app_shell_worker.js
+grep -q "${BUILD_ID}" build/web/app_shell_worker.js

@@ -21,8 +21,10 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
+  // Tabs are built on first visit, then kept alive so their state survives.
+  final Set<int> _visited = {0};
 
-  final List<Widget> _pages = const [
+  static const List<Widget> _pages = [
     DashboardPage(),
     TransactionsPage(),
     AnalyticsPage(),
@@ -116,7 +118,12 @@ class _MainShellState extends State<MainShell> {
                     Positioned.fill(
                       child: IndexedStack(
                         index: _currentIndex,
-                        children: _pages,
+                        children: [
+                          for (var i = 0; i < _pages.length; i++)
+                            _visited.contains(i)
+                                ? _pages[i]
+                                : const SizedBox.shrink(),
+                        ],
                       ),
                     ),
                     Positioned(
@@ -128,7 +135,10 @@ class _MainShellState extends State<MainShell> {
                         items: navItems,
                         onAddPressed: _showQuickAddSheet,
                         onChanged: (index) {
-                          setState(() => _currentIndex = index);
+                          setState(() {
+                            _currentIndex = index;
+                            _visited.add(index);
+                          });
                         },
                       ),
                     ),

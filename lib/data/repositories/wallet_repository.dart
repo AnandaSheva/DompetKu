@@ -1,9 +1,8 @@
-import 'dart:async';
-
 import 'package:drift/drift.dart';
 
 import '../../core/enums/wallet_type.dart';
 import '../../core/helpers/calculation_helper.dart';
+import '../../core/helpers/stream_combiner.dart';
 import '../local/database/app_database.dart';
 import '../store/finance_store.dart';
 import 'app_models.dart';
@@ -14,37 +13,32 @@ class WalletRepository {
   final FinanceStore _database;
 
   Stream<List<WalletBalance>> watchWalletBalances() {
-    final controller = StreamController<List<WalletBalance>>();
-    List<WalletEntry>? wallets;
-    List<TransactionEntry>? transactions;
-
-    void emit() {
-      final currentWallets = wallets;
-      final currentTransactions = transactions;
-      if (currentWallets == null || currentTransactions == null) return;
-
-      controller.add([
-        for (final wallet in currentWallets)
-          if (wallet.deletedAt == null)
-            _walletBalance(wallet, currentTransactions),
-      ]);
-    }
-
-    final walletSub = _database.walletsDao.watchAll().listen((value) {
-      wallets = value;
-      emit();
-    });
-    final transactionSub = _database.transactionsDao.watchAll().listen((value) {
-      transactions = value;
-      emit();
-    });
-
-    controller.onCancel = () async {
-      await walletSub.cancel();
-      await transactionSub.cancel();
-    };
-
-    return controller.stream;
+    return combineLatest<List<WalletBalance>>(
+      [_database.walletsDao.watchAll(), _database.transactionsDao.watchAll()],
+      (values) {
+        final wallets = [
+          for (final wallet in values[0] as List<WalletEntry>)
+            if (wallet.deletedAt == null) wallet,
+        ];
+        final balances = CalculationHelper.walletBalances(
+          initialBalances: {
+            for (final wallet in wallets) wallet.id: wallet.initialBalance,
+          },
+          transactions: (values[1] as List<TransactionEntry>).map(
+            (transaction) => (
+              walletId: transaction.walletId,
+              transferWalletId: transaction.transferWalletId,
+              type: transaction.type,
+              amount: transaction.amount,
+            ),
+          ),
+        );
+        return [
+          for (final wallet in wallets)
+            WalletBalance(wallet: wallet, balance: balances[wallet.id]!),
+        ];
+      },
+    );
   }
 
   Future<List<WalletEntry>> getWallets() async {

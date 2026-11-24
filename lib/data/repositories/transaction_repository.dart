@@ -1,8 +1,7 @@
-import 'dart:async';
-
 import 'package:drift/drift.dart';
 
 import '../../core/enums/transaction_type.dart';
+import '../../core/helpers/stream_combiner.dart';
 import '../local/database/app_database.dart';
 import '../store/finance_store.dart';
 import 'app_models.dart';
@@ -13,50 +12,20 @@ class TransactionRepository {
   final FinanceStore _database;
 
   Stream<List<TransactionDetail>> watchDetails() {
-    final controller = StreamController<List<TransactionDetail>>();
-    List<TransactionEntry>? transactions;
-    List<CategoryEntry>? categories;
-    List<WalletEntry>? wallets;
-
-    void emit() {
-      final currentTransactions = transactions;
-      final currentCategories = categories;
-      final currentWallets = wallets;
-      if (currentTransactions == null ||
-          currentCategories == null ||
-          currentWallets == null) {
-        return;
-      }
-
-      controller.add(
-        _details(
-          transactions: currentTransactions,
-          categories: currentCategories,
-          wallets: currentWallets,
-        ),
-      );
-    }
-
-    final transactionSub = _database.transactionsDao.watchAll().listen((value) {
-      transactions = value;
-      emit();
-    });
-    final categorySub = _database.categoriesDao.watchAll().listen((value) {
-      categories = value;
-      emit();
-    });
-    final walletSub = _database.walletsDao.watchAll().listen((value) {
-      wallets = value;
-      emit();
-    });
-
-    controller.onCancel = () async {
-      await transactionSub.cancel();
-      await categorySub.cancel();
-      await walletSub.cancel();
-    };
-
-    return controller.stream;
+    return combineLatest<List<TransactionDetail>>(
+      [
+        _database.transactionsDao.watchAll(),
+        _database.categoriesDao.watchAll(),
+        _database.walletsDao.watchAll(),
+      ],
+      (values) {
+        return _details(
+          transactions: values[0] as List<TransactionEntry>,
+          categories: values[1] as List<CategoryEntry>,
+          wallets: values[2] as List<WalletEntry>,
+        );
+      },
+    );
   }
 
   Future<List<TransactionDetail>> getDetails() async {

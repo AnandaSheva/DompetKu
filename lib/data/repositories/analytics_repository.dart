@@ -1,10 +1,9 @@
-import 'dart:async';
-
 import '../../core/constants/category_palette.dart';
 import '../../core/enums/analytics_period.dart';
 import '../../core/enums/transaction_type.dart';
 import '../../core/formatters/date_formatter.dart';
 import '../../core/helpers/monthly_period.dart';
+import '../../core/helpers/stream_combiner.dart';
 import '../local/database/app_database.dart';
 import '../store/finance_store.dart';
 import 'app_models.dart';
@@ -25,48 +24,21 @@ class AnalyticsRepository {
   }
 
   Stream<AnalyticsSummary> watchSummary(AnalyticsPeriod period) {
-    final controller = StreamController<AnalyticsSummary>();
-    List<TransactionEntry>? transactions;
-    List<CategoryEntry>? categories;
-    var resetDay = 1;
-    var settingsLoaded = false;
-
-    void emit() {
-      final currentTransactions = transactions;
-      final currentCategories = categories;
-      if (currentTransactions == null ||
-          currentCategories == null ||
-          !settingsLoaded) {
-        return;
-      }
-      controller.add(
-        _summary(currentTransactions, currentCategories, period, resetDay),
-      );
-    }
-
-    final transactionSub = _database.transactionsDao.watchAll().listen((value) {
-      transactions = value;
-      emit();
-    });
-    final categorySub = _database.categoriesDao.watchAll().listen((value) {
-      categories = value;
-      emit();
-    });
-    final settingsSub = _database.appSettingsDao.watchSettings().listen((
-      value,
-    ) {
-      resetDay = value?.monthlyResetDay ?? 1;
-      settingsLoaded = true;
-      emit();
-    });
-
-    controller.onCancel = () async {
-      await transactionSub.cancel();
-      await categorySub.cancel();
-      await settingsSub.cancel();
-    };
-
-    return controller.stream;
+    return combineLatest<AnalyticsSummary>(
+      [
+        _database.transactionsDao.watchAll(),
+        _database.categoriesDao.watchAll(),
+        _database.appSettingsDao.watchSettings(),
+      ],
+      (values) {
+        return _summary(
+          values[0] as List<TransactionEntry>,
+          values[1] as List<CategoryEntry>,
+          period,
+          (values[2] as AppSettingEntry?)?.monthlyResetDay ?? 1,
+        );
+      },
+    );
   }
 
   AnalyticsSummary _summary(
@@ -91,12 +63,14 @@ class AnalyticsRepository {
         )
         .toList();
 
+    final expenseByCategory = _categoryAmounts(
+      filtered,
+      categoriesById,
+      TransactionType.expense,
+    );
+
     return AnalyticsSummary(
-      expenseByCategory: _categoryAmounts(
-        filtered,
-        categoriesById,
-        TransactionType.expense,
-      ),
+      expenseByCategory: expenseByCategory,
       incomeByCategory: _categoryAmounts(
         filtered,
         categoriesById,
@@ -104,11 +78,7 @@ class AnalyticsRepository {
       ),
       dailyCashflow: _cashflowSeries(filtered, period, now, resetDay),
       weeklyExpense: _expenseBuckets(filtered, period, now, resetDay),
-      topExpenses: _categoryAmounts(
-        filtered,
-        categoriesById,
-        TransactionType.expense,
-      ).take(5).toList(),
+      topExpenses: expenseByCategory.take(5).toList(),
     );
   }
 

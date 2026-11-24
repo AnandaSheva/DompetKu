@@ -1,12 +1,20 @@
 {
+    "id": "/",
     "name": "DompetKu",
     "short_name": "DompetKu",
-    "start_url": ".",
+    "start_url": "/",
+    "scope": "/",
     "display": "standalone",
     "background_color": "#F5F8FF",
     "theme_color": "#2563EB",
     "description": "Aplikasi keuangan pribadi dengan login Google dan penyimpanan data per akun.",
-    "orientation": "portrait-primary",
+    "lang": "id",
+    "dir": "ltr",
+    "categories": [
+        "finance",
+        "productivity"
+    ],
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {
